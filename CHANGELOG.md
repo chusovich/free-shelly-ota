@@ -25,8 +25,6 @@ All notable changes to this project are documented here. The format follows
   loader 1.0.3, so the default 1.0.3 was skipped and later ESPHome OTAs did not take effect. The hardware result of the package route is not
   recorded here yet, so there is no device page and no README row.
 - GitHub issue form **Request a new device** (model, `app` name, firmware, chip, whether you can test it; no dumps or secrets). The README links to it.
-
-### Added
 - GitHub issue forms: **Device report** (device, tool and Shelly version, method, result, `send --watch` output, with a reminder to remove
   secrets and the device cloud key) and **Bug or wrong message**. The README links to the device report.
 
