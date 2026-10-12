@@ -23,6 +23,8 @@ The file name without `.yaml` is the profile name you give to `fetch`, `build`, 
 | `Mini1PMG3` | Shelly Mini 1PM Gen3 | ESP32-C3 | 1 | [Mini1PMG3](../docs/devices/Mini1PMG3.md) |
 | `Mini1PMG4` | Shelly Mini 1PM Gen4 | ESP32-C6 | 1 | [Mini1PMG4](../docs/devices/Mini1PMG4.md) |
 | `Mini1PMG4ZB` | Shelly Mini 1PM Gen4 (Zigbee) | ESP32-C6 | 1 | [Mini1PMG4](../docs/devices/Mini1PMG4.md#zigbee-variant) |
+| `PlusUni` | Shelly Plus Uni | ESP32 | 1 | [PlusUni](../docs/devices/PlusUni.md) |
+| `Pro3EM` | Shelly Pro 3EM | ESP32 | 1 | [Pro3EM](../docs/devices/Pro3EM.md) |
 
 `python ota.py profiles` prints the same list with the revision and a content hash, `python ota.py list` also shows which
 official firmware is cached.

@@ -27,6 +27,8 @@ body:
         - Mini1PMG3 (Mini 1PM Gen3)
         - Mini1PMG4 (Mini 1PM Gen4)
         - Mini1PMG4ZB (Mini 1PM Gen4, Zigbee)
+        - PlusUni (Plus Uni, Gen2)
+        - Pro3EM (Pro 3EM, Gen2)
         - Other (a profile made with add-device)
     validations:
       required: true

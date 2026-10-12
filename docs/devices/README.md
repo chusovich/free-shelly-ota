@@ -25,6 +25,8 @@ commands, the log lines to look for and the way back to Shelly OS. Pick your dev
 | Mini 1PM Gen3 | [`Mini1PMG3`](Mini1PMG3.md) | ESP32-C3 | **`0xf000`** | `0x2a0000` | 🧪 |
 | Mini 1PM Gen4 | [`Mini1PMG4`](Mini1PMG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](Mini1PMG4.md#zigbee-variant) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
+| Plus Uni (Gen2) | [`PlusUni`](PlusUni.md) | **ESP32** | **`0x8000`** | `0x190000` | 🧪 |
+| Pro 3EM (Gen2) | [`Pro3EM`](Pro3EM.md) | **ESP32** | **`0x8000`** | `0x200000` | 🧪 |
 
 The partition table offset goes into your ESPHome config as `CONFIG_PARTITION_TABLE_OFFSET`; `build` refuses a config that
 does not match the profile. Details per device are on its page.
@@ -33,11 +35,12 @@ does not match the profile. Details per device are on its page.
 
 - **Partition table at `0xf000`:** [H&T Gen3](HTG3.md) and [Mini 1PM Gen3](Mini1PMG3.md). A default ESPHome build uses
   ESP-IDF's default `0x8000` and does not match.
-- **Classic ESP32 (Gen2):** only the [Plus Plug S](PlusPlugS.md). Partition table at `0x8000`, bootloader at `0x1000`, 4 MB
-  flash, and the ESPHome build needs the 80 MHz flash frequency.
+- **Classic ESP32 (Gen2):** the [Plus Plug S](PlusPlugS.md), [Plus Uni](PlusUni.md) and [Pro 3EM](Pro3EM.md). Partition table at
+  `0x8000`, bootloader at `0x1000`, and the ESPHome build needs the 80 MHz flash frequency. Flash is 4 MB, except on the Pro 3EM
+  (16 MB, so `flash_size: 16MB`, and an extra `emdata` partition).
 - **Gen4 / ESP32-C6:** [Power Strip](PowerStrip.md), [Power Strip (Zigbee)](PowerStripZB.md) and
   [Mini 1PM Gen4](Mini1PMG4.md) have the largest app slots (`0x300000`).
-- **Bootloader `min_version` 1.0.9:** the profiles for `HTG3`, `PlugMG3`, `PlugPMG3`, `PowerStrip` and `RGBCCTBulbG3` set it, because a device that runs
+- **Bootloader `min_version` 1.0.9:** the profiles for `DuoBulbG3`, `HTG3`, `Mini1PMG3`, `PlugMG3`, `PlugPMG3`, `PlusUni`, `PowerStrip`, `Pro3EM` and `RGBCCTBulbG3` set it, because a device that runs
   Shelly's loader 1.0.3 would otherwise skip ESPHome's bootloader. Background:
   [Bootloader and slots](../bootloader-and-slots.md).
 - **Variants:** `PowerStripZB` and `Mini1PMG4ZB` are the Zigbee firmware of the same hardware as `PowerStrip` and `Mini1PMG4`.
