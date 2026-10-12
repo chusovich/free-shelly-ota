@@ -1,6 +1,6 @@
-# Shelly Multicolor Bulb E27 Gen3 (ESP32-C3), UNTESTED on the bulb and not compiled.
-# LED driver: KP18068 on SDA = GPIO4, SCL = GPIO5. The channel order below was read from the Shelly firmware; check it with
-# the test lights at the end of this file first. See README.md in this folder.
+# Shelly Multicolor Bulb E27 Gen3 (ESP32-C3). Runs on a real bulb (owner report 2026-10-11): OUT1 blue, OUT2 red, OUT3 green,
+# OUT4 warm white (fixed colour temperature). Brightness and colour accuracy are not measured.
+# LED driver: KP18068 on SDA = GPIO4, SCL = GPIO5. See README.md in this folder.
 # Copy secrets.yaml.example to secrets.yaml and fill it in.
 
 substitutions:
@@ -60,7 +60,8 @@ kp18058:
   chop_frequency: 4khz
 
 # Channel order from the Shelly firmware: OUT1 = blue, OUT2 = red, OUT3 = green. OUT4 and OUT5 always get the same value
-# (one white level). Not measured on the bulb.
+# (one white level). Tested on the bulb (owner, 2026-10-11): OUT1 blue, OUT2 red, OUT3 green, OUT4 warm (yellowish) white, OUT5 lights nothing
+# on its own. The white has a fixed colour temperature (no Kelvin control).
 output:
   - {platform: kp18058, id: out_b, channel: 1}
   - {platform: kp18058, id: out_r, channel: 2}
@@ -74,18 +75,17 @@ output:
       - output.set_level: {id: out_w4, level: !lambda "return state;"}
       - output.set_level: {id: out_w5, level: !lambda "return state;"}
 
+# Time from Home Assistant; used by the optional packages daylight.yaml, daylight_sun.yaml and wakeup.yaml.
+time:
+  - platform: homeassistant
+    id: ha_time
+
 light:
   - platform: rgbw
+    id: bulb
     name: "Light"
     red: out_r
     green: out_g
     blue: out_b
     white: out_white
-    color_interlock: true
-
-  # Channel test: switch these on one at a time to see which LED each OUT lights. Delete them once the order is confirmed.
-  - {platform: monochromatic, name: "Test OUT1", output: out_b, internal: false}
-  - {platform: monochromatic, name: "Test OUT2", output: out_r, internal: false}
-  - {platform: monochromatic, name: "Test OUT3", output: out_g, internal: false}
-  - {platform: monochromatic, name: "Test OUT4", output: out_w4, internal: false}
-  - {platform: monochromatic, name: "Test OUT5", output: out_w5, internal: false}
+    color_interlock: false   # RGB and the warm white may be on together (daylight.yaml mixes them)
