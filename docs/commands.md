@@ -127,6 +127,36 @@ Shelly firmware is still running: a device that already runs ESPHome with ESPHom
 back is UART ([Recovery over UART](recovery-uart.md)). The official package also resets NVS and `otadata`, so Wi-Fi
 credentials and settings are lost.
 
+## add-device
+
+Creates a profile from an official ZIP: `python ota.py add-device NewDevice.zip`. `--name NAME` sets the device name (default: the name in the ZIP),
+`--parent DEVICE` marks a variant of another device (for example the Zigbee version), `--force` overwrites an existing profile. The new profile starts at
+`revision: 1`; run `python ota.py profiles --update-lock` afterwards ([Versions](versions.md)).
+
+## partition-csv
+
+Writes Shelly's stock partition table as a CSV for ESPHome's `partitions:` option, read from the cached official package
+(run `fetch` first): `python ota.py partition-csv HTG3 -o HTG3-stock.csv`. Without `-o` it prints the CSV. The same files are
+in `partitions/`; use this command for a profile you added yourself. Set `CONFIG_PARTITION_TABLE_OFFSET` in your config to the
+profile's `pt_offset`.
+
+| Option | Required | Default | Description |
+| --- | --- | --- | --- |
+| `DEVICE` | yes | | Profile name |
+| `-o`, `--output CSV` | no | print | Write to this file; refuses to overwrite an existing file |
+| `--force` | no | off | Overwrite an existing output file |
+| `--official ZIP` | no | the cache | Use this official ZIP instead of the cached one |
+| `--version VER` | no | latest cached | Use this cached version |
+
+## inspect
+
+Shows and verifies a ZIP (manifest, part hashes, credential warnings): `python ota.py inspect out/<file>.zip`. `--device DEVICE` also shows how full
+the app slot is.
+
+## clean
+
+Deletes old ZIPs in `out/`. `--keep N` keeps the newest N (default 5); nothing is deleted without `--yes`.
+
 ## log
 
 Shows the live debug log of a Shelly without sending anything:

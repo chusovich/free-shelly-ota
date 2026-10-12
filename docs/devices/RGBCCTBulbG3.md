@@ -11,7 +11,7 @@ The LEDs sit behind a **KP18068** 5-channel driver on SDA GPIO4 / SCL GPIO5. ESP
 | Official package | 2.0.1 |
 | Partition table | `0x10000` |
 | App slot size | `0x280000` |
-| State | ✅ `send` with `--esphome-factory` ran through and ESPHome runs (owner report). The light itself is not confirmed yet |
+| State | ✅ `send` with `--esphome-factory` ran through, ESPHome runs and the light was tested on the bulb (owner, 2026-10-11): channel order and fixed warm white confirmed. Colour accuracy, the lowest dimming steps and the driver currents are not measured |
 
 ## ESPHome config
 
@@ -33,12 +33,14 @@ ota:
   - platform: esphome
 ```
 
-The full example config (RGBW light, per-channel test lights, current codes as the Shelly firmware sends them) is in
+The full example config (RGBW light, current codes as the Shelly firmware sends them) is in
 [`configs/shelly-rgbcct-bulb-g3/`](../../configs/shelly-rgbcct-bulb-g3). It pulls the driver component through
-`external_components`.
+`external_components`. The folder also has optional light packages (daylight, scenes, wake-up alarm, night light, over-temperature
+protection, dim range); its README lists them and says what is tested.
 
-Channel order read from the stock firmware (not measured on the bulb): OUT1 = blue, OUT2 = red, OUT3 = green; OUT4 and OUT5 get
-the same value (one white level). The `Test OUT1` to `Test OUT5` lights in the example are there to confirm this.
+Channel order, read from the stock firmware and tested on the bulb (owner, 2026-10-11): OUT1 = blue, OUT2 = red, OUT3 = green,
+OUT4 = warm white with a fixed colour temperature; OUT5 shows nothing on its own. OUT4 and OUT5 get the same value (one white
+level), so the example uses an `rgbw` light.
 
 ## Flash it
 
@@ -67,7 +69,9 @@ If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshootin
 
 ## Notes for this device
 
-- **Installed loader:** `Shelly OS loader 1.0.2` (visible on UART). The default `min_version` 1.0.3 was enough.
+- **Installed loader:** on the first install the bulb ran `Shelly OS loader 1.0.2` (visible on UART), and the default `min_version` 1.0.3 was enough.
+  After a return to stock the bulb runs loader 1.0.3, so the profile sets `boot_min_version: 1.0.9`; with it the ESPHome bootloader was written
+  (hardware-confirmed 2026-10-11).
 - **Dark bulb?** The driver component bit-bangs the two pins and expects an ACK for every byte. Try `ignore_ack: true` first;
   the other suspects are the address byte `0xE1` (Shelly's I2C hardware sends `0xE0`) and the internal pull-ups at a faster clock
   than Shelly's 100 kHz. Details: [`configs/shelly-rgbcct-bulb-g3/README.md`](../../configs/shelly-rgbcct-bulb-g3/README.md).

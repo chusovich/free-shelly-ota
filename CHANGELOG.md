@@ -5,10 +5,50 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- Profile `PlugMG3` (revision 2): `boot_min_version: 1.0.9`. The official package carries Shelly OS loader 1.0.3, so a Plug M restored from it
+  would skip the default 1.0.3 and silently keep Shelly's bootloader (same cause as on the H&T and the Plug PM Gen3).
+- Profile `RGBCCTBulbG3` (revision 2): `boot_min_version: 1.0.9`. After a return to stock the Multicolor Bulb runs Shelly OS loader 1.0.3, so the default
+  1.0.3 would be skipped; with 1.0.9 the ESPHome bootloader was written (hardware-confirmed on a real bulb, 2026-10-11).
+- Recovery over UART: the ESP32-C3 command for the Plug M Gen3 (restored from ESPHome, boot log reviewed), and a note that pushing the
+  official app image over ESPHome OTA is not a way back (the Shelly app cannot read ESP-IDF's `otadata`).
+- Power Strip example config (`configs/shelly-power-strip-gen4/`): README and YAML name this tool instead of "ShellyOTA", the build command is relative to the
+  repository root, and the slot-0 note links the Power Strip device page and "The app must land in slot 0" instead of a README section that is gone.
+- Device pages: pin tables for Plug S Gen3, Duo Bulb Gen3, H&T Gen3, The Pill and Plus Plug S, taken from the ESPHome device database pages of the owner
+  (and bobkersten for the Plus Plug S) and checked against the firmware where possible. The Plug S Gen3 state is plain ✅ now; the Duo Bulb pages say
+  the ESPHome config runs (UART) while the OTA path is not run.
+- `docs/commands.md` documents `add-device`, `inspect`, `clean` and `partition-csv`.
+
+### Removed
+- Profile `Cury` (Shelly Cury), its partition CSV and device page (added in 0.3.1): the device has an NFC reader, regulated heaters and a
+  voltage doubler that ESPHome cannot drive, and its pins are not decoded, so it is not a useful target. It is parked outside the repository.
+
+### Added
+- Profile `PlugPMG3` (Shelly Plug PM Gen3, S3PL-30116EU; it only measures, there is no relay) with its partition CSV, generated from the official
+  2.0.1 package (app slots `0x280000`, smaller than the Plug M / Plug S). The profile sets `boot_min_version: 1.0.9`: the device runs Shelly OS
+  loader 1.0.3, so the default 1.0.3 was skipped and later ESPHome OTAs did not take effect. The hardware result of the package route is not
+  recorded here yet, so the state is 🧪.
+- Device page `docs/devices/PlugPMG3.md` and a README row for the Plug PM Gen3: ESPHome `esp32:` block, pin table (read from the stock 2.0.1 firmware,
+  not verified in a running ESPHome), commands and a UART restore command derived from the package manifest (not run on this plug).
+- Index pages: `docs/README.md` (where to start, all pages, what to read when something goes wrong), `docs/devices/README.md` (all device pages with partition
+  table offset and app slot size, where devices differ, what a page contains), `devices/README.md` (the profiles, the profile keys, how to change a profile)
+  and `configs/README.md` (the example configs and how to use one).
+- GitHub issue form **Request a new device** (model, `app` name, firmware, chip, whether you can test it; no dumps or secrets). The README links to it.
+- GitHub issue forms: **Device report** (device, tool and Shelly version, method, result, `send --watch` output, with a reminder to remove
+  secrets and the device cloud key) and **Bug or wrong message**. The README links to the device report.
+- Multicolor Bulb E27 Gen3 example config (`configs/shelly-rgbcct-bulb-g3/`): eight optional packages (daylight by time and by the real sun, scenes,
+  wake-up alarm, over-temperature protection, night light by time and by sun, dim range), each with its settings in its header. The per-channel test
+  lights are gone: the channel order (OUT1 blue, OUT2 red, OUT3 green, OUT4 warm white) is tested on the bulb (2026-10-11). The main file gets the
+  Home Assistant time component, an `id` on the light and `color_interlock: false`. The README and the device page mark the bulb as ✅ now; the folder
+  README says what is tested.
+
+## [0.3.1] - 2026-10-06
+
 ### Added
 - Profile `Cury` (Shelly Cury) with partition CSV and a device page. Package builds and verifies; not tested on hardware.
 - Profile `Pill` (Shelly The Pill) with partition CSV and a device page. Package builds and verifies; not tested on hardware. Reported: the USB-C port exposes USB Serial/JTAG, so it can be flashed and recovered with esptool.
-- Profile `Mini1PMG3` (Shelly Mini 1PM Gen3, partition table at `0xf000`) with partition CSV and a device page. Package builds and verifies; not tested on hardware. The profile sets `boot_min_version: 1.0.9` (revision 2), like the other Gen3 devices that needed it, so that the installer does not skip ESPHome's bootloader.
+- Profile `Mini1PMG3` (Shelly Mini 1PM Gen3, partition table at `0xf000`) with partition CSV and a device page. Package builds and verifies; not tested on hardware.
+- Profiles `Mini1PMG4` and `Mini1PMG4ZB` (Shelly Mini 1PM Gen4, Zigbee variant via `parent:`) with partition CSVs and a device page. Package builds and verifies; not tested on hardware.
 
 ## [0.3.0] - 2026-10-06
 

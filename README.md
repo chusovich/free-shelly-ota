@@ -36,19 +36,22 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | Device | Profile | Chip | State |
 | --- | --- | --- | --- |
 | Plug M Gen3 | [`PlugMG3`](docs/devices/PlugMG3.md) | ESP32-C3 | ✅ |
-| Plug S Gen3 | [`PlugSG3`](docs/devices/PlugSG3.md) | ESP32-C3 | ✅ base config |
+| Plug S Gen3 | [`PlugSG3`](docs/devices/PlugSG3.md) | ESP32-C3 | ✅ |
+| Plug PM Gen3 (measures only, no relay) | [`PlugPMG3`](docs/devices/PlugPMG3.md) | ESP32-C3 | 🧪 |
 | H&T Gen3 | [`HTG3`](docs/devices/HTG3.md) | ESP32-C3 | ✅ |
-| Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](docs/devices/RGBCCTBulbG3.md) | ESP32-C3 | ✅ OTA, light not confirmed |
-| Duo Bulb Gen3 | [`DuoBulbG3`](docs/devices/DuoBulbG3.md) | ESP32-C3 | 🧪 |
+| Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](docs/devices/RGBCCTBulbG3.md) | ESP32-C3 | ✅ |
+| Duo Bulb Gen3 | [`DuoBulbG3`](docs/devices/DuoBulbG3.md) | ESP32-C3 | 🧪 OTA not run; ESPHome config runs (UART) |
 | Power Strip 4 Gen4 | [`PowerStrip`](docs/devices/PowerStrip.md) | ESP32-C6 | ✅ boots, outlets not checked |
 | Power Strip 4 Gen4 (Zigbee) | [`PowerStripZB`](docs/devices/PowerStripZB.md) | ESP32-C6 | 🧪 |
 | Plus Plug S (V2 hardware, Gen2) | [`PlusPlugS`](docs/devices/PlusPlugS.md) | ESP32 | ✅ without UART |
-| Shelly Cury | [`Cury`](docs/devices/Cury.md) | ESP32-C6 | 🧪 |
 | The Pill | [`Pill`](docs/devices/Pill.md) | ESP32-C3 | 🧪 |
 | Mini 1PM Gen3 | [`Mini1PMG3`](docs/devices/Mini1PMG3.md) | ESP32-C3 | 🧪 |
+| Mini 1PM Gen4 | [`Mini1PMG4`](docs/devices/Mini1PMG4.md) | ESP32-C6 | 🧪 |
+| Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](docs/devices/Mini1PMG4.md#zigbee-variant) | ESP32-C6 | 🧪 |
 
-Another device? `python ota.py add-device <official.zip>` creates a profile from an official package
-(`--parent <base device>` for a variant, e.g. the Zigbee version). Reports are welcome.
+Another device? [Request it](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml), or run
+`python ota.py add-device <official.zip>` to create a profile from an official package
+(`--parent <base device>` for a variant, e.g. the Zigbee version). Reports are welcome, also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
 
 
 ## Quick start

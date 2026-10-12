@@ -1,0 +1,79 @@
+# Sunrise alarm for the Shelly Multicolor Bulb Gen3 (UNTESTED on the bulb).
+# Add to shelly-rgbcct-bulb-g3.yaml:
+#   packages:
+#     wakeup: !include wakeup.yaml
+# Needs the "bulb" light (id), color_interlock: false and the time component "ha_time" (platform homeassistant) in the main file.
+# Over wake_minutes the lamp goes from off through deep red and orange to warm white at full brightness. It starts at wake_cron
+# (only while the switch "Wake alarm" is on), or at once with the button "Sunrise start". The button "Sunrise stop" ends it.
+# While the sunrise runs it sets the lamp every wake_step_s seconds; switching the lamp off by hand does not stop it, use the stop button.
+# Colours and brightness are starting points to tune by eye.
+
+substitutions:
+  wake_minutes: "30"
+  wake_step_s: "10"                       # seconds between two steps (each step fades over the same time)
+  wake_cron: "0 30 6 * * MON-FRI"         # seconds minutes hours day-of-month month day-of-week; here Mon-Fri 06:30
+
+time:
+  - id: !extend ha_time
+    on_time:
+      - cron: ${wake_cron}
+        then:
+          - if:
+              condition:
+                switch.is_on: wake_enabled
+              then:
+                - script.execute: wake_sunrise
+
+globals:
+  - id: wake_p
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+
+switch:
+  - platform: template
+    id: wake_enabled
+    name: "Wake alarm"
+    icon: "mdi:alarm"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+
+button:
+  - platform: template
+    name: "Sunrise start"
+    on_press:
+      - script.execute: wake_sunrise
+  - platform: template
+    name: "Sunrise stop"
+    on_press:
+      - script.stop: wake_sunrise
+
+script:
+  - id: wake_sunrise
+    mode: restart
+    then:
+      - lambda: 'id(wake_p) = 0.0f;'
+      - while:
+          condition:
+            lambda: 'return id(wake_p) < 1.0f;'
+          then:
+            - lambda: |-
+                const float p = id(wake_p);
+                auto sm = [](float a, float b, float x) { float t = (x - a) / (b - a); t = t < 0 ? 0 : (t > 1 ? 1 : t); return t * t * (3 - 2 * t); };
+                // colour: deep red -> orange -> warm white (the warm white takes over in the second half)
+                const float red_to_orange = sm(0.0f, 0.6f, p);
+                const float rgb_g = 20.0f + (110.0f - 20.0f) * red_to_orange;
+                const float rgb_share = 1.0f - sm(0.55f, 1.0f, p);
+                const float white = sm(0.35f, 1.0f, p);
+                const float br = 0.02f + 0.98f * p * p;           // slow start, faster at the end
+                ESP_LOGD("wake", "p %.2f: rgb g %.0f share %.2f, white %.2f, brightness %.2f", p, rgb_g, rgb_share, white, br);
+                auto call = id(bulb).turn_on();
+                call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
+                call.set_rgb(1.0f, rgb_g / 255.0f, 0.0f);
+                call.set_color_brightness(rgb_share > 0.02f ? rgb_share : 0.0f);
+                call.set_white(white);
+                call.set_brightness(br);
+                call.set_transition_length((uint32_t) ((float) ${wake_step_s} * 1000.0f));
+                call.perform();
+                id(wake_p) += (float) ${wake_step_s} / ((float) ${wake_minutes} * 60.0f);
+            - delay: !lambda 'return (uint32_t) (${wake_step_s}) * 1000;'
