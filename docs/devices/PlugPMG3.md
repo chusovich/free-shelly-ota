@@ -2,7 +2,7 @@
 
 [Back to the README](../../README.md) · [All commands](../commands.md)
 
-Not tested on hardware: the package builds and verifies, but the result of the package route on a real plug is not recorded yet. This plug **only measures**: Shelly lists the Plug PM Gen3 as a monitoring device, and there is no relay in it. Do not confuse it with the [Plug M Gen3](PlugMG3.md), which switches.
+Flashed over OTA with this tool on a real plug (reported by the owner, 2026-10-12); the log lines and the readings are not recorded here yet. This plug **only measures**: Shelly lists the Plug PM Gen3 as a monitoring device, and there is no relay in it. Do not confuse it with the [Plug M Gen3](PlugMG3.md), which switches.
 
 | | |
 | --- | --- |
@@ -12,7 +12,7 @@ Not tested on hardware: the package builds and verifies, but the result of the p
 | Official package | 2.0.1 |
 | Partition table | `0x10000` |
 | App slot size | `0x280000` (smaller than the Plug M and Plug S, `0x2a0000`) |
-| State | 🧪 builds and verifies; the hardware result is not recorded yet |
+| State | ✅ flashed over OTA (`send` with `--esphome-factory`); readings not checked |
 
 ## ESPHome config
 
@@ -40,7 +40,7 @@ slot size does not match the profile.
 
 ## Pins
 
-Read from the stock 2.0.1 firmware (a flash dump and the boot log of a real plug). **Not verified in a running ESPHome**: nobody has run a config on this plug yet.
+Read from the stock 2.0.1 firmware (a flash dump and the boot log of a real plug). **Not verified against the plug**: nobody has reported readings from a running ESPHome on it yet.
 
 | Function | Pin |
 | --- | --- |

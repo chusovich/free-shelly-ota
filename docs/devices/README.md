@@ -14,7 +14,7 @@ commands, the log lines to look for and the way back to Shelly OS. Pick your dev
 | --- | --- | --- | --- | --- | --- |
 | Plug M Gen3 | [`PlugMG3`](PlugMG3.md) | ESP32-C3 | `0x10000` | `0x2a0000` | ✅ |
 | Plug S Gen3 | [`PlugSG3`](PlugSG3.md) | ESP32-C3 | `0x10000` | `0x2a0000` | ✅ |
-| Plug PM Gen3 (no relay) | [`PlugPMG3`](PlugPMG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🧪 |
+| Plug PM Gen3 (no relay) | [`PlugPMG3`](PlugPMG3.md) | ESP32-C3 | `0x10000` | `0x280000` | ✅ flashed over OTA, readings not checked |
 | H&T Gen3 | [`HTG3`](HTG3.md) | ESP32-C3 | **`0xf000`** | `0x280000` | ✅ |
 | Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](RGBCCTBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | ✅ |
 | Duo Bulb Gen3 | [`DuoBulbG3`](DuoBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🧪 OTA not run; ESPHome config runs (UART) |
