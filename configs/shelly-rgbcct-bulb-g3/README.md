@@ -1,9 +1,10 @@
 # Shelly Multicolor Bulb E27 Gen3 (RGBCCT) - ESPHome notes and config
 
-Status: **the OTA works, the light is unconfirmed.** `ota.py send` with `--esphome-factory` ran through on a real bulb and ESPHome runs
-(reported by the owner, 2026-10-06). The LED driver component, the channel order and the colours have not been checked yet. 
+Status: **runs on a real bulb.** `ota.py send` with `--esphome-factory` ran through and ESPHome runs (owner, 2026-10-06). The owner tested the light on
+2026-10-11: the channel order below and the fixed warm white are confirmed. Not measured: colour accuracy, the lowest dimming steps, the driver currents
+and the power consumption.
 
-Files: `shelly-rgbcct-bulb-g3.yaml` (config with an RGBW light and per-channel test lights), the LED driver component lives in its own repository, https://github.com/oxynatOr/esphome-kp18058 (pinned in the YAML), `RGBCCTBulbG3-stock.csv` (Shelly's partition table from the
+Files: `shelly-rgbcct-bulb-g3.yaml` (config with an RGBW light), the LED driver component lives in its own repository, https://github.com/oxynatOr/esphome-kp18058 (pinned in the YAML), `RGBCCTBulbG3-stock.csv` (Shelly's partition table from the
 official 2.0.1 package), `secrets.yaml.example`.
 
 ## What is known
@@ -35,13 +36,11 @@ Every byte carries an even-parity bit in bit 0.
 **Channel order** (read from two places in the firmware: the function that builds the frame from the colour parameters, and
 the start-up routine that lights the three colours one after the other; both put the first colour value on OUT2, the second on
 OUT3 and the third on OUT1): **OUT1 = blue, OUT2 = red, OUT3 = green.** That the three values are R, G, B in this order is
-inferred from the start-up order, not proven. In the colour-temperature path **OUT4 and OUT5 get the same value**, so the bulb
+inferred from the start-up order, not proven. **Tested on the bulb (owner, 2026-10-11): OUT1 = blue, OUT2 = red, OUT3 = green, OUT4 = warm (yellowish) white, OUT5 = nothing visible on its own; the white has a fixed colour temperature.** In the colour-temperature path **OUT4 and OUT5 get the same value**, so the bulb
 looks like RGB plus one white level (colour temperature is mixed from the RGB channels). The config therefore uses an `rgbw` light
-that drives OUT4 and OUT5 together. It also contains one test light per channel to confirm this on the bulb. The 13-byte length, the standby bytes `0x00 0x03`, the parity bits and the 5-bit halves all match the KP18058/KP18068
+that drives OUT4 and OUT5 together. The 13-byte length, the standby bytes `0x00 0x03`, the parity bits and the 5-bit halves all match the KP18058/KP18068
 protocol as implemented by the OpenBeken project (which sends the low half first and a slightly different third byte; the
 differences may be a chip variant, they were not checked).
-
-Correction of an earlier note: the I2C **addresses are `0x70` and `0x40`** (7-bit), not `0x38` and `0x20`.
 
 ## What is missing
 
@@ -51,18 +50,35 @@ Correction of an earlier note: the I2C **addresses are `0x70` and `0x40`** (7-bi
   commit. Differences to the Shelly firmware: it sends the address byte `0xE1` (Shelly's I2C hardware sends `0xE0`), and it needs
   an ACK for every byte unless `ignore_ack: true` is set (the chip may not send one). If the light stays dark, try `ignore_ack`
   first. The first build on the bulb used an earlier version of the component than the pinned one.
-- The current codes (5 for RGB and 11 for white, read from the constants), the channel order and the behaviour at full
-  brightness are unverified.
-- A Duo Bulb (`DuoBulbG3`) is a different design: its firmware has no I2C code, it uses PWM (LEDC).
+- The current codes (5 for RGB and 11 for white, read from the constants) and the behaviour at full brightness are unverified.
+  The channel order is tested (see above).
 
 ## Installing
 
-Use ShellyOTA as for the other devices: build with the partition table from `RGBCCTBulbG3-stock.csv` and
+Use this tool as for the other devices ([device page](../../docs/devices/RGBCCTBulbG3.md)): build with the partition table from `RGBCCTBulbG3-stock.csv` and
 `CONFIG_PARTITION_TABLE_OFFSET: "0x10000"`, then `ota.py build RGBCCTBulbG3 ... --esphome-factory ...`, `ota.py send` (it
 checks that the installer writes to slot 0 and tells you when to run `ota.py restore` first). Confirmed on this device (the first build used the config of this folder).
 Keep UART or USB access as your way back.
 
 ## Duo Bulb
 
-The owner reports that the Duo Bulb has the same main board with a different lamp module. Its stock firmware has no I2C code and drives
-PWM (LEDC), so this config's LED driver does not apply to it. The OTA part (`DuoBulbG3` profile) should work the same way but has not been run.
+The Duo Bulb has a different lamp module (PWM, no I2C), so this config's LED driver does not apply to it. Its pins and the state of
+its OTA path are on the [Duo Bulb page](../../docs/devices/DuoBulbG3.md).
+
+## Optional extras (packages)
+
+All untested on the bulb; each file has its settings and notes in its header. They need `id: bulb` on the light, `color_interlock: false` and the `ha_time` time component, which the main file provides. Add the ones you want:
+
+```yaml
+packages:
+  daylight: !include daylight.yaml        # effect "Daylight": fixed times (warm -> cool -> warm)
+  sun: !include daylight_sun.yaml         # effect "Daylight (sun)": follows the real sun; set your coordinates first
+  scenes: !include scenes.yaml            # effects Relax, Reading, Focus, Energize, Sunset, Night light, Candle
+  wakeup: !include wakeup.yaml            # sunrise alarm: switch "Wake alarm" + buttons "Sunrise start/stop"
+  overtemp: !include overtemp.yaml        # protection: chip temperature sensor, dims above 75 degC, light off at 90 degC
+  night: !include night.yaml              # effect "Night (time)": warm white at 5 % between night_start and night_end
+  night_sun: !include night_sun.yaml      # effect "Night (sun)": same, while the sun is below -4 degrees (needs daylight_sun.yaml)
+  dimrange: !include dimrange.yaml        # lowest non-zero output raised so that small values (5 %) are visible; optional upper limit
+```
+
+A config with all eight packages passes `esphome config` and compiles (ESPHome 2026.10.0-dev, 976 KB). The lamp's white is one fixed warm white; the cool tones are RGB.
