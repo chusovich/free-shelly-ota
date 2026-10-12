@@ -48,6 +48,8 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | Mini 1PM Gen3 | [`Mini1PMG3`](docs/devices/Mini1PMG3.md) | ESP32-C3 | 🧪 |
 | Mini 1PM Gen4 | [`Mini1PMG4`](docs/devices/Mini1PMG4.md) | ESP32-C6 | 🧪 |
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](docs/devices/Mini1PMG4.md#zigbee-variant) | ESP32-C6 | 🧪 |
+| Plus Uni (Gen2) | [`PlusUni`](docs/devices/PlusUni.md) | ESP32 | 🧪 |
+| Pro 3EM (Gen2) | [`Pro3EM`](docs/devices/Pro3EM.md) | ESP32 | 🧪 |
 
 
 ## Another device?
