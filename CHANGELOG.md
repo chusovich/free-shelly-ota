@@ -8,7 +8,7 @@ All notable changes to this project are documented here. The format follows
 ### Added
 - Profile `Cury` (Shelly Cury) with partition CSV and a device page. Package builds and verifies; not tested on hardware.
 - Profile `Pill` (Shelly The Pill) with partition CSV and a device page. Package builds and verifies; not tested on hardware. Reported: the USB-C port exposes USB Serial/JTAG, so it can be flashed and recovered with esptool.
-- Profile `Mini1PMG3` (Shelly Mini 1PM Gen3, partition table at `0xf000`) with partition CSV and a device page. Package builds and verifies; not tested on hardware.
+- Profile `Mini1PMG3` (Shelly Mini 1PM Gen3, partition table at `0xf000`) with partition CSV and a device page. Package builds and verifies; not tested on hardware. The profile sets `boot_min_version: 1.0.9` (revision 2), like the other Gen3 devices that needed it, so that the installer does not skip ESPHome's bootloader.
 
 ## [0.3.0] - 2026-10-06
 
