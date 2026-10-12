@@ -1,7 +1,8 @@
 # Shelly Multicolor Bulb E27 Gen3 (RGBCCT) - ESPHome notes and config
 
-Status: **the OTA works, the light is unconfirmed.** `ota.py send` with `--esphome-factory` ran through on a real bulb and ESPHome runs
-(reported by the owner, 2026-10-06). The LED driver component, the channel order and the colours have not been checked yet. 
+Status: **runs on a real bulb.** `ota.py send` with `--esphome-factory` ran through and ESPHome runs (owner, 2026-10-06). The owner tested the light on
+2026-10-11: the channel order below and the fixed warm white are confirmed. Not measured: colour accuracy, the lowest dimming steps, the driver currents
+and the power consumption.
 
 Files: `shelly-rgbcct-bulb-g3.yaml` (config with an RGBW light), the LED driver component lives in its own repository, https://github.com/oxynatOr/esphome-kp18058 (pinned in the YAML), `RGBCCTBulbG3-stock.csv` (Shelly's partition table from the
 official 2.0.1 package), `secrets.yaml.example`.
@@ -49,8 +50,8 @@ differences may be a chip variant, they were not checked).
   commit. Differences to the Shelly firmware: it sends the address byte `0xE1` (Shelly's I2C hardware sends `0xE0`), and it needs
   an ACK for every byte unless `ignore_ack: true` is set (the chip may not send one). If the light stays dark, try `ignore_ack`
   first. The first build on the bulb used an earlier version of the component than the pinned one.
-- The current codes (5 for RGB and 11 for white, read from the constants), the channel order and the behaviour at full
-  brightness are unverified.
+- The current codes (5 for RGB and 11 for white, read from the constants) and the behaviour at full brightness are unverified.
+  The channel order is tested (see above).
 
 ## Installing
 

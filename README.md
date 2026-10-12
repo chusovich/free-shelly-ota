@@ -38,7 +38,7 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | Plug M Gen3 | [`PlugMG3`](docs/devices/PlugMG3.md) | ESP32-C3 | ✅ |
 | Plug S Gen3 | [`PlugSG3`](docs/devices/PlugSG3.md) | ESP32-C3 | ✅ |
 | H&T Gen3 | [`HTG3`](docs/devices/HTG3.md) | ESP32-C3 | ✅ |
-| Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](docs/devices/RGBCCTBulbG3.md) | ESP32-C3 | ✅ OTA, light not confirmed |
+| Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](docs/devices/RGBCCTBulbG3.md) | ESP32-C3 | ✅ |
 | Duo Bulb Gen3 | [`DuoBulbG3`](docs/devices/DuoBulbG3.md) | ESP32-C3 | 🧪 OTA not run; ESPHome config runs (UART) |
 | Power Strip 4 Gen4 | [`PowerStrip`](docs/devices/PowerStrip.md) | ESP32-C6 | ✅ boots, outlets not checked |
 | Power Strip 4 Gen4 (Zigbee) | [`PowerStripZB`](docs/devices/PowerStripZB.md) | ESP32-C6 | 🧪 |

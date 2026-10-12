@@ -29,6 +29,11 @@ All notable changes to this project are documented here. The format follows
 ### Added
 - GitHub issue forms: **Device report** (device, tool and Shelly version, method, result, `send --watch` output, with a reminder to remove
   secrets and the device cloud key) and **Bug or wrong message**. The README links to the device report.
+- Multicolor Bulb E27 Gen3 example config (`configs/shelly-rgbcct-bulb-g3/`): eight optional packages (daylight by time and by the real sun, scenes,
+  wake-up alarm, over-temperature protection, night light by time and by sun, dim range), each with its settings in its header. The per-channel test
+  lights are gone: the channel order (OUT1 blue, OUT2 red, OUT3 green, OUT4 warm white) is tested on the bulb (2026-10-11). The main file gets the
+  Home Assistant time component, an `id` on the light and `color_interlock: false`. The README and the device page mark the bulb as ✅ now; the folder
+  README says what is tested.
 
 ## [0.3.1] - 2026-10-06
 
