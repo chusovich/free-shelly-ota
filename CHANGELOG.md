@@ -30,6 +30,9 @@ All notable changes to this project are documented here. The format follows
   recorded here yet, so the state is 🧪.
 - Device page `docs/devices/PlugPMG3.md` and a README row for the Plug PM Gen3: ESPHome `esp32:` block, pin table (read from the stock 2.0.1 firmware,
   not verified in a running ESPHome), commands and a UART restore command derived from the package manifest (not run on this plug).
+- Index pages: `docs/README.md` (where to start, all pages, what to read when something goes wrong), `docs/devices/README.md` (all device pages with partition
+  table offset and app slot size, where devices differ, what a page contains), `devices/README.md` (the profiles, the profile keys, how to change a profile)
+  and `configs/README.md` (the example configs and how to use one).
 - GitHub issue form **Request a new device** (model, `app` name, firmware, chip, whether you can test it; no dumps or secrets). The README links to it.
 - GitHub issue forms: **Device report** (device, tool and Shelly version, method, result, `send --watch` output, with a reminder to remove
   secrets and the device cloud key) and **Bug or wrong message**. The README links to the device report.

@@ -1,0 +1,50 @@
+# Documentation
+
+[Back to the README](../README.md) · [CHANGELOG](../CHANGELOG.md)
+
+How to get your own ESPHome firmware onto a Shelly with `ota.py`, why the tool does what it does, and what to do when it does
+not work. The README has the short version; these pages have the details.
+
+## Where to start
+
+1. **Find your device** on the [device pages](devices/README.md): the ESPHome config it needs, the exact commands and the log
+   lines to look for.
+2. **Run the three steps** `fetch`, `build`, `send` ([Commands](commands.md)).
+3. **If something stops or looks wrong,** look it up below or in [Troubleshooting](troubleshooting.md).
+4. **Before you share a package,** read the [Credential check](credential-check.md): it can contain your Wi-Fi password.
+
+## Pages
+
+| Page | What is in it |
+| --- | --- |
+| [Device pages](devices/README.md) | One page per device: config, pins, commands, log lines, pitfalls |
+| [Commands](commands.md) | `fetch`, `build`, `send`, `restore`, `log` and the rest, with all options |
+| [Bootloader and slots](bootloader-and-slots.md) | Why ESPHome's bootloader is shipped, `min_version`, why the app must land in slot 0 |
+| [Troubleshooting](troubleshooting.md) | Header errors, empty log, battery devices, eFuse, power cycle |
+| [Recovery over UART](recovery-uart.md) | Back to Shelly OS with `esptool` |
+| [Credential check](credential-check.md) | Secrets inside images and packages |
+| [Versions](versions.md) | Tool version, build report, profile revisions |
+
+## Something went wrong
+
+| What you see | Where to look |
+| --- | --- |
+| `send` refuses: update target slot is not 0 | [Troubleshooting](troubleshooting.md#send-refuses-update-target-slot-is-not-0), [The app must land in slot 0](bootloader-and-slots.md#the-app-must-land-in-slot-0) |
+| `build` stops with "differs from Shelly's in ..." | [Build refuses to replace the bootloader](troubleshooting.md#build-refuses-to-replace-the-bootloader) |
+| The `--watch` log stays empty | [Empty `--watch` log](troubleshooting.md#empty---watch-log) |
+| H&T Gen3: HTTP 500, "Battery below 30 percent" | [Battery devices](troubleshooting.md#battery-devices-ht-gen3) |
+| ESPHome does not start after the update | [ESPHome does not start after the update](troubleshooting.md#esphome-does-not-start-after-the-update) |
+| ESPHome OTAs "work", but the version does not change | [Troubleshooting](troubleshooting.md#esphome-otas-work-but-the-version-does-not-change), [`min_version`](bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version) |
+| `build` warns about credentials in the image | [Credential check](credential-check.md) |
+| You want Shelly OS back and Shelly firmware still runs | [`restore`](commands.md#restore) |
+| You want Shelly OS back and the device runs ESPHome | [Recovery over UART](recovery-uart.md) |
+| A log or package needs to say which tool state made it | [Versions](versions.md) |
+
+## Outside this folder
+
+| Where | What is in it |
+| --- | --- |
+| [`devices/`](../devices/README.md) | The device profiles (one YAML each) and `profiles.lock` |
+| [`partitions/`](../partitions) | Stock partition tables as ESPHome `partitions:` CSV, one per profile |
+| [`configs/`](../configs) | Complete example ESPHome configs (Power Strip 4 Gen4, Multicolor Bulb Gen3) |
+| [CHANGELOG](../CHANGELOG.md) | What changed |
