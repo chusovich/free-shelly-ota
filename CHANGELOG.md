@@ -18,6 +18,8 @@ All notable changes to this project are documented here. The format follows
   (and bobkersten for the Plus Plug S) and checked against the firmware where possible. The Plug S Gen3 state is plain ✅ now; the Duo Bulb pages say
   the ESPHome config runs (UART) while the OTA path is not run.
 - `docs/commands.md` documents `add-device`, `inspect`, `clean` and `partition-csv`.
+- README: "Another device?" is a section of its own (request it, make a profile yourself, send a device report) instead of one
+  sentence under the device table.
 
 ### Removed
 - Profile `Cury` (Shelly Cury), its partition CSV and device page (added in 0.3.1): the device has an NFC reader, regulated heaters and a
