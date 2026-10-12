@@ -1,6 +1,6 @@
 # Shelly Power Strip 4 Gen4 (ESP32-C6) with ESPHome: 4 outlets, 2x ADE7953 metering, buttons, WS2812 LED ring.
 # Pins as used by the author's working config. Build with the stock partition table and install through
-# ShellyOTA (python ota.py build PowerStrip ... --esphome-factory ... --esphome-yaml shelly-power-strip-gen4.yaml).
+# free-shelly-ota (python ota.py build PowerStrip ... --esphome-factory ... --esphome-yaml shelly-power-strip-gen4.yaml).
 # Copy secrets.yaml.example to secrets.yaml and fill it in.
 
 substitutions:
