@@ -14,7 +14,7 @@ The file name without `.yaml` is the profile name you give to `fetch`, `build`, 
 | `PlugSG3` | Shelly Plug S Gen3 | ESP32-C3 | 1 | [PlugSG3](../docs/devices/PlugSG3.md) |
 | `PlugPMG3` | Shelly Plug PM Gen3 | ESP32-C3 | 2 | [PlugPMG3](../docs/devices/PlugPMG3.md) |
 | `HTG3` | Shelly H&T Gen3 | ESP32-C3 | 2 | [HTG3](../docs/devices/HTG3.md) |
-| `RGBCCTBulbG3` | Shelly Multicolor Bulb E27 Gen3 | ESP32-C3 | 1 | [RGBCCTBulbG3](../docs/devices/RGBCCTBulbG3.md) |
+| `RGBCCTBulbG3` | Shelly Multicolor Bulb E27 Gen3 | ESP32-C3 | 2 | [RGBCCTBulbG3](../docs/devices/RGBCCTBulbG3.md) |
 | `DuoBulbG3` | Shelly Duo Bulb Gen3 | ESP32-C3 | 1 | [DuoBulbG3](../docs/devices/DuoBulbG3.md) |
 | `PowerStrip` | Shelly Power Strip 4 Gen4 | ESP32-C6 | 2 | [PowerStrip](../docs/devices/PowerStrip.md) |
 | `PowerStripZB` | Shelly Power Strip 4 Gen4 (Zigbee) | ESP32-C6 | 1 | [PowerStripZB](../docs/devices/PowerStripZB.md) |
