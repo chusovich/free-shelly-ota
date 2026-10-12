@@ -67,7 +67,9 @@ If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshootin
 
 ## Notes for this device
 
-- **Installed loader:** `Shelly OS loader 1.0.2` (visible on UART). The default `min_version` 1.0.3 was enough.
+- **Installed loader:** on the first install the bulb ran `Shelly OS loader 1.0.2` (visible on UART), and the default `min_version` 1.0.3 was enough.
+  After a return to stock the bulb runs loader 1.0.3, so the profile sets `boot_min_version: 1.0.9`; with it the ESPHome bootloader was written
+  (hardware-confirmed 2026-10-11).
 - **Dark bulb?** The driver component bit-bangs the two pins and expects an ACK for every byte. Try `ignore_ack: true` first;
   the other suspects are the address byte `0xE1` (Shelly's I2C hardware sends `0xE0`) and the internal pull-ups at a faster clock
   than Shelly's 100 kHz. Details: [`configs/shelly-rgbcct-bulb-g3/README.md`](../../configs/shelly-rgbcct-bulb-g3/README.md).
