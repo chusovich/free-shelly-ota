@@ -75,8 +75,8 @@ If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshootin
 
 ## Notes for this device
 
-The OTA chain should work the same way as on the Multicolor Bulb (installed loader 1.0.2, default `min_version` 1.0.3), but it has
-not been run. Please report the `--watch` log.
+The OTA chain should work the same way as on the Multicolor Bulb, but it has not been run. The profile sets `boot_min_version: 1.0.9` because the Multicolor Bulb
+(same main board) runs loader 1.0.3 after a return to stock, which the default 1.0.3 would skip. Please report the `--watch` log, especially the line `Boot: cur ... min ... update?`.
 
 ## Way back
 
