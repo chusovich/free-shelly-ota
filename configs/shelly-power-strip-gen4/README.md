@@ -14,16 +14,17 @@ Shelly's partition table is at **0x10000** on this model, so the config sets `CO
 | Buttons 1 to 4 | GPIO20 / GPIO22 / GPIO23 / GPIO21 | in use on the author's device (pull-up, inverted) |
 | LED ring (WS2812, 12 LEDs, 3 per outlet) | GPIO18 | in use on the author's device |
 
-Install with ShellyOTA:
+Install with this tool, from the root of the repository:
 
 ```
-python ota.py build PowerStrip app.ota.bin --esphome-factory app.factory.bin --esphome-yaml ../configs/shelly-power-strip-gen4/shelly-power-strip-gen4.yaml
+python ota.py build PowerStrip app.ota.bin --esphome-factory app.factory.bin --esphome-yaml configs/shelly-power-strip-gen4/shelly-power-strip-gen4.yaml
 python ota.py send PowerStrip out/<file>.zip --watch 60
 ```
 
-Read the ShellyOTA README, "Notes & troubleshooting", first: on a Power Strip running stock **1.7.99** a direct `send` did not
-work (the app landed in slot 1 and the old app started again). It worked after one official update to 2.0.1. With
-`--watch`, the log line `Will write to slot 0` is the one you want.
+Read the [Power Strip device page](../../docs/devices/PowerStrip.md) first: on a Power Strip running stock **1.7.99** a direct
+`send` did not work (the app landed in slot 1 and the old app started again). It worked after one official update to 2.0.1.
+With `--watch`, the log line `Will write to slot 0` is the one you want
+([why](../../docs/bootloader-and-slots.md#the-app-must-land-in-slot-0)).
 
 After a successful install the UART log shows `ESP-IDF ... 2nd stage bootloader` (ESPHome's bootloader), `ota data partition
 invalid and no factory, will try all partitions` (expected) and `Loaded app from partition at offset 0x20000`.
@@ -44,7 +45,7 @@ replaces them with plain blocks:
 
 ## Status
 
-The author's config runs on a real Power Strip; ESPHome boots with ShellyOTA's package and joins Wi-Fi and Home Assistant
+The author's config runs on a real Power Strip; ESPHome boots with this tool's package and joins Wi-Fi and Home Assistant
 (UART log). This published file was cleaned up as described above and checked with `ota.py build --esphome-yaml` and a YAML
 parse only. It has **not been compiled** in this exact form, and outlets, buttons, LEDs and metering were not checked by whoever
 wrote this README.
