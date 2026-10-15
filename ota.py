@@ -168,7 +168,8 @@ def cmd_send(args) -> None:
 RESTORE_NOTE = """NOTE: restore sends the cached official package. It only works while the Shelly firmware is still running (only it
       understands Shelly.Update); a device that already runs ESPHome does not answer, and the way back is then UART with a
       flash backup.
-      The official package resets NVS and otadata: Wi-Fi credentials and settings are lost.
+      The official package may reset NVS and otadata, so Wi-Fi credentials and settings can be lost (a PM Mini Gen3
+      kept them going from 2.0.1 to 2.0.1; do not count on it).
       If ESPHome's bootloader is installed, the installer puts Shelly's back (seen once, on the Plus Plug S:
       'Boot: cur 00000000 ... update? 1'). It also moves the stock firmware to the other slot, which is what the next send of an
       ESPHome package needs when send reports that the installer would write to slot 1."""

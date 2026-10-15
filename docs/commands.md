@@ -128,8 +128,8 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 
 Takes the same options as `send`, but sends the cached official firmware instead of a ZIP you choose. It works only while
 Shelly firmware is still running: a device that already runs ESPHome with ESPHome's bootloader does not answer, and the way
-back is UART ([Recovery over UART](recovery-uart.md)). The official package also resets NVS and `otadata`, so Wi-Fi
-credentials and settings are lost.
+back is UART ([Recovery over UART](recovery-uart.md)). The official package may also reset NVS and `otadata`, so Wi-Fi
+credentials and settings can be lost (a PM Mini Gen3 that went from 2.0.1 to 2.0.1 this way kept both; do not count on it).
 
 ## add-device
 
