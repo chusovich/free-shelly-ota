@@ -55,8 +55,8 @@ def _ssl_context(insecure: bool = False) -> ssl.SSLContext:
     return ssl.create_default_context()
 
 
-def _http_get(url: str, timeout: int = 60, insecure: bool = False) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "ShellyOTA/1.0"})
+def _http_get(url: str, timeout: int = 60, insecure: bool = False, headers: dict | None = None) -> bytes:
+    req = urllib.request.Request(url, headers={"User-Agent": "ShellyOTA/1.0", **(headers or {})})
     try:
         with urllib.request.urlopen(req, timeout=timeout, context=_ssl_context(insecure)) as resp:
             return resp.read()
@@ -65,9 +65,18 @@ def _http_get(url: str, timeout: int = 60, insecure: bool = False) -> bytes:
         raise OtaError(f"Download failed for {url}: {e}{hint}") from e
 
 
-def query_update_api(update_id: str, insecure: bool = False) -> dict:
-    """Return the raw JSON reply of the update API."""
-    body = _http_get(UPDATE_API.format(update_id=update_id), insecure=insecure)
+def query_update_api(update_id: str, insecure: bool = False, from_version: str | None = None) -> dict:
+    """Return the raw JSON reply of the update API.
+
+    The server answers per installed version, which the device reports in the Shelly-Info header
+    (found in the firmware: {id,mac,model,batch,app,ver,fw_id}; the server needs only app and ver).
+    Without it you get the newest release (currently only a beta); with e.g. ver 1.4.4 you get the
+    stable release that device would be offered (2.0.1).
+    """
+    headers = None
+    if from_version:
+        headers = {"Shelly-Info": json.dumps({"app": update_id, "ver": from_version}, separators=(",", ":"))}
+    body = _http_get(UPDATE_API.format(update_id=update_id), insecure=insecure, headers=headers)
     try:
         return json.loads(body)
     except ValueError:
@@ -106,13 +115,18 @@ def store_zip(device: str, data: bytes, source: str, api_reply: dict | None = No
 
 
 def fetch(device: str, update_id: str, *, refresh: bool = False, version: str | None = None,
-          insecure: bool = False, alt: str | None = None, fw_dir: Path = FW_DIR) -> Path:
+          insecure: bool = False, alt: str | None = None, channel: str = "stable",
+          from_version: str | None = None, fw_dir: Path = FW_DIR) -> Path:
     """Return the official ZIP, downloading it if it is not cached.
 
     - cached and not refresh: use the cache (version pins a specific cached version)
     - otherwise: ask the update API and download what it points to
+    - channel: "stable" (default) or "beta"; a non-stable channel always asks the update API unless version is given
+    - from_version: ask the update API as a device running this version would (Shelly-Info header); always asks the API
     - alt: the device is a variant listed under "alt" in the reply of its parent device (update_id is the parent's)
     """
+    if (channel != "stable" or from_version) and not version:
+        refresh = True  # the cache only knows what is newest, not which channel it came from
     if not refresh:
         cached = cached_zip(device, version, fw_dir)
         if cached:
@@ -122,7 +136,7 @@ def fetch(device: str, update_id: str, *, refresh: bool = False, version: str | 
                            f"release. Put the ZIP under {fw_dir / device / version} manually.")
     if insecure:
         ui.say("WARNING: TLS certificate verification is OFF for this download.")
-    reply = query_update_api(update_id, insecure)
+    reply = query_update_api(update_id, insecure, from_version) if from_version else query_update_api(update_id, insecure)
     # Observed reply: {"stable": {"version", "build_id", "url"}, "time": <unix>}
     if alt:
         entry = (reply.get("alt") or {}).get(alt)
@@ -130,10 +144,19 @@ def fetch(device: str, update_id: str, *, refresh: bool = False, version: str | 
             raise OtaError(f"Variant {alt!r} is not listed in the update API reply of {update_id} "
                            f"(variants: {', '.join((reply.get('alt') or {}).keys()) or 'none'}).")
         reply = entry
-    release = reply.get("stable") if isinstance(reply.get("stable"), dict) else reply
+    if channel == "stable":
+        release = reply.get("stable") if isinstance(reply.get("stable"), dict) else reply
+    else:
+        release = reply.get(channel)
+        if not isinstance(release, dict):
+            offered = ", ".join(k for k, v in reply.items() if isinstance(v, dict)) or "none"
+            raise OtaError(f"The update API has no {channel!r} release for {device} (offered: {offered}).")
     url = release.get("url")
     if not isinstance(url, str) or not url.startswith("https://"):
-        raise OtaError(f"No https 'url' in update API reply: {json.dumps(reply)[:300]}")
+        offered = ", ".join(k for k, v in reply.items() if isinstance(v, dict))
+        hint = (f" The API offers: {offered}. Use --channel {offered.split(', ')[0]}"
+                + ("" if from_version else " or --from-version <installed version>") + ".") if offered else ""
+        raise OtaError(f"No https 'url' in update API reply: {json.dumps(reply)[:300]}{hint}")
     api_version = release.get("version")
     if version and api_version and str(api_version) != version:
         raise OtaError(f"Update API offers {api_version}, not the requested {version}.")

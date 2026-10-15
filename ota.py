@@ -74,18 +74,21 @@ def cmd_profiles(args) -> None:
         raise builder.OtaError(f"{len(problems)} profile problem(s); see above.")
 
 
-def _fetch_official(p, *, refresh=False, version=None, insecure=False):
+def _fetch_official(p, *, refresh=False, version=None, insecure=False, channel="stable", from_version=None):
     """Fetch for a profile; variants (profile.parent) are looked up in their parent's update reply."""
     if p.parent:
         parent = profile.load_profile(p.parent)
         return firmware.fetch(p.name, parent.update_id, refresh=refresh, version=version,
-                              insecure=insecure, alt=p.update_id)
-    return firmware.fetch(p.name, p.update_id, refresh=refresh, version=version, insecure=insecure)
+                              insecure=insecure, alt=p.update_id, channel=channel,
+                              from_version=from_version)
+    return firmware.fetch(p.name, p.update_id, refresh=refresh, version=version, insecure=insecure,
+                          channel=channel, from_version=from_version)
 
 
 def cmd_fetch(args) -> None:
     p = profile.load_profile(args.device)
-    path = _fetch_official(p, refresh=args.refresh, version=args.version, insecure=args.insecure)
+    path = _fetch_official(p, refresh=args.refresh, version=args.version, insecure=args.insecure,
+                           channel=args.channel, from_version=args.from_version)
     ui.say(f"Official firmware: {path}")
 
 
@@ -134,7 +137,8 @@ def cmd_build(args) -> None:
             raise builder.OtaError(
                 f"No official {p.name} ZIP in {firmware.FW_DIR / p.name}. Put one there, pass --official <zip>, "
                 f"run 'ota.py fetch {p.name}', or add --download to build.")
-        official = _fetch_official(p, version=args.version, insecure=args.insecure)
+        official = _fetch_official(p, version=args.version, insecure=args.insecure, channel=args.channel,
+                                  from_version=args.from_version)
     output = args.output or MODULE_DIR / "out" / builder.default_output_name(p, args.app, tag=builder.check_tag(args.tag))
     result = builder.build(p, args.app, official, output, drop=drop, tag=args.tag, factory=args.esphome_factory,
                            boot_min_version=args.boot_min_version, secrets=secrets,
@@ -272,6 +276,10 @@ def main() -> None:
     f.add_argument("--refresh", action="store_true", help="check for a newer version even if cached")
     f.add_argument("--version", metavar="VER", help="use this cached version")
     f.add_argument("--insecure", action="store_true", help="skip TLS check (Shelly uses a private CA)")
+    f.add_argument("--channel", choices=["stable", "beta"], default="stable",
+                   help="release channel of the update API (default: %(default)s)")
+    f.add_argument("--from-version", metavar="VER",
+                   help="ask the update API as a device running VER would (e.g. 1.4.4 gets the 2.0.1 stable step)")
     f.set_defaults(func=cmd_fetch)
 
     a = sub.add_parser("add-device", help="create a device profile from an official ZIP",
@@ -325,6 +333,9 @@ def main() -> None:
     g.add_argument("--version", metavar="VER", help="use this cached version (default: latest)")
     g.add_argument("--download", action="store_true", help="download if nothing is cached")
     g.add_argument("--insecure", action="store_true", help="with --download: skip TLS check")
+    g.add_argument("--channel", choices=["stable", "beta"], default="stable",
+                   help="with --download: release channel of the update API (default: %(default)s)")
+    g.add_argument("--from-version", metavar="VER", help="with --download: ask the update API as a device running VER would")
     b.set_defaults(func=cmd_build)
 
     t = sub.add_parser("send", help="send a ZIP to a Shelly (it downloads from this PC)", parents=[dev, snd],
