@@ -1,0 +1,120 @@
+# Shelly PM Mini Gen3
+
+[Back to the README](../../README.md) · [All commands](../commands.md)
+
+The first device that was flashed and reported by someone else: thanks to [imsandli](https://github.com/imsandli) for the device report (October 2026) and the notes on this page. This device **only measures**: there is no relay in it. Do not confuse it with the [Mini 1PM Gen3](Mini1PMG3.md), which has one and is a different application in Shelly's update API (`Mini1PMG3`).
+
+| | |
+| --- | --- |
+| Profile | `MiniPMG3` |
+| Model | S3PM-001PCEU16 (device id `shellypmminig3-...`) |
+| Chip | ESP32-C3, 8 MB flash |
+| Official package | 2.1.0 (the reported flash started from stock 2.0.1, see the notes) |
+| Partition table | **`0xf000`** (not `0x10000`) |
+| App slot size | `0x280000` |
+| Bootloader `min_version` | `1.0.9` (set in the profile) |
+| State | ✅ `send` from stock 2.0.1 with `--esphome-factory`; ESPHome boots, six and more ESPHome OTAs took effect, BLE, Wi-Fi and the power meter work |
+
+## ESPHome config
+
+```yaml
+esp32:
+  variant: ESP32C3
+  board: esp32-c3-devkitm-1
+  flash_size: 8MB
+  flash_mode: dio
+  partitions: MiniPMG3-stock.csv        # copy from partitions/ in this repository
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_PARTITION_TABLE_OFFSET: "0xf000"
+    advanced:
+      enable_ota_rollback: false
+
+ota:
+  - platform: esphome
+```
+
+The `esp32:` block is the tester's working one (the report did not include the `ota:` block, this is the usual one). Like the [H&T Gen3](HTG3.md), the device keeps its partition table at `0xf000`, so a default ESPHome build does not match and `build` refuses it.
+
+## Pins
+
+From the running ESPHome config of the report:
+
+| Function | Pin |
+| --- | --- |
+| BL0942 power meter (UART, 9600 baud, 8N1) | ESP **TX GPIO6**, ESP **RX GPIO7** |
+| Relay | none |
+
+```yaml
+uart:
+  tx_pin: GPIO6
+  rx_pin:
+    number: GPIO7
+    mode:
+      input: true
+      pullup: true
+  baud_rate: 9600
+  stop_bits: 1
+```
+
+- **The RX pin needs the internal pull-up.** Without it every 23-byte reply of the BL0942 arrives with stray bytes around it (`00` before the `55` header, `00:FE:00:FE` after the checksum), so every checksum fails and
+  all values stay `nan`. With the pull-up the packets are clean.
+- **Voltage calibration:** with ESPHome's default `voltage_reference` (15883) the voltage reads about 10 % low. `voltage_reference: 14357` was correct against the electricity meter on this one unit; the stock firmware
+  read about 2 % low. Compare with a reference on your unit.
+- Button and LED pins were not read.
+
+## Flash it
+
+```
+pip install -r requirements.txt
+python ota.py fetch MiniPMG3 --insecure
+python ota.py build MiniPMG3 app.ota.bin --esphome-factory app.factory.bin --esphome-yaml app.yaml
+python ota.py send MiniPMG3 out/MiniPMG3-app-<date>.zip --ip <device IP> --dry-run
+python ota.py send MiniPMG3 out/MiniPMG3-app-<date>.zip --ip <device IP> --watch 120
+```
+
+`app.ota.bin` and `app.factory.bin` are the two files ESPHome compiles. `--dry-run` only checks the device and, for this
+package, reads the update target slot. Command reference: [Commands](../commands.md).
+
+## What to expect
+
+In the `--watch` log look for these lines, in this order:
+
+1. `Update target slot: 0 ...` from `send` (the slot check; if it says anything else, run `python ota.py restore MiniPMG3` first).
+2. `Boot: cur ... min ... update? 1`: the installer will write ESPHome's bootloader. `update? 0` means it will not: build again
+   with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)).
+3. `ota_progress` up to 95 %, then `ota_success`. The device restarts into ESPHome.
+
+The package wipes NVS: Wi-Fi and settings are gone, ESPHome opens its own access point or joins the Wi-Fi from your config.
+If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
+
+The reported run, from stock 2.0.1 (the first line comes from `send`, the rest from the device):
+
+```
+Update target slot: 0 (the slot ESPHome's bootloader starts).
+  log| shelly_update.cpp:511   Incoming fw signatures: 00
+  log| 2xx_ota_backend.cpp:409 Will write to slot 0
+  log| 2xx_ota_backend.cpp:689 Boot: cur 010002ff, new 00000000, min 010009ff, update? 1
+  log| 2xx_ota_backend.cpp:171 Installing BL 20960@app_0(0x20000) -> boot(0)...
+  log| shelly_update.cpp:631   EFUSE write error bit[1]: 5636
+  log| shos_system.c:66        Rebooting in 1000 ms
+```
+
+The `EFUSE write error` line also appeared on the [H&T Gen3](HTG3.md); the update still succeeded ([eFuse note](../troubleshooting.md#efuse)).
+
+## Notes for this device
+
+- The installed loader was 1.0.2, which is why the profile sets `boot_min_version: 1.0.9`: a lower value would have been skipped by the installer.
+- **Slot:** the first `send --dry-run` refused because the installer would have written to slot 1. `python ota.py restore MiniPMG3` fixed that (the device then ran from slot 1, and the next dry run reported slot 0). The restore kept
+  Wi-Fi and settings on this unit (2.0.1 to 2.0.1).
+- **Network:** the tester's Shelly sat in an IoT VLAN that could reach nothing on the PC's network, while the PC could reach the Shelly. The device's own RPC finds this before anything is sent:
+  `http://<Shelly IP>/rpc/HTTP.GET?url="http://<PC IP>:8000/"` answered `Connection error: -13`. Any HTTP status in the answer (a 404 is fine) means the way is open.
+- **Package versions:** the profile and `MiniPMG3-stock.csv` were made from the 2.1.0 package; the flash on the tester's unit was done with the 2.0.1 table. The two tables were not compared.
+- Check the app name (`MiniPMG3`) and the model (S3PM-001PCEU16) before you use this page. The Mini 1PM Gen3 (`Mini1PMG3`) has a relay, another partition layout (app slot `0x2a0000`) and was not tested.
+
+## Way back
+
+`python ota.py restore MiniPMG3` sends the official firmware back while Shelly firmware still runs. Once ESPHome with
+ESPHome's bootloader is running, `restore` gets no answer and only UART brings Shelly OS back
+([Recovery over UART](../recovery-uart.md)): take a flash backup first if you can.

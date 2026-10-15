@@ -16,6 +16,7 @@ commands, the log lines to look for and the way back to Shelly OS. Pick your dev
 | Plug S Gen3 | [`PlugSG3`](PlugSG3.md) | ESP32-C3 | `0x10000` | `0x2a0000` | ✅ |
 | Plug PM Gen3 (no relay) | [`PlugPMG3`](PlugPMG3.md) | ESP32-C3 | `0x10000` | `0x280000` | ✅ flashed over OTA, readings not checked |
 | H&T Gen3 | [`HTG3`](HTG3.md) | ESP32-C3 | **`0xf000`** | `0x280000` | ✅ |
+| PM Mini Gen3 (no relay) | [`MiniPMG3`](MiniPMG3.md) | ESP32-C3 | **`0xf000`** | `0x280000` | ✅ |
 | Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](RGBCCTBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | ✅ |
 | Duo Bulb Gen3 | [`DuoBulbG3`](DuoBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🧪 OTA not run; ESPHome config runs (UART) |
 | Power Strip 4 Gen4 | [`PowerStrip`](PowerStrip.md) | ESP32-C6 | `0x10000` | `0x300000` | ✅ boots, outlets not checked |
@@ -33,14 +34,14 @@ does not match the profile. Details per device are on its page.
 
 ## Where devices differ
 
-- **Partition table at `0xf000`:** [H&T Gen3](HTG3.md) and [Mini 1PM Gen3](Mini1PMG3.md). A default ESPHome build uses
-  ESP-IDF's default `0x8000` and does not match.
+- **Partition table at `0xf000`:** [H&T Gen3](HTG3.md), [PM Mini Gen3](MiniPMG3.md) and [Mini 1PM Gen3](Mini1PMG3.md). A default
+  ESPHome build uses ESP-IDF's default `0x8000` and does not match.
 - **Classic ESP32 (Gen2):** the [Plus Plug S](PlusPlugS.md), [Plus Uni](PlusUni.md) and [Pro 3EM](Pro3EM.md). Partition table at
   `0x8000`, bootloader at `0x1000`, and the ESPHome build needs the 80 MHz flash frequency. Flash is 4 MB, except on the Pro 3EM
   (16 MB, so `flash_size: 16MB`, and an extra `emdata` partition).
 - **Gen4 / ESP32-C6:** [Power Strip](PowerStrip.md), [Power Strip (Zigbee)](PowerStripZB.md) and
   [Mini 1PM Gen4](Mini1PMG4.md) have the largest app slots (`0x300000`).
-- **Bootloader `min_version` 1.0.9:** the profiles for `DuoBulbG3`, `HTG3`, `Mini1PMG3`, `PlugMG3`, `PlugPMG3`, `PlusUni`, `PowerStrip`, `Pro3EM` and `RGBCCTBulbG3` set it, because a device that runs
+- **Bootloader `min_version` 1.0.9:** the profiles for `DuoBulbG3`, `HTG3`, `Mini1PMG3`, `MiniPMG3`, `PlugMG3`, `PlugPMG3`, `PlusUni`, `PowerStrip`, `Pro3EM` and `RGBCCTBulbG3` set it, because a device that runs
   Shelly's loader 1.0.3 would otherwise skip ESPHome's bootloader. Background:
   [Bootloader and slots](../bootloader-and-slots.md).
 - **Variants:** `PowerStripZB` and `Mini1PMG4ZB` are the Zigbee firmware of the same hardware as `PowerStrip` and `Mini1PMG4`.

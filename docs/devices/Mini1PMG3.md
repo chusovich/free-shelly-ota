@@ -2,7 +2,7 @@
 
 [Back to the README](../../README.md) · [All commands](../commands.md)
 
-Not tested on hardware. Like the H&T Gen3, the official package keeps its partition table at `0xf000`, so a default ESPHome build does not match.
+Not tested on hardware. This is the Mini with a relay; the measuring-only [PM Mini Gen3](MiniPMG3.md) is a different device with its own profile. Like the H&T Gen3, the official package keeps its partition table at `0xf000`, so a default ESPHome build does not match.
 
 | | |
 | --- | --- |
