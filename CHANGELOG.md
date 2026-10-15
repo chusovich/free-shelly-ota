@@ -54,6 +54,7 @@ All notable changes to this project are documented here. The format follows
 - Profile `MiniPMG3` (Shelly PM Mini Gen3, S3PM-001PCEU16; measures only, no relay) with partition CSV and device page, made from the official 2.1.0 package (partition table `0xf000`, app slot
   `0x280000`, `boot_min_version: 1.0.9`). Hardware-confirmed by the first external device report ([imsandli](https://github.com/imsandli)): `send` from stock 2.0.1 with ESPHome's bootloader (loader 1.0.2 replaced), ESPHome OTAs
   afterwards, BL0942 readings. The page documents the BL0942 UART pins, the RX pull-up it needs and a voltage calibration. This is not the Mini 1PM Gen3 (`Mini1PMG3`), which stays untested.
+- `CREDITS.md`: the projects the tool learned from (as in the README), the people who tested devices and sent reports (imsandli, bobkersten), Shelly and the tooling, and how to get on or off the list. The README links to it.
 
 ## [0.3.1] - 2026-10-06
 
