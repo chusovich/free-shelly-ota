@@ -5,9 +5,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `fetch` and `build --download` take `--from-version VER`: the update API answers per installed version (header `Shelly-Info`, found in the firmware), e.g. `--from-version 1.4.4` returns the stable 2.0.1 for the H&T Gen3 while the plain query returns only a beta.
+- `fetch` and `build --download` take `--channel beta` to download the beta release from the update API (`stable` stays the default). A non-stable channel always asks the API unless `--version` is given.
+
 ### Changed
-- `docs/commands.md` and the note `restore` prints: the official package *may* reset NVS (a PM Mini Gen3 going from 2.0.1 to 2.0.1 kept Wi-Fi and settings). `docs/troubleshooting.md`:
-  the eFuse note also lists `EFUSE write error bit[1]: 5636` after `Incoming fw signatures: 00` on a PM Mini Gen3 (update and ESPHome were fine). Both from the first device report by [imsandli](https://github.com/imsandli).
+- Multicolor Bulb E27 Gen3 example config (`configs/shelly-rgbcct-bulb-g3/`): the light is now `rgbw_ct_table` (component of `oxynatOr/esphome-kp18058`) instead of `rgbw`: an RGB mode and a
+  colour temperature mode 2700-6500 K (exclusive, like the stock web UI) with the stock firmware's 9-point table and RGB white balance (red 0.856, green 0.701, blue 0.749), linear brightness
+  (`gamma_correct: 1.0`) and a 3 s default fade, all read from the 2.0.1 firmware. The packages daylight, daylight_sun, scenes, night, night_sun and wakeup use colour temperature instead of
+  mixing RGB with the white (the white-mixing modes are gone); dimrange is only needed with gamma 2.8. The YAML points at a local clone of the component until it is published; not flashed on the bulb yet.
 - Plug PM Gen3: flashed over OTA with this tool on a real plug (owner report, 2026-10-12). The device page, `docs/devices/README.md` and the README row go from 🧪 to ✅
   with "readings not checked"; the log lines (`Boot: cur ... update?`) and the BL0942 readings are not recorded yet.
 - Profile `PlugMG3` (revision 2): `boot_min_version: 1.0.9`. The official package carries Shelly OS loader 1.0.3, so a Plug M restored from it
