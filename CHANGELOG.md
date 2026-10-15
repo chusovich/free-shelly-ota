@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Changed
+- `docs/commands.md` and the note `restore` prints: the official package *may* reset NVS (a PM Mini Gen3 going from 2.0.1 to 2.0.1 kept Wi-Fi and settings). `docs/troubleshooting.md`:
+  the eFuse note also lists `EFUSE write error bit[1]: 5636` after `Incoming fw signatures: 00` on a PM Mini Gen3 (update and ESPHome were fine). Both from the first device report by [imsandli](https://github.com/imsandli).
 - Plug PM Gen3: flashed over OTA with this tool on a real plug (owner report, 2026-10-12). The device page, `docs/devices/README.md` and the README row go from 🧪 to ✅
   with "readings not checked"; the log lines (`Boot: cur ... update?`) and the BL0942 readings are not recorded yet.
 - Profile `PlugMG3` (revision 2): `boot_min_version: 1.0.9`. The official package carries Shelly OS loader 1.0.3, so a Plug M restored from it

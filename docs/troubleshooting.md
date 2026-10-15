@@ -87,6 +87,9 @@ bits for a package without the signature marks, and those writes were refused be
 still succeeded and ESPHome ran. What the bits mean is not known; this may be irreversible on a device where the bits were
 still empty, so treat it as a possible permanent change.
 
+The same marker appeared on a PM Mini Gen3 (stock 2.0.1, package with ESPHome's bootloader): `Incoming fw signatures: 00`, then
+`EFUSE write error bit[1]: 5636`, then a normal reboot. The update succeeded and ESPHome ran.
+
 ## Safety
 
 Nothing is downloaded unless you run `fetch` (or pass `--download`). Shelly firmware is not part of this repository (`fw/` and
