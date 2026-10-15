@@ -30,6 +30,20 @@ the Python program in Windows Defender Firewall) leaves the log empty; the updat
 the installer's `ota_progress` events (0 to 95 %, then `ota_success`) and, for a package with ESPHome's bootloader, the line
 `Boot: cur ... min ... update? 0/1`.
 
+## The device does not download the ZIP
+
+`send` ends with "did not download the ZIP within ..." when the Shelly cannot reach this PC. The usual cause is a network
+rule: the Shelly sits in an IoT VLAN or guest network that may not connect to this PC (the other direction works: this PC
+reaches the Shelly, so `send` can talk to it). `send --dry-run` asks the device to fetch `http://<this PC>:8000/` itself and fails with
+`Connection error` if it cannot; the same check by hand:
+
+```
+http://<Shelly IP>/rpc/HTTP.GET?url="http://<PC IP>:8000/"
+```
+
+Any HTTP status in the answer (a 404 is fine) means the way is open. Allow TCP port 8000 (or your `--port`) from the Shelly's
+network to this PC, or put the PC in the same network for the update. If `send` picked the wrong PC address, set `--host`.
+
 ## Battery devices (H&T Gen3)
 
 The stock updater refuses to start below 30 % battery: `Shelly.Update` answers HTTP 500 with
@@ -86,6 +100,9 @@ by `EFUSE write error bit[1]` and `bit[2]` with `Bits are not empty. Write opera
 bits for a package without the signature marks, and those writes were refused because the bits were already set. The update
 still succeeded and ESPHome ran. What the bits mean is not known; this may be irreversible on a device where the bits were
 still empty, so treat it as a possible permanent change.
+
+The same marker appeared on a PM Mini Gen3 (stock 2.0.1, package with ESPHome's bootloader): `Incoming fw signatures: 00`, then
+`EFUSE write error bit[1]: 5636`, then a normal reboot. The update succeeded and ESPHome ran.
 
 ## Safety
 

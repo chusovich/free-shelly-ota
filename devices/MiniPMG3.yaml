@@ -1,0 +1,9 @@
+# OTA profile for MiniPMG3 (Shelly PM Mini Gen3, S3PM-001PCEU16), generated from the official 2.1.0 package.
+display_name: "Shelly PM Mini Gen3"
+platform: esp32c3
+update_id: MiniPMG3        # name used by https://updates.shelly.cloud/update/<update_id>
+app_ptn: app_0
+app_slot_size: 0x280000   # app_0 @0x20000
+pt_offset: 0xf000   # partition table address (default 0x10000)
+boot_min_version: "1.0.9"   # the unit of the first device report ran Shelly OS loader 1.0.2 ("Boot: cur 010002ff"); with 1.0.9 the ESPHome bootloader was written (hardware-confirmed 2026-10-14)
+revision: 1   # counts changes of this profile: raise it when anything else in this file changes (see devices/profiles.lock)

@@ -38,6 +38,10 @@ All notable changes to this project are documented here. The format follows
   voltage doubler that ESPHome cannot drive, and its pins are not decoded, so it is not a useful target. It is parked outside the repository.
 
 ### Added
+- `send` (and `restore`) ask the device to fetch `http://<this PC>:<port>/` itself (RPC `HTTP.GET`) before they send. `--dry-run` fails with the device's
+  `Connection error` if it cannot reach this PC, a real `send` prints a warning and goes on, and a device without `HTTP.GET` only gets a note. Suggested by [imsandli](https://github.com/imsandli) in the
+  first device report (PM Mini Gen3), where the Shelly sat in an IoT VLAN that could not reach the PC and the plain run would have ended in the 300 s timeout.
+  Not run on a real device yet: the exact error reply of the device is known from the report only.
 - Profiles `PlusUni` (Shelly Plus Uni) and `Pro3EM` (Shelly Pro 3EM), both classic ESP32 (Gen2) made from the official 2.0.1 packages, with partition CSVs
   and device pages. The Pro 3EM has 16 MB flash (app slot `0x200000`, extra `emdata` partition), the Plus Uni 4 MB (`0x190000`). Both set
   `boot_min_version: 1.0.9` (the packages carry loader 1.0.2; the loader of a real unit has not been seen). Packages build and verify; not tested on
@@ -59,6 +63,10 @@ All notable changes to this project are documented here. The format follows
   lights are gone: the channel order (OUT1 blue, OUT2 red, OUT3 green, OUT4 warm white) is tested on the bulb (2026-10-11). The main file gets the
   Home Assistant time component, an `id` on the light and `color_interlock: false`. The README and the device page mark the bulb as ✅ now; the folder
   README says what is tested.
+- Profile `MiniPMG3` (Shelly PM Mini Gen3, S3PM-001PCEU16; measures only, no relay) with partition CSV and device page, made from the official 2.1.0 package (partition table `0xf000`, app slot
+  `0x280000`, `boot_min_version: 1.0.9`). Hardware-confirmed by the first external device report ([imsandli](https://github.com/imsandli)): `send` from stock 2.0.1 with ESPHome's bootloader (loader 1.0.2 replaced), ESPHome OTAs
+  afterwards, BL0942 readings. The page documents the BL0942 UART pins, the RX pull-up it needs and a voltage calibration. This is not the Mini 1PM Gen3 (`Mini1PMG3`), which stays untested.
+- `CREDITS.md`: the projects the tool learned from (as in the README), the people who tested devices and sent reports (imsandli, bobkersten), Shelly and the tooling, and how to get on or off the list. The README links to it.
 
 ## [0.3.1] - 2026-10-06
 

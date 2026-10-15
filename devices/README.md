@@ -21,6 +21,7 @@ The file name without `.yaml` is the profile name you give to `fetch`, `build`, 
 | `PlusPlugS` | Shelly Plus Plug S | ESP32 | 1 | [PlusPlugS](../docs/devices/PlusPlugS.md) |
 | `Pill` | Shelly The Pill | ESP32-C3 | 1 | [Pill](../docs/devices/Pill.md) |
 | `Mini1PMG3` | Shelly Mini 1PM Gen3 | ESP32-C3 | 1 | [Mini1PMG3](../docs/devices/Mini1PMG3.md) |
+| `MiniPMG3` | Shelly PM Mini Gen3 | ESP32-C3 | 1 | [MiniPMG3](../docs/devices/MiniPMG3.md) |
 | `Mini1PMG4` | Shelly Mini 1PM Gen4 | ESP32-C6 | 1 | [Mini1PMG4](../docs/devices/Mini1PMG4.md) |
 | `Mini1PMG4ZB` | Shelly Mini 1PM Gen4 (Zigbee) | ESP32-C6 | 1 | [Mini1PMG4](../docs/devices/Mini1PMG4.md#zigbee-variant) |
 | `PlusUni` | Shelly Plus Uni | ESP32 | 1 | [PlusUni](../docs/devices/PlusUni.md) |
@@ -51,7 +52,7 @@ revision: 2
 | `update_id` | no | file name | Name in Shelly's update API, `https://updates.shelly.cloud/update/<update_id>`, where `fetch` finds the official package |
 | `app_ptn` | no | `app_0` | Partition the `app` part of the package targets. `build` warns if the official package says otherwise |
 | `parent` | no | none | Base device of a variant (for example the Zigbee firmware). The variant is listed under `alt` in the update reply of the parent |
-| `pt_offset` | no | `0x10000` | Where the device keeps its partition table. Your ESPHome config must set `CONFIG_PARTITION_TABLE_OFFSET` to it (`build --esphome-yaml` checks); it is `0xf000` on `HTG3` and `Mini1PMG3`, `0x8000` on `PlusPlugS` |
+| `pt_offset` | no | `0x10000` | Where the device keeps its partition table. Your ESPHome config must set `CONFIG_PARTITION_TABLE_OFFSET` to it (`build --esphome-yaml` checks); it is `0xf000` on `HTG3`, `Mini1PMG3` and `MiniPMG3`, `0x8000` on `PlusPlugS` |
 | `boot_min_version` | no | none | Default for `--boot-min-version` when you ship ESPHome's bootloader. Without it the tool uses one patch above Shelly's loader version. See [Bootloader and slots](../docs/bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version) |
 | `revision` | no | `1` | Counts the changes of the profile, see below |
 

@@ -39,6 +39,7 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | Plug S Gen3 | [`PlugSG3`](docs/devices/PlugSG3.md) | ESP32-C3 | ✅ |
 | Plug PM Gen3 (measures only, no relay) | [`PlugPMG3`](docs/devices/PlugPMG3.md) | ESP32-C3 | ✅ flashed over OTA, readings not checked |
 | H&T Gen3 | [`HTG3`](docs/devices/HTG3.md) | ESP32-C3 | ✅ |
+| PM Mini Gen3 (measures only, no relay) | [`MiniPMG3`](docs/devices/MiniPMG3.md) | ESP32-C3 | ✅ |
 | Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](docs/devices/RGBCCTBulbG3.md) | ESP32-C3 | ✅ |
 | Duo Bulb Gen3 | [`DuoBulbG3`](docs/devices/DuoBulbG3.md) | ESP32-C3 | 🧪 OTA not run; ESPHome config runs (UART) |
 | Power Strip 4 Gen4 | [`PowerStrip`](docs/devices/PowerStrip.md) | ESP32-C6 | ✅ boots, outlets not checked |
@@ -115,13 +116,14 @@ ota:
 
 ## Credits
 
-Almost everything this tool knows was found out by other people. Please visit and support their projects:
+Almost everything this tool knows was found out by other people. Please visit and support their projects. [CREDITS.md](CREDITS.md) has the same list with more detail, and names the people who tested devices and sent reports.
 
 | Project | License | What we learned from it |
 | --- | --- | --- |
 | [tasmota/mgos32-to-tasmota32](https://github.com/tasmota/mgos32-to-tasmota32) | GPL-3.0 | Converting a Shelly OTA ZIP so the stock updater accepts third-party firmware |
 | [inventor7777/ESPHome-Shelly-Plus-Plug-US](https://github.com/inventor7777/ESPHome-Shelly-Plus-Plug-US) | MIT | Replacing only the app image in Shelly's ZIP; the partition table at `0x10000`; the follow-up bootloader step |
 | [automatous-io/shelly-gen4-esphome](https://github.com/automatous-io/shelly-gen4-esphome) | Apache-2.0 | Gen4 (ESP32-C6) partition layout, the A/B slot rule, install documentation |
+| [imsandli](https://github.com/imsandli) | – | The first external device report (PM Mini Gen3): a successful OTA run with logs, the BL0942 RX pull-up and voltage calibration, the idea for the reachability check |
 | Shelly / Allterco Robotics | – | The official OTA packages and update API (not redistributed here) |
 | [ESPHome](https://esphome.io), Espressif (esptool, ESP-IDF) | – | The firmware framework and tooling everything builds on |
 
