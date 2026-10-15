@@ -93,6 +93,10 @@ example connected to the Shelly's own access point.
 For a package that replaces the bootloader, `send` first reads the update target slot and refuses if it is not slot 0
 ([why](bootloader-and-slots.md#the-app-must-land-in-slot-0)).
 
+It also asks the device to fetch `http://<this PC>:<port>/` itself (RPC `HTTP.GET`), so a Shelly that cannot reach this PC
+(firewall, VLAN) is reported at once instead of after the `--timeout`. With `--dry-run` that is an error; a real `send` only
+warns and goes on, because the download is what counts. A device without `HTTP.GET` gets a note.
+
 > [!WARNING]
 > While `send` runs, its web server listens on all interfaces of this PC and hands the ZIP to anyone on the network who asks
 > for its exact file name. The ZIP may contain your Wi-Fi password, so do not run it on an untrusted network.
@@ -104,7 +108,7 @@ For a package that replaces the bootloader, `send` first reads the update target
 | `--watch SEC` | no | off | Show the device's debug log (UDP, switched on over RPC and restored afterwards) and keep listening SEC seconds after the download |
 | `--user USER` / `--password PW` | no | `admin` / none | Login, if the device has a password (digest auth) |
 | `--yes` | no | off | Do not ask before flashing |
-| `--dry-run` | no | off | Check the device only, send nothing |
+| `--dry-run` | no | off | Check the device (also whether it can reach this PC), send nothing |
 | `--ignore-slot` | no | off | Send even if the installer would write to a slot that ESPHome's bootloader does not start |
 
 <details>

@@ -30,6 +30,10 @@ All notable changes to this project are documented here. The format follows
   voltage doubler that ESPHome cannot drive, and its pins are not decoded, so it is not a useful target. It is parked outside the repository.
 
 ### Added
+- `send` (and `restore`) ask the device to fetch `http://<this PC>:<port>/` itself (RPC `HTTP.GET`) before they send. `--dry-run` fails with the device's
+  `Connection error` if it cannot reach this PC, a real `send` prints a warning and goes on, and a device without `HTTP.GET` only gets a note. Suggested by [imsandli](https://github.com/imsandli) in the
+  first device report (PM Mini Gen3), where the Shelly sat in an IoT VLAN that could not reach the PC and the plain run would have ended in the 300 s timeout.
+  Not run on a real device yet: the exact error reply of the device is known from the report only.
 - Profiles `PlusUni` (Shelly Plus Uni) and `Pro3EM` (Shelly Pro 3EM), both classic ESP32 (Gen2) made from the official 2.0.1 packages, with partition CSVs
   and device pages. The Pro 3EM has 16 MB flash (app slot `0x200000`, extra `emdata` partition), the Plus Uni 4 MB (`0x190000`). Both set
   `boot_min_version: 1.0.9` (the packages carry loader 1.0.2; the loader of a real unit has not been seen). Packages build and verify; not tested on
