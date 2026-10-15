@@ -125,6 +125,46 @@ def probe_target_slot(addr: str, host: str, log_port: int, *, wait: float = 4.0,
     return found[0] if found else None
 
 
+# What a device answers when its RPC HTTP.GET cannot connect (seen in a device report: "Connection error: -13").
+CONNECTION_ERROR_RE = re.compile(r'Connection error[^"}\\]*')
+
+
+def check_reach(addr: str, host: str, port: int, *, timeout: float = 30, **auth) -> tuple[bool | None, str]:
+    """Ask the device to fetch http://host:port/ itself (RPC HTTP.GET): can the Shelly reach this PC?
+
+    The file server answers 404 there, which is enough: any HTTP status proves the way is open. Returns
+    (True, "HTTP 404"), (False, the device's connection error) or (None, why it could not be checked)."""
+    target = f"http://{host}:{port}/"
+    try:
+        body = rpc.request(f"http://{addr}/rpc/HTTP.GET?url={urllib.parse.quote(target, safe='')}",
+                           timeout=timeout, **auth)
+    except OtaError as e:
+        m = CONNECTION_ERROR_RE.search(str(e))
+        return (False, m.group(0)) if m else (None, str(e))
+    try:
+        reply = json.loads(body)
+    except ValueError:
+        return None, "the answer is not JSON"
+    if not isinstance(reply, dict):
+        return None, f"unexpected answer {body[:80]!r}"
+    code = reply.get("code")
+    if isinstance(code, int) and code > 0:
+        return True, f"HTTP {code}"
+    m = CONNECTION_ERROR_RE.search(str(reply.get("message", "")))
+    return (False, m.group(0)) if m else (None, f"unexpected answer {body[:80]!r}")
+
+
+def reach_text(state: bool | None, detail: str, host: str, port: int) -> str:
+    """One line for the result of check_reach."""
+    if state is True:
+        return f"The device can reach this PC (its own request to http://{host}:{port}/ got {detail})."
+    if state is False:
+        return (f"The device cannot reach this PC at http://{host}:{port}/ ({detail}), so it cannot download the ZIP. "
+                f"Check the Shelly's network: firewall (TCP port {port}), VLAN or guest-network rules; --host and "
+                "--port set the address and port it is told to use.")
+    return f"could not check whether the device can reach this PC ({detail})."
+
+
 def package_info(zip_path: Path, profile: Profile) -> list[str]:
     """What the package's report says about its origin: when, by which tool state, from which profile revision."""
     try:
@@ -216,7 +256,15 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
     if note:
         out(f"{note[0]}: {note[1]}")
     if dry_run:
-        server.httpd.server_close()
+        server.start()  # the device fetches http://host:port/ from it; the ZIP is not requested
+        try:
+            state, detail = check_reach(addr, host, server.port, **auth)
+        finally:
+            server.stop()
+        text = reach_text(state, detail, host, server.port)
+        if state is False:
+            raise OtaError(f"Dry run: {text}")
+        out(text if state else f"NOTE: {text}")
         out("Dry run: nothing sent.")
         return True
     if not assume_yes:
@@ -228,6 +276,9 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
 
     server.start()
     try:
+        state, detail = check_reach(addr, host, server.port, **auth)
+        text = reach_text(state, detail, host, server.port)
+        out(text if state else f"{'WARNING' if state is False else 'NOTE'}: {text}")  # never blocks: the download decides
         with contextlib.ExitStack() as stack:
             if watch > 0:
                 stack.enter_context(logwatch.udp_log(addr, host, log_port, out, **auth))

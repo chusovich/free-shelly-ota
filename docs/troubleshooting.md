@@ -30,6 +30,20 @@ the Python program in Windows Defender Firewall) leaves the log empty; the updat
 the installer's `ota_progress` events (0 to 95 %, then `ota_success`) and, for a package with ESPHome's bootloader, the line
 `Boot: cur ... min ... update? 0/1`.
 
+## The device does not download the ZIP
+
+`send` ends with "did not download the ZIP within ..." when the Shelly cannot reach this PC. The usual cause is a network
+rule: the Shelly sits in an IoT VLAN or guest network that may not connect to this PC (the other direction works: this PC
+reaches the Shelly, so `send` can talk to it). `send --dry-run` asks the device to fetch `http://<this PC>:8000/` itself and fails with
+`Connection error` if it cannot; the same check by hand:
+
+```
+http://<Shelly IP>/rpc/HTTP.GET?url="http://<PC IP>:8000/"
+```
+
+Any HTTP status in the answer (a 404 is fine) means the way is open. Allow TCP port 8000 (or your `--port`) from the Shelly's
+network to this PC, or put the PC in the same network for the update. If `send` picked the wrong PC address, set `--host`.
+
 ## Battery devices (H&T Gen3)
 
 The stock updater refuses to start below 30 % battery: `Shelly.Update` answers HTTP 500 with
