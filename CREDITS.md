@@ -1,0 +1,35 @@
+# Credits
+
+Almost everything this tool knows was found out by other people: how a Shelly package is built, how its bootloader and slots work, which pin does what on which device. This page says who, and what we took from them. The short version is in the [README](README.md#credits).
+
+Please visit and support these projects and people.
+
+## Projects
+
+| Project | License | What we learned from it |
+| --- | --- | --- |
+| [tasmota/mgos32-to-tasmota32](https://github.com/tasmota/mgos32-to-tasmota32) | GPL-3.0 | Converting a Shelly OTA ZIP so the stock updater accepts third-party firmware |
+| [inventor7777/ESPHome-Shelly-Plus-Plug-US](https://github.com/inventor7777/ESPHome-Shelly-Plus-Plug-US) | MIT | Replacing only the app image in Shelly's ZIP; the partition table at `0x10000`; the follow-up bootloader step (see [Bootloader and slots](docs/bootloader-and-slots.md)) |
+| [automatous-io/shelly-gen4-esphome](https://github.com/automatous-io/shelly-gen4-esphome) | Apache-2.0 | Gen4 (ESP32-C6) partition layout, the A/B slot rule, install documentation |
+
+## People
+
+People who tested a device, sent a report or shared what they know. Newest first.
+
+| Who | What |
+| --- | --- |
+| [imsandli](https://github.com/imsandli) | The first external device report (PM Mini Gen3, October 2026): a successful OTA run with logs, the BL0942 RX pull-up and a voltage calibration for the [device page](docs/devices/MiniPMG3.md), and the idea for the check that the device can reach the PC |
+| bobkersten | Author of the ESPHome device-database page for the [Shelly Plus Plug S](https://devices.esphome.io/devices/Shelly-Plus-Plug-S/), whose pins and config the [Plus Plug S page](docs/devices/PlusPlugS.md) uses (tested by the author, not by this project) |
+
+## Shelly and the tools underneath
+
+| Who | What |
+| --- | --- |
+| Shelly / Allterco Robotics | The official OTA packages and the update API (not redistributed here) |
+| [ESPHome](https://esphome.io), Espressif (esptool, ESP-IDF) | The firmware framework and tooling everything builds on |
+
+## Missing from this list?
+
+If this project uses something you found out and you are not named, or you would rather not be, please
+[open an issue](https://github.com/oxynatOr/free-shelly-ota/issues/new). If you flashed a device with the tool, a
+[device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) puts you on this list, also when it worked.

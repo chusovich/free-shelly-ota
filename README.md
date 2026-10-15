@@ -116,7 +116,7 @@ ota:
 
 ## Credits
 
-Almost everything this tool knows was found out by other people. Please visit and support their projects:
+Almost everything this tool knows was found out by other people. Please visit and support their projects. [CREDITS.md](CREDITS.md) has the same list with more detail, and names the people who tested devices and sent reports.
 
 | Project | License | What we learned from it |
 | --- | --- | --- |
