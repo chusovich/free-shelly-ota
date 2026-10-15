@@ -11,7 +11,7 @@ The LEDs sit behind a **KP18068** 5-channel driver on SDA GPIO4 / SCL GPIO5. ESP
 | Official package | 2.0.1 |
 | Partition table | `0x10000` |
 | App slot size | `0x280000` |
-| State | ✅ `send` with `--esphome-factory` ran through, ESPHome runs and the light was tested on the bulb (owner, 2026-10-11): channel order and fixed warm white confirmed. Colour accuracy, the lowest dimming steps and the driver currents are not measured |
+| State | ✅ `send` with `--esphome-factory` ran through, ESPHome runs and the light was tested on the bulb (owner, 2026-10-11): channel order and the single warm white LED confirmed. Colour accuracy, the lowest dimming steps and the driver currents are not measured. The example config got a colour temperature light afterwards (not flashed yet) |
 
 ## ESPHome config
 
@@ -33,14 +33,15 @@ ota:
   - platform: esphome
 ```
 
-The full example config (RGBW light, current codes as the Shelly firmware sends them) is in
+The full example config (RGB + colour temperature light with the stock firmware's table and white balance, current codes as the Shelly firmware sends them) is in
 [`configs/shelly-rgbcct-bulb-g3/`](../../configs/shelly-rgbcct-bulb-g3). It pulls the driver component through
 `external_components`. The folder also has optional light packages (daylight, scenes, wake-up alarm, night light, over-temperature
 protection, dim range); its README lists them and says what is tested.
 
 Channel order, read from the stock firmware and tested on the bulb (owner, 2026-10-11): OUT1 = blue, OUT2 = red, OUT3 = green,
-OUT4 = warm white with a fixed colour temperature; OUT5 shows nothing on its own. OUT4 and OUT5 get the same value (one white
-level), so the example uses an `rgbw` light.
+OUT4 = the one warm white LED; OUT5 shows nothing on its own. OUT4 and OUT5 get the same value (one white
+level). The stock firmware makes colour temperatures from 2700 to 6500 K by mixing red, green and blue into that white (a 9-point table); the
+example config does the same with the light platform `rgbw_ct_table` (see its README).
 
 ## Flash it
 

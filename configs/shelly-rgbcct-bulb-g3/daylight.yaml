@@ -2,25 +2,22 @@
 # Add to shelly-rgbcct-bulb-g3.yaml:
 #   packages:
 #     daylight: !include daylight.yaml
-# Needs the time component "ha_time" (platform homeassistant) in the main file and color_interlock: false on the light (set there) so that RGB and the warm white can be on together.
-# Then choose the effect "Daylight" on the light in Home Assistant. It is applied at once, then once a minute: warm and dim after
+# Needs the time component "ha_time" (platform homeassistant) in the main file and the light "bulb" (platform rgbw_ct_table).
+# Then choose the effect "Daylight" on the light in Home Assistant. It is applied at once, then once a minute: warm and dim at
 # daylight_start, bright and cool white around the middle of the period, warm and dim again before daylight_end.
 # Outside the period nothing is changed. Choosing a colour or brightness by hand ends the effect.
-# The lamp has one fixed warm white (no Kelvin control). The period starts and ends with that warm white alone; towards the middle
-# the cool RGB white fades in and the warm white drops to daylight_white_mid. RGB white tends to look a little cold or greenish:
-# raise daylight_white_mid to warm it up, or change daylight_cool_* by eye. Needs the "bulb" light (id) in the main file.
+# The effect sweeps the colour temperature of the lamp (2700-6500 K, the stock calibration table in the main file) and the brightness
+# along a sine curve; there is no RGB involved any more. Tune daylight_cool_k by eye (the lamp's blue and green LEDs are strong, so it
+# can look a little cold above about 5500 K).
 
 substitutions:
   daylight_start: "06:30"       # HH:MM, local time
   daylight_end: "21:00"
-  daylight_white_edge: "1.0"    # warm white level (0..1) at the start and end of the period
-  daylight_white_mid: "0.6"     # warm white level in the middle, mixed with the cool RGB white
-  daylight_cool_r: "255"        # RGB colour at the middle of the period (start value, tune by eye: the lamp's blue LED is strong, so it is warmer than 6500 K on paper)
-  daylight_cool_g: "225"
-  daylight_cool_b: "150"
+  daylight_warm_k: "2700"       # colour temperature in kelvin at the start and end of the period (2700 is the lowest the lamp can do)
+  daylight_cool_k: "5500"       # colour temperature in the middle of the period (up to 6500)
   daylight_min_brightness: "0.25"   # 0..1 at start and end; the middle is always 1.0
   daylight_step: "60s"          # how often the effect sets the lamp
-  daylight_fade: "5000"         # ms, fade time of each change (a long fade from "off" stays dark for a long time because of gamma)
+  daylight_fade: "5000"         # ms, fade time of each change
 
 light:
   - id: !extend bulb
@@ -40,14 +37,12 @@ light:
               // k: 0 at start/end, 1 in the middle (sine curve)
               const float k = sinf(3.14159265f * (float)(m - s) / (float)(e - s));
               const float minb = ${daylight_min_brightness};
-              const float w = ${daylight_white_edge} + (${daylight_white_mid} - ${daylight_white_edge}) * k;
+              const float kelvin = ${daylight_warm_k} + (${daylight_cool_k} - ${daylight_warm_k}) * k;
               const float br = minb + (1.0f - minb) * k;
-              ESP_LOGD("daylight", "k %.2f: rgb share %.2f, white %.2f, brightness %.2f", k, k, w, br);
+              ESP_LOGD("daylight", "k %.2f: %.0f K, brightness %.2f", k, kelvin, br);
               auto call = id(bulb).turn_on();
-              call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
-              call.set_rgb(${daylight_cool_r} / 255.0f, ${daylight_cool_g} / 255.0f, ${daylight_cool_b} / 255.0f);
-              call.set_color_brightness(k);
-              call.set_white(w);
+              call.set_color_mode(esphome::light::ColorMode::COLOR_TEMPERATURE);
+              call.set_color_temperature(1000000.0f / kelvin);
               call.set_brightness(br);
               call.set_transition_length(${daylight_fade});
               call.set_publish(false);

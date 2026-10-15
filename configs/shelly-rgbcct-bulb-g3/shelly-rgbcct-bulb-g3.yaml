@@ -1,6 +1,8 @@
 # Shelly Multicolor Bulb E27 Gen3 (ESP32-C3). Runs on a real bulb (owner report 2026-10-11): OUT1 blue, OUT2 red, OUT3 green,
-# OUT4 warm white (fixed colour temperature). Brightness and colour accuracy are not measured.
+# OUT4 warm white. Brightness and colour accuracy are not measured.
 # LED driver: KP18068 on SDA = GPIO4, SCL = GPIO5. See README.md in this folder.
+# The light behaves like the stock firmware: an RGB mode and a colour temperature mode (2700-6500 K) that are exclusive, linear brightness (gamma 1.0),
+# 3 s default fade. The colour temperature and the RGB white balance come from the stock firmware (README.md, "Light"). NEW, UNTESTED on the bulb.
 # Copy secrets.yaml.example to secrets.yaml and fill it in.
 
 substitutions:
@@ -46,9 +48,12 @@ ota:
 
 # The KP18068 LED driver. The component (https://github.com/oxynatOr/esphome-kp18058) bit-bangs the two pins (no i2c: block, GPIO4/5 belong to it).
 # Values as the Shelly firmware sends them: RGB current code 5 (= 9 mA), white current code 11 (= 27.5 mA), analog dimming, 4 kHz.
+#   kp18058 = the driver, rgbw_ct_table = the light with the colour temperature table (both from that repository).
+#   rgbw_ct_table must be on the branch below; pin a commit (@<commit>) once you have a build you want to keep.
 external_components:
-  - source: github://oxynatOr/esphome-kp18058@2e6d1beb956f16c679a617f33a24e5bbd57b5c03   # pinned commit; for local work: type: local, path: <your clone>/components
-    components: [kp18058]
+  - source: github://oxynatOr/esphome-kp18058@main
+    components: [kp18058, rgbw_ct_table]
+  # for local work: source: {type: local, path: <your clone>/components}
 
 kp18058:
   id: led_driver
@@ -61,7 +66,7 @@ kp18058:
 
 # Channel order from the Shelly firmware: OUT1 = blue, OUT2 = red, OUT3 = green. OUT4 and OUT5 always get the same value
 # (one white level). Tested on the bulb (owner, 2026-10-11): OUT1 blue, OUT2 red, OUT3 green, OUT4 warm (yellowish) white, OUT5 lights nothing
-# on its own. The white has a fixed colour temperature (no Kelvin control).
+# on its own. There is only this one warm white LED; the stock firmware makes other colour temperatures by mixing red, green and blue into it.
 output:
   - {platform: kp18058, id: out_b, channel: 1}
   - {platform: kp18058, id: out_r, channel: 2}
@@ -75,17 +80,38 @@ output:
       - output.set_level: {id: out_w4, level: !lambda "return state;"}
       - output.set_level: {id: out_w5, level: !lambda "return state;"}
 
-# Time from Home Assistant; used by the optional packages daylight.yaml, daylight_sun.yaml and wakeup.yaml.
+# Time from Home Assistant; used by the optional packages daylight.yaml, daylight_sun.yaml, night.yaml and wakeup.yaml.
 time:
   - platform: homeassistant
     id: ha_time
 
+# Two exclusive modes, like the Color and White tabs of the stock web UI:
+#  - RGB: the three colour outputs, white off, each colour scaled by a white-balance factor (stock: red 0.856, green 0.701, blue 0.749).
+#  - Colour temperature 2700-6500 K: red, green, blue and white from the stock calibration table (10-bit levels as the stock firmware sends them,
+#    interpolated between the rows; the gains above are not applied here). 2700 K is the white LED alone, 6500 K is mostly green and blue.
+# Brightness is linear in the stock firmware, so gamma_correct is 1.0 here (the ESPHome default 2.8 would make the lowest steps much darker).
+# Stock default fade (transition_duration) is 3 s.
 light:
-  - platform: rgbw
+  - platform: rgbw_ct_table
     id: bulb
     name: "Light"
     red: out_r
     green: out_g
     blue: out_b
     white: out_white
-    color_interlock: false   # RGB and the warm white may be on together (daylight.yaml mixes them)
+    gamma_correct: 1.0
+    default_transition_length: 3s
+    red_gain: 0.856
+    green_gain: 0.701
+    blue_gain: 0.749
+    table_max: 1023
+    color_temperature_table:
+      - {kelvin: 2700, red: 0,   green: 0,   blue: 0,   white: 1023}
+      - {kelvin: 3000, red: 325, green: 314, blue: 86,  white: 635}
+      - {kelvin: 3500, red: 314, green: 373, blue: 112, white: 483}
+      - {kelvin: 4000, red: 361, green: 511, blue: 182, white: 451}
+      - {kelvin: 4500, red: 100, green: 600, blue: 220, white: 494}
+      - {kelvin: 5000, red: 17,  green: 650, blue: 240, white: 490}
+      - {kelvin: 5700, red: 0,   green: 662, blue: 267, white: 441}
+      - {kelvin: 6000, red: 0,   green: 659, blue: 325, white: 426}
+      - {kelvin: 6500, red: 0,   green: 659, blue: 366, white: 425}

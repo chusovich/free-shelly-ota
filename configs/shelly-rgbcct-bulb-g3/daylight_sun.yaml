@@ -2,11 +2,11 @@
 # Add to shelly-rgbcct-bulb-g3.yaml (can be used together with daylight.yaml, which keeps the fixed times):
 #   packages:
 #     daylight_sun: !include daylight_sun.yaml
-# Needs the "bulb" light (id), color_interlock: false and the time component "ha_time" (platform homeassistant) in the main file.
+# Needs the light "bulb" (platform rgbw_ct_table) and the time component "ha_time" (platform homeassistant) in the main file.
 # SET YOUR OWN COORDINATES below (daylight_lat / daylight_lon). The placeholders are only roughly the middle of Germany.
 # The effect uses the sun's height above the horizon: warm and dim at the horizon, bright and cool at daylight_peak_elev degrees
 # and higher. Below daylight_start_elev (a bit under the horizon, about the end of the evening twilight) nothing is changed.
-# Colours and levels are the same variables as in daylight.yaml (daylight_cool_*, daylight_white_*, daylight_min_brightness, daylight_fade).
+# Levels are the same variables as in daylight.yaml (daylight_warm_k, daylight_cool_k, daylight_min_brightness, daylight_fade).
 # If you use this file alone, the defaults below apply; with daylight.yaml in the same config, set them once in your own substitutions.
 
 substitutions:
@@ -14,11 +14,8 @@ substitutions:
   daylight_lon: "9.0"            # degrees east, CHANGE THIS
   daylight_start_elev: "-4"      # degrees: the effect starts here (dim, warm)
   daylight_peak_elev: "40"       # degrees: full brightness and the coolest colour from here upwards
-  daylight_white_edge: "1.0"
-  daylight_white_mid: "0.6"
-  daylight_cool_r: "255"
-  daylight_cool_g: "225"
-  daylight_cool_b: "150"
+  daylight_warm_k: "2700"
+  daylight_cool_k: "5500"
   daylight_min_brightness: "0.25"
   daylight_step: "60s"
   daylight_fade: "5000"
@@ -45,14 +42,12 @@ light:
               if (x > 1.0f) x = 1.0f;
               const float k = x * x * (3.0f - 2.0f * x);
               const float minb = ${daylight_min_brightness};
-              const float w = ${daylight_white_edge} + (${daylight_white_mid} - ${daylight_white_edge}) * k;
+              const float kelvin = ${daylight_warm_k} + (${daylight_cool_k} - ${daylight_warm_k}) * k;
               const float br = minb + (1.0f - minb) * k;
-              ESP_LOGD("daylight_sun", "elevation %.1f: rgb share %.2f, white %.2f, brightness %.2f", elev, k, w, br);
+              ESP_LOGD("daylight_sun", "elevation %.1f: %.0f K, brightness %.2f", elev, kelvin, br);
               auto call = id(bulb).turn_on();
-              call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
-              call.set_rgb(${daylight_cool_r} / 255.0f, ${daylight_cool_g} / 255.0f, ${daylight_cool_b} / 255.0f);
-              call.set_color_brightness(k);
-              call.set_white(w);
+              call.set_color_mode(esphome::light::ColorMode::COLOR_TEMPERATURE);
+              call.set_color_temperature(1000000.0f / kelvin);
               call.set_brightness(br);
               call.set_transition_length(${daylight_fade});
               call.set_publish(false);
