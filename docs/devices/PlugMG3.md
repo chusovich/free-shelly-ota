@@ -107,7 +107,7 @@ In the `--watch` log look for these lines, in this order:
 
 | # | Log line | Meaning |
 | --- | --- | --- |
-| 1 | `Update target slot: 0 ...` | The slot check of `send`. Anything else: run `python ota.py restore PlugMG3` first |
+| 1 | `Update target slot: 0 ...` | The slot check of `send`. Anything else: run `python ota.py restore PlugMG3` first. On stock 1.8.99 you get a warning instead ([why](#notes-for-this-device)) |
 | 2 | `Boot: cur ... min ... update? 1` | The installer will write ESPHome's bootloader. `update? 0` means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
 | 3 | `ota_progress` up to 95 %, then `ota_success` | The device restarts into ESPHome |
 
@@ -117,6 +117,9 @@ In the `--watch` log look for these lines, in this order:
 
 ## Notes for this device
 
+- On stock 1.8.99 the slot check of `send` cannot run: the device logs `Storing core dumps to scratch (0x720000)` instead of `app_N`,
+  so `send` warns that the firmware does not reveal the update target slot and goes on. The installer wrote to the slot the stock
+  firmware was not running from (device on slot 1, `Will write to slot 0`); look for that line with `--watch`.
 - On this model ESPHome came up after a power-off of about 30 seconds; whether it would also have started without it was not tested.
 - Without `--esphome-factory` ESPHome still boots, but later ESPHome OTAs only take effect after Shelly's attempt counter runs out
   ([details](../bootloader-and-slots.md#without-esphomes-bootloader-plain-package)).

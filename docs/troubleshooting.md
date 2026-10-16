@@ -10,6 +10,14 @@ Device-specific problems are on the [device pages](devices); the slot and bootlo
 See [The app must land in slot 0](bootloader-and-slots.md#the-app-must-land-in-slot-0). Run `python ota.py restore <Device>`
 first, then `send` again.
 
+## `send` warns: this firmware does not reveal the update target slot
+
+The debug log works, but the line `Storing core dumps to ...` names something other than `app_N` (the Plug M Gen3 on stock
+1.8.99 logs `scratch`), so the slot check has nothing to read and cannot refuse in advance. This is not a firewall problem.
+Send with `--watch` and look for `Will write to slot N`: 0 is right; 1 means the old app starts again, see
+[The app must land in slot 0](bootloader-and-slots.md#the-app-must-land-in-slot-0). The other warning, `the update target slot
+could not be read (UDP log blocked? ...)`, means no such line arrived at all: see [Empty `--watch` log](#empty---watch-log).
+
 ## Build refuses to replace the bootloader
 
 `build` stops with "differs from Shelly's in ...": the ESPHome bootloader's header must match the one in the official package

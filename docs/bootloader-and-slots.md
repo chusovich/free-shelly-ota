@@ -63,6 +63,12 @@ first (briefly switching on the UDP log, so allow UDP port 9514) and **refuses t
 `ota.py restore <Device>` first. `--ignore-slot` sends anyway. The `slot=` value in the first output line is not a reliable
 predictor, so the check uses the log line.
 
+Not every firmware prints an app slot there. The Plug M Gen3 on stock 1.8.99 logs `Storing core dumps to scratch (0x720000)`,
+which names no slot. `send` then prints `this firmware does not reveal the update target slot before the update` and goes on
+(it does not refuse, and it does not blame the firewall: the log did arrive). With `--watch`, look for `Will write to slot N`
+yourself. That device ran from slot 1 and the installer wrote to slot 0, as the rule above says; with N = 1 the old app starts
+again and the cure below applies.
+
 Then the cure is: `python ota.py restore <Device>` (official firmware, Shelly's bootloader back), then `send` again; the
 target is then slot 0. The Plus Plug S went through exactly this ([page](devices/PlusPlugS.md)).
 

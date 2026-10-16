@@ -18,7 +18,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path
-from typing import Callable
+from typing import Callable, NamedTuple
 
 from . import buildinfo, firmware, logwatch, rpc, secrets_check, ui
 from .builder import OtaError, read_official_manifest
@@ -106,23 +106,35 @@ class FileServer:
 # The updater logs the slot it will write to as soon as the debug log is switched on, e.g.
 # "shos_ota_esp32_back:949 Storing core dumps to app_1 (0x200000)". In six runs (H&T, Power Strip, Plus Plug S x4) it matched the
 # later "Will write to slot 1" line. That is the slot the stock firmware is NOT running from.
-TARGET_SLOT_RE = re.compile(r"Storing core dumps to app_(\d)\b")
+# Not every firmware names an app slot there: the Plug M Gen3 on stock 1.8.99 logs "Storing core dumps to scratch (0x720000)"
+# and still wrote to slot 0 (running from slot 1). Such a line arrives, but it does not reveal the slot.
+CORE_DUMP_RE = re.compile(r"Storing core dumps to (\w+)")
+APP_SLOT_RE = re.compile(r"app_(\d)")
 
 
-def probe_target_slot(addr: str, host: str, log_port: int, *, wait: float = 4.0, **auth) -> int | None:
-    """Ask the device which slot its updater would write to, without updating. None if no answer arrived."""
-    found: list[int] = []
+class SlotProbe(NamedTuple):
+    slot: int | None               # the slot the updater will write to; None if the log does not name one
+    core_dump_target: str | None   # what the "Storing core dumps to ..." line named ("app_1", "scratch"); None: no such line
+
+
+def probe_target_slot(addr: str, host: str, log_port: int, *, wait: float = 4.0, **auth) -> SlotProbe:
+    """Ask the device which slot its updater would write to, without updating.
+
+    SlotProbe(None, None) if no matching log line arrived (log blocked, or an old firmware); SlotProbe(None, "scratch")
+    if it arrived but names something other than app_N."""
+    found: list[SlotProbe] = []
 
     def sink(text: str) -> None:
-        m = TARGET_SLOT_RE.search(text)
-        if m:
-            found.append(int(m.group(1)))
+        m = CORE_DUMP_RE.search(text)
+        if m and not found:
+            app = APP_SLOT_RE.fullmatch(m.group(1))
+            found.append(SlotProbe(int(app.group(1)) if app else None, m.group(1)))
 
     with logwatch.udp_log(addr, host, log_port, sink, **auth):
         deadline = time.monotonic() + wait
         while not found and time.monotonic() < deadline:
             time.sleep(0.1)
-    return found[0] if found else None
+    return found[0] if found else SlotProbe(None, None)
 
 
 # What a device answers when its RPC HTTP.GET cannot connect (seen in a device report: "Connection error: -13").
@@ -229,12 +241,19 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
                 "bring it back. Do not interrupt the power during the update.")
             out("NOTE: ESPHome's bootloader starts app_0 (the installer overwrites otadata), so the installer must write "
                 "to slot 0; otherwise the old app in app_0 starts instead (seen on the Power Strip Gen4 and the Plus Plug S).")
-            target = None
+            probe = SlotProbe(None, None)
             try:
-                target = probe_target_slot(addr, host, log_port, wait=probe_wait, **auth)
+                probe = probe_target_slot(addr, host, log_port, wait=probe_wait, **auth)
             except OtaError as e:
                 out(f"NOTE: could not ask the device for its update target slot ({e}).")
-            if target is None:
+            target = probe.slot
+            if target is None and probe.core_dump_target:
+                # The log works, this firmware just does not say: do not send the user to the firewall.
+                out("WARNING: this firmware does not reveal the update target slot before the update (its log says "
+                    f"'Storing core dumps to {probe.core_dump_target}', not app_N), so the slot could not be checked. "
+                    "If the installer writes to slot 1, the old app starts instead.\n"
+                    "         With --watch the log line 'Will write to slot N' shows which slot it uses.")
+            elif target is None:
                 out("WARNING: the update target slot could not be read (UDP log blocked? allow UDP port "
                     f"{log_port} in the firewall). If the installer writes to slot 1, the old app starts instead.")
             elif target == 0:
