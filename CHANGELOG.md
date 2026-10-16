@@ -14,14 +14,14 @@ All notable changes to this project are documented here. The format follows
 - `fetch` and `build --download` take `--channel beta` to download the beta release from the update API (`stable` stays the default). A non-stable channel always asks the API unless `--version` is given.
 
 ### Changed
-- All device pages (16 profiles on 15 pages, the Mini 1PM Gen4 page covers two) have a new layout: badges for state and chip, quick links with icons, a `Fact | Value` table
+- All device pages (17 profiles on 16 pages, the Mini 1PM Gen4 page covers two) have a new layout: badges for state and chip, quick links with icons, a `Fact | Value` table
   (the state and the chip are only in the badges), a "Before you start" checklist, callouts (NOTE for what was confirmed or checked, IMPORTANT for the partition table,
   TIP to start from the ESPHome device page, WARNING for the way back, TIP to send a device report), "Flash it" as numbered steps and the log lines of "What to expect" as
   a table. The device-specific text (config, pins, notes, way back) is the same; two lines moved: the first sentence of the intro on untested pages ("Not tested on
   hardware") is now the badge, and the links to the device database in the pin sources are plain text, because the link is in the table. `docs/devices/README.md`
   describes the layout.
-- Device pages link the ESPHome device page where one exists: Plug S Gen3, H&T Gen3, The Pill, Plus Plug S, Power Strip 4 Gen4, PM Mini Gen3 and Mini 1PM Gen3 (the database calls it
-  "Shelly 1PM Mini Gen3"). The Plug M Gen3, Plug PM Gen3, Duo Bulb Gen3, Multicolor Bulb, Mini 1PM Gen4, Plus Uni and Pro 3EM have none (sitemap checked 2026-10-16).
+- Device pages link the ESPHome device page where one exists: Plug S Gen3, H&T Gen3, The Pill, Plus Plug S, Power Strip 4 Gen4, PM Mini Gen3, Mini 1PM Gen3 (the database calls it
+  "Shelly 1PM Mini Gen3") and Mini 1 Gen3 ("Shelly 1 Mini Gen3"). The Plug M Gen3, Plug PM Gen3, Duo Bulb Gen3, Multicolor Bulb, Mini 1PM Gen4, Plus Uni and Pro 3EM have none (sitemap checked 2026-10-16).
 - `tests/test_readme.py` also checks the device pages: the standard sections in order, the state badge against the README, the profile in the commands, and all
   relative links and anchors.
 - README reworked. The device table has a `Note` column (the `State` column holds only the symbol) and a third state, 🟡 = flashed on a real device, but part of the chain
@@ -85,6 +85,7 @@ All notable changes to this project are documented here. The format follows
   and device pages. The Pro 3EM has 16 MB flash (app slot `0x200000`, extra `emdata` partition), the Plus Uni 4 MB (`0x190000`). Both set
   `boot_min_version: 1.0.9` (the packages carry loader 1.0.2; the loader of a real unit has not been seen). Packages build and verify; not tested on
   hardware. No pin tables: the ESPHome device database has no page for either device. `Pro3EMProAddon` (Pro 3EM with Pro Sensor Addon) has no profile.
+- Profile `Mini1G3` (Shelly Mini 1 Gen3, the Mini 1PM Gen3 without the power meter; partition table at `0xf000`, `boot_min_version: 1.0.9`) with partition CSV and a device page. Package builds and verifies; not tested on hardware.
 - Profile `PlugPMG3` (Shelly Plug PM Gen3, S3PL-30116EU; it only measures, there is no relay) with its partition CSV, generated from the official
   2.0.1 package (app slots `0x280000`, smaller than the Plug M / Plug S). The profile sets `boot_min_version: 1.0.9`: the device runs Shelly OS
   loader 1.0.3, so the default 1.0.3 was skipped and later ESPHome OTAs did not take effect. The hardware result of the package route is not
