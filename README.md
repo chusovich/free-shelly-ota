@@ -42,7 +42,7 @@ flowchart LR
 
 ## Supported devices
 
-**16 profiles:** ✅ 6 confirmed · 🟡 3 partly checked · 🧪 7 untested
+**17 profiles:** ✅ 6 confirmed · 🟡 3 partly checked · 🧪 8 untested
 
 Click the profile for the device page: ESPHome config, the exact commands and what to expect.
 
@@ -59,6 +59,7 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | Power Strip 4 Gen4 (Zigbee) | [`PowerStripZB`](docs/devices/PowerStripZB.md) | ESP32&#8209;C6 | 🧪 | |
 | Plus Plug S (V2 hardware, Gen2) | [`PlusPlugS`](docs/devices/PlusPlugS.md) | ESP32 | ✅ | Flashed without UART |
 | The Pill | [`Pill`](docs/devices/Pill.md) | ESP32&#8209;C3 | 🧪 | |
+| Mini 1 Gen3 | [`Mini1G3`](docs/devices/Mini1G3.md) | ESP32&#8209;C3 | 🧪 | |
 | Mini 1PM Gen3 | [`Mini1PMG3`](docs/devices/Mini1PMG3.md) | ESP32&#8209;C3 | 🧪 | |
 | Mini 1PM Gen4 | [`Mini1PMG4`](docs/devices/Mini1PMG4.md) | ESP32&#8209;C6 | 🧪 | |
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](docs/devices/Mini1PMG4.md#zigbee-variant) | ESP32&#8209;C6 | 🧪 | |

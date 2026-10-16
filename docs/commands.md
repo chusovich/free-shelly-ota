@@ -25,7 +25,8 @@ python ota.py send  PlugMG3 out/<file>.zip --watch 60   # 3. send it to the devi
 | Tools | `clean` | Delete old ZIPs in `out/` (needs `--yes`) |
 | Tools | `colors` | Show every message color once and say whether colors are on |
 
-`python ota.py <command> -h` shows the options of any command; `python ota.py --version` the tool version
+`python ota.py -h` lists the commands in the groups of this table, a typical run and what to know before you flash;
+`python ota.py <command> -h` shows the options of one command, grouped by topic; `python ota.py --version` the tool version
 ([Versions](versions.md)).
 
 ## Colors

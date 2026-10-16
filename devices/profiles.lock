@@ -7,6 +7,10 @@
     "revision": 2,
     "hash": "fa7fee3e6280"
   },
+  "Mini1G3": {
+    "revision": 1,
+    "hash": "8405a6eb0a5e"
+  },
   "Mini1PMG3": {
     "revision": 2,
     "hash": "04e6f6e42ba7"
@@ -36,8 +40,8 @@
     "hash": "367eeacbe6e6"
   },
   "PlugSG3": {
-    "revision": 1,
-    "hash": "0288ea47f16b"
+    "revision": 2,
+    "hash": "7d2bdda62aa5"
   },
   "PlusPlugS": {
     "revision": 1,

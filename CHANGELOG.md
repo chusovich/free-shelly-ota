@@ -21,13 +21,14 @@ All notable changes to this project are documented here. The format follows
 - H&T Gen3 page: Shelly's update API lists only the beta `2.2.0-beta1` for this device (the 2.0.1 release is no longer served). The page fetches it with `--channel beta`, builds
   with `--version 2.2.0-beta1`, and says that the beta has the same partition table and bootloader header as 2.0.1 but was not flashed with this tool.
 - All device pages (16 profiles on 15 pages, the Mini 1PM Gen4 page covers two) have a new layout: badges for state and chip, quick links with icons, a `Fact | Value` table
+- All device pages (17 profiles on 16 pages, the Mini 1PM Gen4 page covers two) have a new layout: badges for state and chip, quick links with icons, a `Fact | Value` table
   (the state and the chip are only in the badges), a "Before you start" checklist, callouts (NOTE for what was confirmed or checked, IMPORTANT for the partition table,
   TIP to start from the ESPHome device page, WARNING for the way back, TIP to send a device report), "Flash it" as numbered steps and the log lines of "What to expect" as
   a table. The device-specific text (config, pins, notes, way back) is the same; two lines moved: the first sentence of the intro on untested pages ("Not tested on
   hardware") is now the badge, and the links to the device database in the pin sources are plain text, because the link is in the table. `docs/devices/README.md`
   describes the layout.
-- Device pages link the ESPHome device page where one exists: Plug S Gen3, H&T Gen3, The Pill, Plus Plug S, Power Strip 4 Gen4, PM Mini Gen3 and Mini 1PM Gen3 (the database calls it
-  "Shelly 1PM Mini Gen3"). The Plug M Gen3, Plug PM Gen3, Duo Bulb Gen3, Multicolor Bulb, Mini 1PM Gen4, Plus Uni and Pro 3EM have none (sitemap checked 2026-10-16).
+- Device pages link the ESPHome device page where one exists: Plug S Gen3, H&T Gen3, The Pill, Plus Plug S, Power Strip 4 Gen4, PM Mini Gen3, Mini 1PM Gen3 (the database calls it
+  "Shelly 1PM Mini Gen3") and Mini 1 Gen3 ("Shelly 1 Mini Gen3"). The Plug M Gen3, Plug PM Gen3, Duo Bulb Gen3, Multicolor Bulb, Mini 1PM Gen4, Plus Uni and Pro 3EM have none (sitemap checked 2026-10-16).
 - `tests/test_readme.py` also checks the device pages: the standard sections in order, the state badge against the README, the profile in the commands, and all
   relative links and anchors.
 - README reworked. The device table has a `Note` column (the `State` column holds only the symbol) and a third state, 🟡 = flashed on a real device, but part of the chain
@@ -39,10 +40,18 @@ All notable changes to this project are documented here. The format follows
   A summary line above the device table counts the states. The header has the logo (`docs/assets/logo.png`) in front of the title, the tagline below, then
   the badges and a row of links to the main sections; the badges are status, version, issues and license in a flat style (stars and forks removed, `WIP` in the title replaced
   by the status badge).
+- `ota.py -h` and the help of every command are easier to scan. The top-level help lists the commands in the groups of `docs/commands.md` (Prepare, Build, Deploy,
+  Tools), a typical run, what to know before flashing and the device names once. Each command has a short usage line, and its options are grouped by topic (`send`:
+  the Shelly, this PC, what to do; `build`: app and bootloader, secrets, output, parts, base firmware). Long option texts are shorter and point to
+  `docs/commands.md`. Options, defaults and behaviour are unchanged; `--color` shows `WHEN` in the usage. `tests/test_help.py` checks that every command is in a group, has a
+  working `-h` and that no help line is wider than the terminal.
 - Multicolor Bulb E27 Gen3 example config (`configs/shelly-rgbcct-bulb-g3/`): the light is now `rgbw_ct_table` (component of `oxynatOr/esphome-kp18058`) instead of `rgbw`: an RGB mode and a
   colour temperature mode 2700-6500 K (exclusive, like the stock web UI) with the stock firmware's 9-point table and RGB white balance (red 0.856, green 0.701, blue 0.749), linear brightness
   (`gamma_correct: 1.0`) and a 3 s default fade, all read from the 2.0.1 firmware. The packages daylight, daylight_sun, scenes, night, night_sun and wakeup use colour temperature instead of
   mixing RGB with the white (the white-mixing modes are gone); dimrange is only needed with gamma 2.8. The YAML pulls the component from `oxynatOr/esphome-kp18058@main`, where `rgbw_ct_table` has been published since 2026-10-15. Flashed on the bulb, it runs (owner, 2026-10-16); the colours were not compared with the stock firmware.
+- Profile `PlugSG3` (revision 2): `boot_min_version: 1.0.9`. The Plug S Gen3 package carries the same bootloader as the Plug M Gen3 package (byte-identical, loader 1.0.3),
+  so a plug that already runs it would skip the default 1.0.3 and silently keep Shelly's bootloader. The earlier run used the default on a plug with loader 1.0.2; the new
+  value is not run on a Plug S Gen3 yet.
 - Plug PM Gen3: flashed over OTA with this tool on a real plug (owner report, 2026-10-12). The device page, `docs/devices/README.md` and the README row go from 🧪 to ✅
   with "readings not checked"; the log lines (`Boot: cur ... update?`) and the BL0942 readings are not recorded yet.
 - Profile `PlugMG3` (revision 2): `boot_min_version: 1.0.9`. The official package carries Shelly OS loader 1.0.3, so a Plug M restored from it
@@ -66,6 +75,9 @@ All notable changes to this project are documented here. The format follows
 - Without `--version`, `build`, `send`, `restore`, `fetch` and `partition-csv` took the highest cached version, and a downloaded pre-release such as `2.2.0-beta1`
   sorted above the stable `2.0.1`, so the beta would have been used silently. The default is now the newest stable cached version; a pre-release needs
   `--version`, or is used only when it is all that is cached.
+- `send` read the package's `compatible` value as one pattern, so a comma separated list never matched. The Pro 3EM package says
+  `Pro3EM,Pro3EMProAddon`, and a unit that reports `Pro3EMProAddon` stopped at the model check. The value is split at the commas now and every pattern is
+  tried; such a unit gets the note "matches the package's compatible pattern" and goes on. No separate `Pro3EMProAddon` profile (not needed for this).
 
 ### Removed
 - Profile `Cury` (Shelly Cury), its partition CSV and device page (added in 0.3.1): the device has an NFC reader, regulated heaters and a
@@ -80,6 +92,7 @@ All notable changes to this project are documented here. The format follows
   and device pages. The Pro 3EM has 16 MB flash (app slot `0x200000`, extra `emdata` partition), the Plus Uni 4 MB (`0x190000`). Both set
   `boot_min_version: 1.0.9` (the packages carry loader 1.0.2; the loader of a real unit has not been seen). Packages build and verify; not tested on
   hardware. No pin tables: the ESPHome device database has no page for either device. `Pro3EMProAddon` (Pro 3EM with Pro Sensor Addon) has no profile.
+- Profile `Mini1G3` (Shelly Mini 1 Gen3, the Mini 1PM Gen3 without the power meter; partition table at `0xf000`, `boot_min_version: 1.0.9`) with partition CSV and a device page. Package builds and verifies; not tested on hardware.
 - Profile `PlugPMG3` (Shelly Plug PM Gen3, S3PL-30116EU; it only measures, there is no relay) with its partition CSV, generated from the official
   2.0.1 package (app slots `0x280000`, smaller than the Plug M / Plug S). The profile sets `boot_min_version: 1.0.9`: the device runs Shelly OS
   loader 1.0.3, so the default 1.0.3 was skipped and later ESPHome OTAs did not take effect. The hardware result of the package route is not

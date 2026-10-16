@@ -159,6 +159,19 @@ class VariantTests(unittest.TestCase):
         with self.assertRaises(builder.OtaError):
             self._send_dry("PlugMG3", "PowerStrip")
 
+    def test_compatible_value_is_a_comma_separated_list_of_patterns(self):
+        match = sender.matches_compatible
+        self.assertTrue(match("Pro3EMProAddon", "Pro3EM,Pro3EMProAddon"))
+        self.assertTrue(match("Pro3EM", "Pro3EM, Pro3EMProAddon"))
+        self.assertTrue(match("PowerStripZB", "PowerStrip*"))
+        self.assertFalse(match("PlugMG3", "Pro3EM,Pro3EMProAddon"))
+        self.assertFalse(match("Pro3EM", None))
+        self.assertFalse(match("Pro3EM", ""))
+
+    def test_device_named_in_a_compatible_list_is_accepted(self):
+        lines = self._send_dry("Pro3EMProAddon", "Pro3EM")   # the Pro3EM package says "Pro3EM,Pro3EMProAddon"
+        self.assertTrue(any("compatible pattern" in l for l in lines), lines)
+
     def test_alt_missing_in_reply_is_an_error(self):
         orig = firmware.query_update_api
         firmware.query_update_api = lambda uid, insecure=False: {"stable": {"url": "https://x/y"}, "alt": {}}

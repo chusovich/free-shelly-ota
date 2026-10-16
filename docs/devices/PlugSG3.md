@@ -125,8 +125,10 @@ In the `--watch` log look for these lines, in this order:
 
 ## Notes for this device
 
-- The profile uses the default `boot_min_version` (one patch level above the official loader, 1.0.2 to 1.0.3). If your log says
-  `update? 0`, use `--boot-min-version 1.0.9`.
+- The profile sets `boot_min_version: 1.0.9`. The official 2.0.1 package carries the same bootloader as the Plug M Gen3 package (the files are
+  byte-identical), which reports Shelly OS loader 1.0.3 once installed. A plug that already runs it (restored from the package, or shipped with it)
+  would skip the default 1.0.3, and later ESPHome OTAs would not take effect. The run on a real Plug S Gen3 used the default and the plug had loader 1.0.2;
+  the change is not run on a Plug S Gen3 yet. Check the `--watch` log for `Boot: cur ... update? 1`.
 
 ## Way back
 

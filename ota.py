@@ -10,31 +10,65 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
+import textwrap
 from pathlib import Path
 
 from shelly_ota import (MODULE_DIR, buildinfo, builder, devicegen, firmware, lint, logwatch, profile, secrets_check,
                         sender, ui)
 
-EPILOG = """\
-examples:
-  python ota.py list
-  python ota.py build PlugMG3 app.bin
-  python ota.py build PlugMG3 app.bin --tag v2 --drop nvs
-  python ota.py build PlugMG3 firmware.ota.bin --esphome-factory firmware.factory.bin   # recommended first install
-  python ota.py send PlugMG3 out/PlugMG3-app-20261004.zip --watch 60
-  python ota.py inspect out/PlugMG3-app-20261004.zip
+DESCRIPTION = ("Pack your ESPHome app image into an official-style Shelly OTA ZIP (Gen2 ESP32, Gen3 ESP32-C3, Gen4 ESP32-C6) "
+               "and send it to the device.")
 
-A built package contains your Wi-Fi/API credentials in plain text if the config has them. build compares the image with
---esphome-yaml/secrets.yaml and warns (--fail-on-secrets stops); never share such a ZIP.
-Applying a built ZIP wipes NVS (Wi-Fi, settings) unless you --drop nvs.
-Bootloader: by default Shelly's bootloader stays. --esphome-factory swaps in ESPHome's (and a clean otadata) so later
-ESPHome OTAs work. It worked on the devices marked as confirmed in the README; if it does not suit a device only UART can
-recover it. The installer must also write the app to slot 0: send checks the target slot first and tells you to run
-restore (the official firmware) before sending again if it would write to slot 1.
-restore only works while the Shelly firmware still runs; a device already on ESPHome needs UART.
-Details per command: python ota.py <command> -h
-"""
+# One list for the command groups: it feeds `ota.py -h` and the sub-commands, and a test checks that no command is missing.
+COMMANDS = [
+    ("Prepare", [
+        ("fetch", "get the official firmware ZIP (downloads if missing)"),
+        ("add-device", "create a device profile from an official ZIP"),
+        ("partition-csv", "write the stock partition table as ESPHome partitions CSV"),
+    ]),
+    ("Build", [
+        ("build", "build an OTA ZIP from your app image"),
+    ]),
+    ("Deploy", [
+        ("send", "send a ZIP to a Shelly (it downloads from this PC)"),
+        ("restore", "send the cached official firmware back to a Shelly"),
+        ("log", "show the live debug log of a Shelly"),
+    ]),
+    ("Tools", [
+        ("inspect", "show and verify an OTA ZIP"),
+        ("list", "show devices and cached firmware"),
+        ("profiles", "list the device profiles with their revision, check devices/profiles.lock"),
+        ("clean", "delete old ZIPs in out/ (shows what, needs --yes)"),
+        ("colors", "show every message color once, and whether colors are on"),
+    ]),
+]
+COMMAND_HELP = {name: text for _, items in COMMANDS for name, text in items}
+
+TOP_OPTIONS = [
+    ("-h, --help", "show this help"),
+    ("--version", "show the version (in a git checkout also branch, commit and date)"),
+    ("--color WHEN", "colored messages: auto (default: only in a terminal, not with NO_COLOR), always or never; "
+                     "goes before the command"),
+]
+TYPICAL_RUN = [
+    "python ota.py fetch PlugMG3 --insecure",
+    "python ota.py build PlugMG3 app.ota.bin --esphome-factory app.factory.bin --esphome-yaml app.yaml",
+    "python ota.py send PlugMG3 out/PlugMG3-app-<date>.zip --ip <device IP> --watch 120",
+]
+BEFORE_YOU_FLASH = [
+    "A built ZIP can hold your Wi-Fi/API secrets: never share it (build warns; --fail-on-secrets stops).",
+    "Applying it wipes NVS (Wi-Fi, settings) unless you --drop nvs.",
+    "--esphome-factory replaces Shelly's bootloader. If that does not suit a device, only UART recovers it: keep UART ready.",
+    "The installer must write the app to slot 0: send reads the target slot first and tells you to run restore "
+    "if it would write to slot 1.",
+    "restore works only while Shelly firmware still runs.",
+]
+RESTORE_HELP = ("note: restore works only while Shelly firmware still runs; a device that already runs\n"
+                "ESPHome does not answer (UART is the way back). The official package may reset NVS and\n"
+                "otadata: Wi-Fi and settings can be lost.")
+PC_GROUP = "this PC"
 
 
 def cmd_list(args) -> None:
@@ -226,25 +260,29 @@ def cmd_inspect(args) -> None:
 def device_options() -> argparse.ArgumentParser:
     """Options shared by every command that talks to a Shelly."""
     o = argparse.ArgumentParser(add_help=False)
-    o.add_argument("--ip", default=sender.DEFAULT_IP, metavar="IP", help="Shelly address (default: %(default)s)")
-    o.add_argument("--user", default="admin", help="login, if the device has a password (default: %(default)s)")
-    o.add_argument("--password", metavar="PW", help="device password")
-    o.add_argument("--host", metavar="IP", help="this PC's address as seen by the Shelly (default: auto)")
-    o.add_argument("--log-port", type=int, default=9514, metavar="PORT", help="UDP port for the log (default: %(default)s)")
+    g = o.add_argument_group("the Shelly")
+    g.add_argument("--ip", default=sender.DEFAULT_IP, metavar="IP", help="Shelly address (default: %(default)s)")
+    g.add_argument("--user", default="admin", help="login, if the device has a password (default: %(default)s)")
+    g.add_argument("--password", metavar="PW", help="device password")
+    g = o.add_argument_group(PC_GROUP)
+    g.add_argument("--host", metavar="IP", help="this PC's address as seen by the Shelly (default: auto)")
+    g.add_argument("--log-port", type=int, default=9514, metavar="PORT", help="UDP port for the device log (default: %(default)s)")
     return o
 
 
 def send_options() -> argparse.ArgumentParser:
     o = argparse.ArgumentParser(add_help=False)
-    o.add_argument("--yes", action="store_true", help="do not ask before flashing")
-    o.add_argument("--dry-run", action="store_true", help="check the device, send nothing")
-    o.add_argument("--force", action="store_true", help="send even if the device model does not match")
-    o.add_argument("--ignore-slot", action="store_true",
+    g = o.add_argument_group(PC_GROUP)
+    g.add_argument("--port", type=int, default=8000, help="web server port the Shelly downloads from (default: %(default)s)")
+    g = o.add_argument_group("what to do")
+    g.add_argument("--dry-run", action="store_true", help="check the device, send nothing")
+    g.add_argument("--yes", action="store_true", help="do not ask before flashing")
+    g.add_argument("--force", action="store_true", help="send even if the device model does not match")
+    g.add_argument("--ignore-slot", action="store_true",
                    help="send even if the installer would write to a slot that ESPHome's bootloader does not start")
-    o.add_argument("--watch", type=float, default=0, metavar="SEC",
+    g.add_argument("--watch", type=float, default=0, metavar="SEC",
                    help="show the device log, and keep listening SEC seconds after the download")
-    o.add_argument("--port", type=int, default=8000, help="local web server port (default: %(default)s)")
-    o.add_argument("--timeout", type=float, default=300, metavar="SEC", help="wait for the download (default: %(default)s)")
+    g.add_argument("--timeout", type=float, default=300, metavar="SEC", help="wait for the download (default: %(default)s)")
     return o
 
 
@@ -257,81 +295,128 @@ class _VersionAction(argparse.Action):
         parser.exit()
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser(prog="ota.py", description=__doc__, epilog=EPILOG,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+def _width() -> int:
+    return max(60, min(shutil.get_terminal_size((100, 24)).columns - 2, 110))
+
+
+def _rows(rows, indent: int, width: int, first_col: int) -> list[str]:
+    """Two-column rows (name, text) with the text wrapped under itself."""
+    out = []
+    for name, text in rows:
+        wrapped = textwrap.wrap(text, width - indent - first_col) or [""]
+        out.append(f"{' ' * indent}{name:<{first_col}}{wrapped[0]}")
+        out += [" " * (indent + first_col) + w for w in wrapped[1:]]
+    return out
+
+
+def top_help(usage: str, width: int | None = None) -> str:
+    """The help of `ota.py -h`: commands in groups, a typical run and what to know before flashing."""
+    width = width or _width()
+    name_w = max(len(n) for _, items in COMMANDS for n, _ in items) + 3
+    lines = [usage.rstrip(), ""] + textwrap.wrap(DESCRIPTION, width) + ["", "commands:"]
+    for group, items in COMMANDS:
+        lines.append(f"  {group}")
+        lines += _rows(items, 4, width, name_w)
+    lines += ["", "options:"] + _rows(TOP_OPTIONS, 2, width, 16)
+    lines += ["", "typical run:"] + [f"  {c}" for c in TYPICAL_RUN]
+    lines += ["", "before you flash:"]
+    for item in BEFORE_YOU_FLASH:
+        lines += textwrap.wrap(item, width, initial_indent="  - ", subsequent_indent="    ")
+    lines += [""] + textwrap.wrap(", ".join(profile.list_devices()), width, initial_indent="devices: ",
+                                  subsequent_indent="         ")
+    lines += ["         (python ota.py list shows them with the cached firmware)"]
+    lines += ["details: python ota.py <command> -h  (options of one command), docs/commands.md"]
+    return "\n".join(lines) + "\n"
+
+
+class _TopParser(argparse.ArgumentParser):
+    """Parser of `ota.py` itself: only the help text is its own, parsing and errors are argparse's."""
+
+    def format_help(self) -> str:
+        return top_help(self.format_usage())
+
+
+def _epilog(example: str, anchor: str, note: str = "") -> str:
+    text = f"example: python ota.py {example}"
+    if note:
+        text += "\n\n" + note
+    return text + f"\n\ndetails: docs/commands.md#{anchor}"
+
+
+def _command(sub, name: str, *, usage: str | None = None, epilog: str | None = None, parents=()):
+    return sub.add_parser(name, help=COMMAND_HELP[name], description=COMMAND_HELP[name], usage=usage, epilog=epilog,
+                          parents=list(parents), formatter_class=argparse.RawDescriptionHelpFormatter)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    ap = _TopParser(prog="ota.py", description=DESCRIPTION)
     ap.add_argument("--version", action=_VersionAction, help="show the version and, in a git checkout, branch, commit and date")
-    ap.add_argument("--color", choices=["auto", "always", "never"], default="auto",
-                    help="colored messages: yellow warning, orange critical, red error, green ok (default: auto = only in "
-                         "a terminal, and not with NO_COLOR set). Put it before the command.")
-    sub = ap.add_subparsers(dest="cmd", required=True, title="commands", metavar="<command>")
-    fmt = argparse.RawDescriptionHelpFormatter
-    dev_help = f"device name ({', '.join(profile.list_devices())})"
+    ap.add_argument("--color", choices=["auto", "always", "never"], default="auto", metavar="WHEN",
+                    help="colored messages (default: auto = only in a terminal, and not with NO_COLOR set). "
+                         "Put it before the command.")
+    sub = ap.add_subparsers(dest="cmd", required=True, title="commands", metavar="<command>", parser_class=argparse.ArgumentParser)
+    dev_help = "profile name (python ota.py list shows them)"
     dev, snd = device_options(), send_options()
 
-    sub.add_parser("list", help="show devices and cached firmware").set_defaults(func=cmd_list)
-
-    f = sub.add_parser("fetch", help="get the official firmware ZIP (downloads if missing)",
-                       formatter_class=fmt, epilog="example: python ota.py fetch DuoBulbG3 --insecure")
+    f = _command(sub, "fetch", usage="ota.py fetch DEVICE [options]", epilog=_epilog("fetch DuoBulbG3 --insecure", "fetch"))
     f.add_argument("device", metavar="DEVICE", help=dev_help)
-    f.add_argument("--refresh", action="store_true", help="check for a newer version even if cached")
-    f.add_argument("--version", metavar="VER", help="use this cached version")
-    f.add_argument("--insecure", action="store_true", help="skip TLS check (Shelly uses a private CA)")
-    f.add_argument("--channel", choices=["stable", "beta"], default="stable",
+    g = f.add_argument_group("cache")
+    g.add_argument("--version", metavar="VER", help="use this cached version")
+    g.add_argument("--refresh", action="store_true", help="check for a newer version even if cached")
+    g = f.add_argument_group("update API")
+    g.add_argument("--channel", choices=["stable", "beta"], default="stable",
                    help="release channel of the update API (default: %(default)s)")
-    f.add_argument("--from-version", metavar="VER",
+    g.add_argument("--from-version", metavar="VER",
                    help="ask the update API as a device running VER would (e.g. 1.4.4 gets the 2.0.1 stable step)")
+    g.add_argument("--insecure", action="store_true", help="skip TLS check (Shelly uses a private CA)")
     f.set_defaults(func=cmd_fetch)
 
-    a = sub.add_parser("add-device", help="create a device profile from an official ZIP",
-                       formatter_class=fmt, epilog="example: python ota.py add-device NewDevice.zip")
+    a = _command(sub, "add-device", epilog=_epilog("add-device NewDevice.zip", "add-device"))
     a.add_argument("zip", type=Path, metavar="ZIP", help="official Shelly OTA ZIP")
     a.add_argument("--name", help="device name (default: name in the ZIP)")
     a.add_argument("--parent", metavar="DEVICE", help="base device, if this is a variant (e.g. PlugUSG4 for PlugUSG4ZB)")
     a.add_argument("--force", action="store_true", help="overwrite an existing profile")
     a.set_defaults(func=cmd_add_device)
 
-    pc = sub.add_parser("partition-csv", help="write the stock partition table as ESPHome partitions CSV",
-                        formatter_class=fmt, epilog="example: python ota.py partition-csv HTG3 -o HTG3-stock.csv")
+    pc = _command(sub, "partition-csv", usage="ota.py partition-csv DEVICE [options]",
+                  epilog=_epilog("partition-csv HTG3 -o HTG3-stock.csv", "partition-csv"))
     pc.add_argument("device", metavar="DEVICE", help=dev_help)
-    pc.add_argument("-o", "--output", type=Path, metavar="CSV", help="write to this file (default: print)")
-    pc.add_argument("--force", action="store_true", help="overwrite an existing output file")
-    pc.add_argument("--official", type=Path, metavar="ZIP", help="use this official ZIP instead of the cache")
-    pc.add_argument("--version", metavar="VER", help="use this cached version (default: latest)")
+    g = pc.add_argument_group("output")
+    g.add_argument("-o", "--output", type=Path, metavar="CSV", help="write to this file (default: print)")
+    g.add_argument("--force", action="store_true", help="overwrite an existing output file")
+    g = pc.add_argument_group("base firmware")
+    g.add_argument("--official", type=Path, metavar="ZIP", help="use this official ZIP instead of the cache")
+    g.add_argument("--version", metavar="VER", help="use this cached version (default: the newest stable one)")
     pc.set_defaults(func=cmd_partition_csv)
 
-    b = sub.add_parser("build", help="build an OTA ZIP from your app image", formatter_class=fmt,
-                       epilog="example: python ota.py build PlugMG3 app.bin --tag v2 --drop nvs")
+    b = _command(sub, "build", usage="ota.py build DEVICE APP.bin [options]",
+                 epilog=_epilog("build PlugMG3 app.ota.bin --esphome-factory app.factory.bin", "build"))
     b.add_argument("device", metavar="DEVICE", help=dev_help)
-    b.add_argument("app", type=Path, metavar="APP.bin", help="ESPHome app binary (not the merged image)")
-    b.add_argument("-o", "--output", type=Path, metavar="ZIP", help="output file (default: out/<auto name>)")
-    b.add_argument("--tag", metavar="LABEL", help="own label for file name and report (manifest unchanged)")
-    b.add_argument("--esphome-yaml", type=Path, metavar="YAML", help="also check this ESPHome config")
-    b.add_argument("--esphome-factory", type=Path, metavar="FACTORY.bin",
-                   help="also replace Shelly's bootloader and otadata with ESPHome's, taken from this factory image "
-                        "(must be the same build as APP.bin; checked first). Later ESPHome OTAs then work without a "
-                        "separate bootloader update. Confirmed devices are marked in the README; if the bootloader "
-                        "does not suit a device, only UART can recover it. The installer must write the app to slot 0 "
-                        "(send checks that first)")
-    b.add_argument("--boot-min-version", metavar="VER",
-                   help="with --esphome-factory: bootloader min_version in the manifest. The Shelly installer only "
-                        "writes a bootloader newer than the installed one. Default: the profile's boot_min_version "
-                        "if it has one (H&T, Power Strip: 1.0.9), otherwise one patch level above the official one "
-                        "(1.0.2 -> 1.0.3). The update log line 'Boot: cur ... min ... update?' shows whether it was "
-                        "written; with 'update? 0' use a higher value. 'keep' leaves it unchanged, which probably "
-                        "makes the installer skip the bootloader (then the old one stays)")
-    b.add_argument("--secrets", type=Path, metavar="FILE",
-                   help="secrets.yaml to compare the image with (default: secrets.yaml next to --esphome-yaml)")
-    b.add_argument("--fail-on-secrets", action="store_true",
-                   help="stop if the image contains credentials from the config/secrets (default: only warn). "
-                        "Use it for packages that are meant to be shared")
-    b.add_argument("--dry-run", action="store_true", help="check only, keep no output")
+    b.add_argument("app", type=Path, metavar="APP.bin", help="ESPHome app binary (the .ota.bin, not the merged image)")
+    g = b.add_argument_group("app and bootloader")
+    g.add_argument("--esphome-factory", type=Path, metavar="FACTORY.bin",
+                   help="also swap in ESPHome's bootloader and a clean otadata from this factory image (same build as "
+                        "APP.bin). Replaces Shelly's bootloader: only UART recovers a device it does not suit")
+    g.add_argument("--boot-min-version", metavar="VER",
+                   help="with --esphome-factory: bootloader min_version in the manifest (default: the profile's value, "
+                        "else one patch above the official one). 'update? 0' in the log: use a higher value; "
+                        "'keep' leaves it unchanged")
+    g.add_argument("--esphome-yaml", type=Path, metavar="YAML", help="also check this ESPHome config")
+    g = b.add_argument_group("secrets")
+    g.add_argument("--secrets", type=Path, metavar="FILE",
+                   help="secrets.yaml to compare the image with (default: next to --esphome-yaml)")
+    g.add_argument("--fail-on-secrets", action="store_true",
+                   help="stop if the image contains credentials (default: only warn); use it for packages meant to be shared")
+    g = b.add_argument_group("output")
+    g.add_argument("-o", "--output", type=Path, metavar="ZIP", help="output file (default: out/<auto name>)")
+    g.add_argument("--tag", metavar="LABEL", help="own label for file name and report (manifest unchanged)")
+    g.add_argument("--dry-run", action="store_true", help="check only, keep no output")
     g = b.add_argument_group("parts")
     g.add_argument("--drop", default="", metavar="LIST", help="leave out parts: boot,pt,otadata,nvs,fs")
     g.add_argument("--drop-fs", action="store_true", help="same as --drop fs")
     g = b.add_argument_group("base firmware")
     g.add_argument("--official", type=Path, metavar="ZIP", help="use this official ZIP")
-    g.add_argument("--version", metavar="VER", help="use this cached version (default: latest)")
+    g.add_argument("--version", metavar="VER", help="use this cached version (default: the newest stable one)")
     g.add_argument("--download", action="store_true", help="download if nothing is cached")
     g.add_argument("--insecure", action="store_true", help="with --download: skip TLS check")
     g.add_argument("--channel", choices=["stable", "beta"], default="stable",
@@ -339,43 +424,48 @@ def main() -> None:
     g.add_argument("--from-version", metavar="VER", help="with --download: ask the update API as a device running VER would")
     b.set_defaults(func=cmd_build)
 
-    t = sub.add_parser("send", help="send a ZIP to a Shelly (it downloads from this PC)", parents=[dev, snd],
-                       formatter_class=fmt, epilog="example: python ota.py send DuoBulbG3 out/x.zip --ip 192.168.1.50")
+    t = _command(sub, "send", usage="ota.py send DEVICE ZIP [options]", parents=[dev, snd],
+                 epilog=_epilog("send DuoBulbG3 out/DuoBulbG3-app-<date>.zip --ip 192.168.1.50 --dry-run", "send"))
     t.add_argument("device", metavar="DEVICE", help=dev_help)
-    t.add_argument("zip", type=Path, metavar="ZIP")
+    t.add_argument("zip", type=Path, metavar="ZIP", help="the package made by build")
     t.set_defaults(func=cmd_send)
 
-    r = sub.add_parser("restore", help="send the cached official firmware back to a Shelly", parents=[dev, snd],
-                       formatter_class=fmt,
-                       epilog="example: python ota.py restore DuoBulbG3 --ip 192.168.1.50\n\n" + RESTORE_NOTE)
+    r = _command(sub, "restore", usage="ota.py restore DEVICE [options]", parents=[dev, snd],
+                 epilog=_epilog("restore DuoBulbG3 --ip 192.168.1.50", "restore", RESTORE_HELP))
     r.add_argument("device", metavar="DEVICE", help=dev_help)
-    r.add_argument("--version", metavar="VER", help="cached version (default: latest)")
+    g = r.add_argument_group("firmware")
+    g.add_argument("--version", metavar="VER", help="cached version (default: the newest stable one)")
     r.set_defaults(func=cmd_restore)
 
-    lg = sub.add_parser("log", help="show the live debug log of a Shelly", parents=[dev], formatter_class=fmt,
-                        epilog="example: python ota.py log --ip 192.168.1.50 --seconds 30")
-    lg.add_argument("--seconds", type=float, metavar="SEC", help="stop after SEC seconds (default: Ctrl+C)")
+    lg = _command(sub, "log", usage="ota.py log [options]", parents=[dev],
+                  epilog=_epilog("log --ip 192.168.1.50 --seconds 30", "log"))
+    g = lg.add_argument_group("what to do")
+    g.add_argument("--seconds", type=float, metavar="SEC", help="stop after SEC seconds (default: Ctrl+C)")
     lg.set_defaults(func=cmd_log)
 
-    c = sub.add_parser("clean", help="delete old ZIPs in out/ (shows what, needs --yes)")
-    c.add_argument("--keep", type=int, default=5, metavar="N", help="newest ZIPs to keep (default: %(default)s)")
-    c.add_argument("--yes", action="store_true", help="really delete")
-    c.set_defaults(func=cmd_clean)
-
-    co = sub.add_parser("colors", help="show every message color once, and whether colors are on")
-    co.set_defaults(func=cmd_colors)
-
-    pr = sub.add_parser("profiles", help="list the device profiles with their revision and check devices/profiles.lock")
-    pr.add_argument("--update-lock", action="store_true",
-                    help="record the current revision and content of every profile (after raising a revision)")
-    pr.set_defaults(func=cmd_profiles)
-
-    i = sub.add_parser("inspect", help="show and verify an OTA ZIP")
+    i = _command(sub, "inspect", usage="ota.py inspect ZIP [--device DEVICE]")
     i.add_argument("zip", type=Path, metavar="ZIP")
     i.add_argument("--device", metavar="DEVICE", help="also show how full the app slot is")
     i.set_defaults(func=cmd_inspect)
 
-    args = ap.parse_args()
+    _command(sub, "list").set_defaults(func=cmd_list)
+
+    pr = _command(sub, "profiles")
+    pr.add_argument("--update-lock", action="store_true",
+                    help="record the current revision and content of every profile (after raising a revision)")
+    pr.set_defaults(func=cmd_profiles)
+
+    c = _command(sub, "clean", usage="ota.py clean [--keep N] [--yes]")
+    c.add_argument("--keep", type=int, default=5, metavar="N", help="newest ZIPs to keep (default: %(default)s)")
+    c.add_argument("--yes", action="store_true", help="really delete")
+    c.set_defaults(func=cmd_clean)
+
+    _command(sub, "colors").set_defaults(func=cmd_colors)
+    return ap
+
+
+def main() -> None:
+    args = build_parser().parse_args()
     ui.configure(args.color)
     if not (args.func is cmd_partition_csv and not args.output):   # that command prints data to stdout
         ui.say(f"free-shelly-ota {buildinfo.current().short()}")
