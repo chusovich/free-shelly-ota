@@ -2,23 +2,22 @@
 # Add to shelly-rgbcct-bulb-g3.yaml (next to daylight.yaml if you use it):
 #   packages:
 #     scenes: !include scenes.yaml
-# Needs the "bulb" light (id) and color_interlock: false in the main file. Pick the scene as an effect of the light in Home Assistant.
-# Each scene is: an RGB colour (rgb), how strong the RGB part is (rgb share 0..1), the warm white level (white, 0..1) and the
-# overall brightness (0..1). To change a scene, edit the four numbers in its lambda. Choosing a colour or brightness by hand stops the effect.
+# Needs the "bulb" light (platform rgbw_ct_table) in the main file. Pick the scene as an effect of the light in Home Assistant.
+# The light has two exclusive modes (like the stock firmware): colour temperature (2700-6500 K) and RGB. Each white scene sets a colour
+# temperature in kelvin and a brightness (0..1); the two coloured scenes ("Sunset", "Candle") set an RGB colour. To change a scene, edit
+# the numbers in its lambda. Choosing a colour or brightness by hand stops the effect.
 # The scene is re-applied every 60 s (same values, no visible change); do not combine with the "Daylight" switch.
 
 light:
   - id: !extend bulb
     effects:
       - lambda:
-          name: "Relax"       # very warm, dim: warm white plus a little orange
+          name: "Relax"       # very warm, dim
           update_interval: 60s
           lambda: |-
             auto call = id(bulb).turn_on();
-            call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
-            call.set_rgb(255/255.0f, 110/255.0f, 20/255.0f);
-            call.set_color_brightness(0.25);
-            call.set_white(1.0);
+            call.set_color_mode(esphome::light::ColorMode::COLOR_TEMPERATURE);
+            call.set_color_temperature(1000000.0f / 2700.0f);
             call.set_brightness(0.35);
             call.set_transition_length(1500);
             call.set_publish(false);
@@ -29,10 +28,8 @@ light:
           update_interval: 60s
           lambda: |-
             auto call = id(bulb).turn_on();
-            call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
-            call.set_rgb(255/255.0f, 190/255.0f, 120/255.0f);
-            call.set_color_brightness(0.35);
-            call.set_white(0.9);
+            call.set_color_mode(esphome::light::ColorMode::COLOR_TEMPERATURE);
+            call.set_color_temperature(1000000.0f / 3500.0f);
             call.set_brightness(0.85);
             call.set_transition_length(1500);
             call.set_publish(false);
@@ -43,10 +40,8 @@ light:
           update_interval: 60s
           lambda: |-
             auto call = id(bulb).turn_on();
-            call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
-            call.set_rgb(255/255.0f, 225/255.0f, 150/255.0f);
-            call.set_color_brightness(1.0);
-            call.set_white(0.6);
+            call.set_color_mode(esphome::light::ColorMode::COLOR_TEMPERATURE);
+            call.set_color_temperature(1000000.0f / 5000.0f);
             call.set_brightness(1.0);
             call.set_transition_length(1500);
             call.set_publish(false);
@@ -57,24 +52,21 @@ light:
           update_interval: 60s
           lambda: |-
             auto call = id(bulb).turn_on();
-            call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
-            call.set_rgb(235/255.0f, 235/255.0f, 255/255.0f);
-            call.set_color_brightness(1.0);
-            call.set_white(0.2);
+            call.set_color_mode(esphome::light::ColorMode::COLOR_TEMPERATURE);
+            call.set_color_temperature(1000000.0f / 6500.0f);
             call.set_brightness(1.0);
             call.set_transition_length(1500);
             call.set_publish(false);
             call.set_save(false);
             call.perform();
       - lambda:
-          name: "Sunset"       # orange-red, medium
+          name: "Sunset"       # orange-red, medium (RGB)
           update_interval: 60s
           lambda: |-
             auto call = id(bulb).turn_on();
-            call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
+            call.set_color_mode(esphome::light::ColorMode::RGB);
             call.set_rgb(255/255.0f, 70/255.0f, 5/255.0f);
             call.set_color_brightness(1.0);
-            call.set_white(0.0);
             call.set_brightness(0.45);
             call.set_transition_length(1500);
             call.set_publish(false);
@@ -85,17 +77,15 @@ light:
           update_interval: 60s
           lambda: |-
             auto call = id(bulb).turn_on();
-            call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
-            call.set_rgb(255/255.0f, 110/255.0f, 20/255.0f);
-            call.set_color_brightness(0.0);
-            call.set_white(1.0);
+            call.set_color_mode(esphome::light::ColorMode::COLOR_TEMPERATURE);
+            call.set_color_temperature(1000000.0f / 2700.0f);
             call.set_brightness(0.04);
             call.set_transition_length(1500);
             call.set_publish(false);
             call.set_save(false);
             call.perform();
       - lambda:
-          name: "Candle"       # warm flickering candle light; the level wanders randomly, with an occasional deep dip
+          name: "Candle"       # warm flickering candle light (RGB orange); the level wanders randomly, with an occasional deep dip
           update_interval: 100ms
           lambda: |-
             static float level = 0.6f, target = 0.6f;
@@ -107,11 +97,10 @@ light:
             }
             level += (target - level) * 0.5f;
             auto call = id(bulb).turn_on();
-            call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
-            call.set_rgb(255 / 255.0f, 100 / 255.0f, 15 / 255.0f);
-            call.set_color_brightness(0.3f);
-            call.set_white(0.75f + 0.25f * level);
-            call.set_brightness(0.12f + 0.38f * level);        // never brighter than about half
+            call.set_color_mode(esphome::light::ColorMode::RGB);
+            call.set_rgb(255 / 255.0f, 95 / 255.0f, 14 / 255.0f);
+            call.set_color_brightness(1.0f);
+            call.set_brightness(0.10f + 0.40f * level);        // never brighter than about half
             call.set_transition_length(80);
             call.set_publish(false);
             call.set_save(false);

@@ -11,7 +11,7 @@ The other devices have a config snippet on their [device page](../docs/devices/R
 | Folder | Device | Profile | State |
 | --- | --- | --- | --- |
 | [`shelly-power-strip-gen4/`](shelly-power-strip-gen4) | Power Strip 4 Gen4 | [`PowerStrip`](../docs/devices/PowerStrip.md) | The author's own config runs on a real strip. This published version was cleaned up and **not compiled** in this form; outlets, buttons, LEDs and metering are not confirmed here |
-| [`shelly-rgbcct-bulb-g3/`](shelly-rgbcct-bulb-g3) | Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](../docs/devices/RGBCCTBulbG3.md) | The OTA ran and ESPHome runs on a real bulb, and the light was tested (owner, 2026-10-11): channel order and fixed warm white. Colour accuracy, the lowest dimming steps and the driver currents are **not measured** |
+| [`shelly-rgbcct-bulb-g3/`](shelly-rgbcct-bulb-g3) | Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](../docs/devices/RGBCCTBulbG3.md) | The OTA ran and ESPHome runs on a real bulb, and the light was tested (owner, 2026-10-11): channel order and the single warm white LED. Colour accuracy, the lowest dimming steps and the driver currents are **not measured**. The config has a colour temperature light (stock table) that runs on the bulb (owner, 2026-10-16); its colours were not compared with the stock firmware |
 
 Each folder has its own `README.md` with the pins, how they were found and what is still open.
 

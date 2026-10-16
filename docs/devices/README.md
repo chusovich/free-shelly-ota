@@ -6,7 +6,8 @@ One page per device: the ESPHome config with the partition table that device nee
 commands, the log lines to look for and the way back to Shelly OS. Pick your device below, then read
 [Commands](../commands.md) for what the options do.
 
-✅ = the whole chain ran on a real device, 🧪 = the package builds and verifies, but nobody has flashed it yet.
+✅ = the whole chain ran on a real device, 🟡 = flashed on a real device, but part of the chain or of the function is not
+checked yet, 🧪 = the package builds and verifies, but nobody has flashed it yet.
 
 ## Devices
 
@@ -14,12 +15,12 @@ commands, the log lines to look for and the way back to Shelly OS. Pick your dev
 | --- | --- | --- | --- | --- | --- |
 | Plug M Gen3 | [`PlugMG3`](PlugMG3.md) | ESP32-C3 | `0x10000` | `0x2a0000` | ✅ |
 | Plug S Gen3 | [`PlugSG3`](PlugSG3.md) | ESP32-C3 | `0x10000` | `0x2a0000` | ✅ |
-| Plug PM Gen3 (no relay) | [`PlugPMG3`](PlugPMG3.md) | ESP32-C3 | `0x10000` | `0x280000` | ✅ flashed over OTA, readings not checked |
+| Plug PM Gen3 (no relay) | [`PlugPMG3`](PlugPMG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🟡 flashed over OTA, readings not checked |
 | H&T Gen3 | [`HTG3`](HTG3.md) | ESP32-C3 | **`0xf000`** | `0x280000` | ✅ |
 | PM Mini Gen3 (no relay) | [`MiniPMG3`](MiniPMG3.md) | ESP32-C3 | **`0xf000`** | `0x280000` | ✅ |
 | Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](RGBCCTBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | ✅ |
-| Duo Bulb Gen3 | [`DuoBulbG3`](DuoBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🧪 OTA not run; ESPHome config runs (UART) |
-| Power Strip 4 Gen4 | [`PowerStrip`](PowerStrip.md) | ESP32-C6 | `0x10000` | `0x300000` | ✅ boots, outlets not checked |
+| Duo Bulb Gen3 | [`DuoBulbG3`](DuoBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🟡 OTA not run; ESPHome config runs (UART) |
+| Power Strip 4 Gen4 | [`PowerStrip`](PowerStrip.md) | ESP32-C6 | `0x10000` | `0x300000` | 🟡 boots, outlets not checked |
 | Power Strip 4 Gen4 (Zigbee) | [`PowerStripZB`](PowerStripZB.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
 | Plus Plug S (V2 hardware, Gen2) | [`PlusPlugS`](PlusPlugS.md) | **ESP32** | **`0x8000`** | `0x190000` | ✅ without UART |
 | The Pill | [`Pill`](Pill.md) | ESP32-C3 | `0x10000` | `0x280000` | 🧪 |
@@ -51,13 +52,15 @@ does not match the profile. Details per device are on its page.
 
 The pages follow the same layout, so you can jump to the part you need:
 
-1. **Header table:** profile, chip, official package version, partition table, app slot size, and the state of the tests.
-2. **ESPHome config:** the `esp32:` and `ota:` block to copy, with the partition CSV from `partitions/`.
-3. **Pins:** what was read from the stock firmware or taken from a working config (not on every page).
-4. **Flash it:** the `fetch`, `build`, `send` commands for this profile, including `--dry-run`.
-5. **What to expect:** the log lines of `send --watch`, in order.
-6. **Notes for this device:** things that only apply to this model.
-7. **Way back:** how to get Shelly OS back, with `restore` or over UART.
+1. **Header:** badges for the state and the chip, quick links, and a table with profile, flash size, official package version, partition table, app slot size and,
+   where one exists, the ESPHome device page; below it a NOTE on what was confirmed or checked (not on untested devices).
+2. **Before you start:** a short checklist (stock firmware, IP address, reachability, config, UART adapter).
+3. **ESPHome config:** the `esp32:` and `ota:` block to copy, with the partition CSV from `partitions/`.
+4. **Pins:** what was read from the stock firmware or taken from a working config (not on every page).
+5. **Flash it:** the `fetch`, `build`, `send` commands for this profile as numbered steps, including `--dry-run`.
+6. **What to expect:** the log lines of `send --watch`, in order, as a table.
+7. **Notes for this device:** things that only apply to this model.
+8. **Way back:** how to get Shelly OS back, with `restore` or over UART.
 
 ## Related pages
 

@@ -1,20 +1,40 @@
 # Shelly Plug PM Gen3
 
-[Back to the README](../../README.md) · [All commands](../commands.md)
+[← README](../../README.md) · [All devices](README.md) · [Commands](../commands.md)
 
-Flashed over OTA with this tool on a real plug (reported by the owner, 2026-10-12); the log lines and the readings are not recorded here yet. This plug **only measures**: Shelly lists the Plug PM Gen3 as a monitoring device, and there is no relay in it. Do not confuse it with the [Plug M Gen3](PlugMG3.md), which switches.
+![State: partly checked](https://img.shields.io/badge/state-partly%20checked-yellow.svg?style=flat-square)
+![Chip: ESP32-C3](https://img.shields.io/badge/chip-ESP32--C3-blue.svg?style=flat-square)
 
-| | |
+[🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [📍 Pins](#pins) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
+
+This plug **only measures**: Shelly lists the Plug PM Gen3 as a monitoring device, and there is no relay in it. Do not confuse it with the [Plug M Gen3](PlugMG3.md), which switches.
+
+| Fact | Value |
 | --- | --- |
 | Profile | `PlugPMG3` |
 | Model | S3PL-30116EU |
-| Chip | ESP32-C3, 8 MB flash |
+| Flash | 8 MB |
 | Official package | 2.0.1 |
 | Partition table | `0x10000` |
 | App slot size | `0x280000` (smaller than the Plug M and Plug S, `0x2a0000`) |
-| State | ✅ flashed over OTA (`send` with `--esphome-factory`); readings not checked |
+
+> [!NOTE]
+> **Partly checked:** flashed over OTA with this tool on a real plug (`send` with `--esphome-factory`; reported by the owner, 2026-10-12). The log lines and the readings are not recorded here yet.
+
+## Before you start
+
+- [ ] The device runs Shelly's own firmware, not ESPHome yet.
+- [ ] You know its IP address (`--ip`), or this PC is connected to the device's own access point (the default, `192.168.33.1`).
+- [ ] This PC can be reached from the device: same network, and nothing blocks port 8000 (`--port`).
+- [ ] Your ESPHome config uses the partition table below and is compiled.
+- [ ] The device is a Plug PM Gen3 (`PlugPMG3`, S3PL-30116EU), not a Plug M.
+- [ ] A UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md)).
 
 ## ESPHome config
+
+> [!IMPORTANT]
+> `build` refuses a config without Shelly's partition table. Copy `partitions/PlugPMG3-stock.csv` from this repository next to your
+> YAML and keep `CONFIG_PARTITION_TABLE_OFFSET: "0x10000"`.
 
 ```yaml
 esp32:
@@ -62,13 +82,35 @@ Read from the stock 2.0.1 firmware (a flash dump and the boot log of a real plug
 
 ## Flash it
 
-```
-pip install -r requirements.txt
-python ota.py fetch PlugPMG3 --insecure
-python ota.py build PlugPMG3 app.ota.bin --esphome-factory app.factory.bin --esphome-yaml app.yaml
-python ota.py send PlugPMG3 out/PlugPMG3-app-<date>.zip --ip <device IP> --dry-run
-python ota.py send PlugPMG3 out/PlugPMG3-app-<date>.zip --ip <device IP> --watch 120
-```
+1. **Install the requirements** (once):
+
+   ```
+   pip install -r requirements.txt
+   ```
+
+2. **Fetch** the official package:
+
+   ```
+   python ota.py fetch PlugPMG3 --insecure
+   ```
+
+3. **Build:** put your app into it; the ZIP goes to `out/`:
+
+   ```
+   python ota.py build PlugPMG3 app.ota.bin --esphome-factory app.factory.bin --esphome-yaml app.yaml
+   ```
+
+4. **Check the device** first. Nothing is sent:
+
+   ```
+   python ota.py send PlugPMG3 out/PlugPMG3-app-<date>.zip --ip <device IP> --dry-run
+   ```
+
+5. **Flash it** and watch the log:
+
+   ```
+   python ota.py send PlugPMG3 out/PlugPMG3-app-<date>.zip --ip <device IP> --watch 120
+   ```
 
 `app.ota.bin` and `app.factory.bin` are the two files ESPHome compiles. `--dry-run` only checks the device and, for this
 package, reads the update target slot. Command reference: [Commands](../commands.md).
@@ -80,13 +122,15 @@ uses the same name. If `fetch` fails with "No https 'url' in update API reply", 
 
 In the `--watch` log look for these lines, in this order:
 
-1. `Update target slot: 0 ...` from `send` (the slot check; if it says anything else, run `python ota.py restore PlugPMG3` first).
-2. `Boot: cur ... min ... update? 1`: the installer will write ESPHome's bootloader. `update? 0` means it will not: build again
-   with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)).
-3. `ota_progress` up to 95 %, then `ota_success`. The device restarts into ESPHome.
+| # | Log line | Meaning |
+| --- | --- | --- |
+| 1 | `Update target slot: 0 ...` | The slot check of `send`. Anything else: run `python ota.py restore PlugPMG3` first |
+| 2 | `Boot: cur ... min ... update? 1` | The installer will write ESPHome's bootloader. `update? 0` means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
+| 3 | `ota_progress` up to 95 %, then `ota_success` | The device restarts into ESPHome |
 
-The package wipes NVS: Wi-Fi and settings are gone, ESPHome opens its own access point or joins the Wi-Fi from your config.
-If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
+> [!NOTE]
+> The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.
+> If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
 
 Please report what you see, also when it works: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml). The lines `Update target slot`,
 `Boot: cur ... update?` and `Will write to slot` are the ones that matter, and whether the plug measures voltage, current and power afterwards.
@@ -100,9 +144,11 @@ Please report what you see, also when it works: [open a device report](https://g
 
 ## Way back
 
-`python ota.py restore PlugPMG3` sends the official firmware back while Shelly firmware still runs. Once ESPHome with
-ESPHome's bootloader is running, `restore` gets no answer and only UART brings Shelly OS back
-([Recovery over UART](../recovery-uart.md)): take a flash backup first if you can.
+`python ota.py restore PlugPMG3` sends the official firmware back while Shelly firmware still runs.
+
+> [!WARNING]
+> Once ESPHome with ESPHome's bootloader is running, `restore` gets no answer and only UART brings Shelly OS back
+> ([Recovery over UART](../recovery-uart.md)). Take a flash backup first if you can.
 
 The UART steps on that page were run on a Plus Plug S and a Plug M Gen3. For this plug the parts and addresses come from the official package's manifest and
 `partitions/PlugPMG3-stock.csv`; the command below is derived from them and **has not been run on a Plug PM Gen3**. The only difference to the Plug M command is the file system, which sits at
@@ -115,3 +161,10 @@ esptool --chip esp32c3 --port COM4 --baud 460800 write-flash --flash-mode keep -
 
 Do not write the `shelly` partition (`0x7f0000`): it holds the model name and the calibration of this plug, and no package contains it. A plug restored this way reports loader 1.0.3
 afterwards, which is why the profile sets `boot_min_version: 1.0.9`.
+
+---
+
+> [!TIP]
+> **Flashed this device?** Tell us how it went, also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
+
+[Bootloader and slots](../bootloader-and-slots.md) · [Troubleshooting](../troubleshooting.md) · [Recovery over UART](../recovery-uart.md)

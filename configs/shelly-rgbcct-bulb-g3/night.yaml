@@ -2,20 +2,20 @@
 # Add to shelly-rgbcct-bulb-g3.yaml:
 #   packages:
 #     night: !include night.yaml
-# Needs the "bulb" light (id), color_interlock: false and the time component "ha_time" in the main file.
+# Needs the "bulb" light (platform rgbw_ct_table) and the time component "ha_time" in the main file.
 # For the night light that follows the sun use night_sun.yaml (separate effect "Night (sun)"); for the day see daylight.yaml / daylight_sun.yaml.
 #
 # While the effect is selected and the time is inside night_start .. night_end (over midnight is fine), the lamp is set once a minute to the
-# warm white at night_brightness. Outside that window nothing is changed. Choosing a colour or brightness by hand ends the effect.
+# colour temperature night_k at night_brightness. Outside that window nothing is changed. Choosing a colour or brightness by hand ends the effect.
 #
-# IMPORTANT: with the default gamma (2.8) a brightness of 5 % is below one step of the 10-bit LED driver and the lamp stays DARK.
-# Include dimrange.yaml as well (it raises the lowest non-zero output so that 5 % is visible), or raise night_brightness to about 0.10.
+# The main file uses gamma 1.0 (as the stock firmware), so 5 % is about 51 of 1023 steps and clearly visible. If you set gamma_correct back to 2.8, 5 %
+# is below one step and the lamp stays DARK: then include dimrange.yaml as well or raise night_brightness to about 0.10.
 
 substitutions:
   night_start: "21:30"        # HH:MM, local time
   night_end: "06:30"
   night_brightness: "0.05"    # 0..1
-  night_white: "1.0"          # warm white level 0..1 (the lamp has one fixed warm white)
+  night_k: "2700"             # colour temperature in kelvin (2700 = the white LED alone, the warmest the lamp can do)
   night_step: "60s"           # how often the effect sets the lamp
   night_fade: "3000"          # ms, fade time of each change
 
@@ -36,10 +36,8 @@ light:
               const bool inside = (s < e) ? (m >= s && m < e) : (m >= s || m < e);   // s >= e: the night goes over midnight
               if (!inside) return;
               auto call = id(bulb).turn_on();
-              call.set_color_mode(esphome::light::ColorMode::RGB_WHITE);
-              call.set_rgb(1.0f, 1.0f, 1.0f);
-              call.set_color_brightness(0.0f);
-              call.set_white(${night_white});
+              call.set_color_mode(esphome::light::ColorMode::COLOR_TEMPERATURE);
+              call.set_color_temperature(1000000.0f / ${night_k});
               call.set_brightness(${night_brightness});
               call.set_transition_length(${night_fade});
               call.set_publish(false);
