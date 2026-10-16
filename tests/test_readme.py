@@ -4,6 +4,8 @@ Keeps the README (and the device overview next to the device pages) in step with
 """
 
 import re
+import shutil
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -16,6 +18,7 @@ ROOT = profile.MODULE_DIR
 README = ROOT / "README.md"
 DEVICE_OVERVIEW = ROOT / "docs" / "devices" / "README.md"
 STATES = ("✅", "🟡", "🧪")
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"}
 
 
 def _slug(heading: str) -> str:
@@ -137,6 +140,16 @@ class DevicePageTests(unittest.TestCase):
                 self.assertTrue(target.exists(), f"{page.name}: {url}")
                 if frag and target.suffix == ".md":
                     self.assertIn(frag, _anchors(target), f"{page.name}: {url}")
+
+
+class RepositoryTests(unittest.TestCase):
+    def test_images_only_in_docs_assets(self):
+        """The logo and the social preview live in docs/assets. Device photos belong on the ESPHome device pages."""
+        if not shutil.which("git") or not (ROOT / ".git").exists():
+            self.skipTest("needs a git checkout")
+        files = subprocess.run(["git", "-C", str(ROOT), "ls-files"], capture_output=True, text=True, check=True).stdout.splitlines()
+        stray = [f for f in files if Path(f).suffix.lower() in IMAGE_SUFFIXES and not f.startswith("docs/assets/")]
+        self.assertEqual(stray, [], "pictures of devices do not belong in this repository: put them on the ESPHome device page")
 
 
 if __name__ == "__main__":

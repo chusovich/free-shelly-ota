@@ -21,7 +21,7 @@ shows up. State: 2026-10-16, after the tag `v0.3.1` and the unreleased changes i
   the Power Strip outlets and metering, the Duo Bulb over OTA.
 - **Multicolor Bulb.** The colour temperature light (`rgbw_ct_table`, published in `oxynatOr/esphome-kp18058` since 2026-10-15) runs on the
   bulb. Still open: its colours against the stock UI at 2700, 4000 and 6500 K, the optional light packages (daylight, scenes, wake-up alarm,
-  night light), and pinning a commit of the component in `configs/shelly-rgbcct-bulb-g3/` instead of `@main`.
+  night light), and pinning a commit of the component in the bulb config (kept in `oxynatOr/esphome-configs`) instead of `@main`.
 - **Device pages on devices.esphome.io** for the Plug M, Plug PM and PM Mini (new pages) and a correction of the Plug S page, each with the
   OTA route via this tool. A page for the Multicolor Bulb can follow now that its light component is published; Duo Bulb and Mini 1 Gen3
   when their hardware is checked.

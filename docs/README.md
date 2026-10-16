@@ -46,5 +46,4 @@ not work. The README has the short version; these pages have the details.
 | --- | --- |
 | [`devices/`](../devices/README.md) | The device profiles (one YAML each) and `profiles.lock` |
 | [`partitions/`](../partitions) | Stock partition tables as ESPHome `partitions:` CSV, one per profile |
-| [`configs/`](../configs) | Complete example ESPHome configs (Power Strip 4 Gen4, Multicolor Bulb Gen3) |
 | [CHANGELOG](../CHANGELOG.md) | What changed |

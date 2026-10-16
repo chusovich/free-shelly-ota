@@ -7,7 +7,7 @@
 
 [🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [📍 Pins](#pins) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
 
-Gen4 / ESP32-C6. A full example config with all pins is in [`configs/shelly-power-strip-gen4/`](../../configs/shelly-power-strip-gen4).
+Gen4 / ESP32-C6. The pins and an example config are on the ESPHome device page (see the table).
 
 | Fact | Value |
 | --- | --- |
