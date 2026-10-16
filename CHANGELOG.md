@@ -33,6 +33,11 @@ All notable changes to this project are documented here. The format follows
 - README: "Another device?" is a section of its own (request it, make a profile yourself, send a device report) instead of one
   sentence under the device table.
 
+### Fixed
+- Without `--version`, `build`, `send`, `restore`, `fetch` and `partition-csv` took the highest cached version, and a downloaded pre-release such as `2.2.0-beta1`
+  sorted above the stable `2.0.1`, so the beta would have been used silently. The default is now the newest stable cached version; a pre-release needs
+  `--version`, or is used only when it is all that is cached.
+
 ### Removed
 - Profile `Cury` (Shelly Cury), its partition CSV and device page (added in 0.3.1): the device has an NFC reader, regulated heaters and a
   voltage doubler that ESPHome cannot drive, and its pins are not decoded, so it is not a useful target. It is parked outside the repository.

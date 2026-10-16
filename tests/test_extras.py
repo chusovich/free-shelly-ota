@@ -233,6 +233,31 @@ class NetworkTests(unittest.TestCase):
         self.assertEqual(s.updates, [])
 
 
+class CachedVersionTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+
+    def _cache(self, device, *versions):
+        for v in versions:
+            d = self.tmp / device / v
+            d.mkdir(parents=True)
+            (d / f"{device}.zip").write_bytes(b"")
+
+    def test_default_is_the_newest_stable_not_a_newer_pre_release(self):
+        self._cache("HTG3", "2.0.1", "2.2.0-beta1")
+        self.assertEqual(firmware.cached_zip("HTG3", fw_dir=self.tmp).parent.name, "2.0.1")
+
+    def test_a_pre_release_is_used_when_asked_for_or_when_it_is_all_there_is(self):
+        self._cache("HTG3", "2.0.1", "2.2.0-beta1")
+        self._cache("Only", "1.0.0-beta2")
+        self.assertEqual(firmware.cached_zip("HTG3", "2.2.0-beta1", fw_dir=self.tmp).parent.name, "2.2.0-beta1")
+        self.assertEqual(firmware.cached_zip("Only", fw_dir=self.tmp).parent.name, "1.0.0-beta2")
+
+    def test_nothing_cached(self):
+        self.assertIsNone(firmware.cached_zip("HTG3", fw_dir=self.tmp))
+
+
 class OfflineTests(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp())

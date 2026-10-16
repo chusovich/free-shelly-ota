@@ -37,10 +37,15 @@ def list_versions(device: str, fw_dir: Path = FW_DIR) -> list[str]:
 
 
 def cached_zip(device: str, version: str | None = None, fw_dir: Path = FW_DIR) -> Path | None:
-    """Path of the cached official ZIP (latest if version is None), or None."""
+    """Path of the cached official ZIP, or None.
+
+    Without a version it is the newest stable one (a pre-release such as 2.2.0-beta1 has to be asked for with
+    its version); only if nothing but pre-releases is cached, the newest of those.
+    """
     versions = list_versions(device, fw_dir)
     if version is None:
-        version = versions[-1] if versions else None
+        stable = [v for v in versions if "-" not in v]
+        version = (stable or versions or [None])[-1]
     if version is None or version not in versions:
         return None
     return fw_dir / device / version / f"{device}.zip"
