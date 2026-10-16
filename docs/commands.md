@@ -45,7 +45,7 @@ URL. Shelly's servers use a private CA, so TLS verification fails; `--insecure` 
 | --- | --- | --- | --- |
 | `DEVICE` | yes | | Profile name, e.g. `PlugMG3` |
 | `--refresh` | no | off | Check for a newer version even if one is cached |
-| `--version VER` | no | latest cached | Use this cached version |
+| `--version VER` | no | newest stable cached | Use this cached version (a pre-release such as `2.2.0-beta1` only with this option) |
 | `--insecure` | no | off | Skip the TLS check (the URL hash only guards against transfer errors) |
 
 ## build
@@ -75,7 +75,7 @@ file.
 | --- | --- |
 | `--drop-fs` | Same as `--drop fs` |
 | `--official ZIP` | Use this official ZIP instead of the cache |
-| `--version VER` | Use this cached version (default: latest) |
+| `--version VER` | Use this cached version (default: the newest stable one; a pre-release only with this option) |
 | `--download` | Download the official ZIP if none is cached (off by default) |
 | `--insecure` | With `--download`: skip the TLS check |
 
@@ -150,7 +150,7 @@ profile's `pt_offset`.
 | `-o`, `--output CSV` | no | print | Write to this file; refuses to overwrite an existing file |
 | `--force` | no | off | Overwrite an existing output file |
 | `--official ZIP` | no | the cache | Use this official ZIP instead of the cached one |
-| `--version VER` | no | latest cached | Use this cached version |
+| `--version VER` | no | newest stable cached | Use this cached version (a pre-release only with this option) |
 
 ## inspect
 
