@@ -6,10 +6,32 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- `docs/assets/social-preview.png` (1280×640): the image for GitHub's social preview (Settings → General → Social preview; it cannot be set from the repository).
+- `tests/test_readme.py`: every profile is in the README device table, the "N profiles: ✅ … 🟡 … 🧪 …" line above it matches the table, the state symbols of the README and of
+  `docs/devices/README.md` agree, and every relative link, anchor and image of the README exists.
 - `fetch` and `build --download` take `--from-version VER`: the update API answers per installed version (header `Shelly-Info`, found in the firmware), e.g. `--from-version 1.4.4` returns the stable 2.0.1 for the H&T Gen3 while the plain query returns only a beta.
 - `fetch` and `build --download` take `--channel beta` to download the beta release from the update API (`stable` stays the default). A non-stable channel always asks the API unless `--version` is given.
 
 ### Changed
+- All 14 device pages (13 files, the Mini 1PM Gen4 page covers two profiles) have a new layout: badges for state and chip, quick links with icons, a `Fact | Value` table
+  (the state and the chip are only in the badges), a "Before you start" checklist, callouts (NOTE for what was confirmed or checked, IMPORTANT for the partition table,
+  TIP to start from the ESPHome device page, WARNING for the way back, TIP to send a device report), "Flash it" as numbered steps and the log lines of "What to expect" as
+  a table. The device-specific text (config, pins, notes, way back) is the same; two lines moved: the first sentence of the intro on untested pages ("Not tested on
+  hardware") is now the badge, and the links to the device database in the pin sources are plain text, because the link is in the table. `docs/devices/README.md`
+  describes the layout.
+- Device pages link the ESPHome device page where one exists: Plug S Gen3, H&T Gen3, The Pill, Plus Plug S, Power Strip 4 Gen4 and Mini 1PM Gen3 (the database calls it
+  "Shelly 1PM Mini Gen3"). The Plug M Gen3, Plug PM Gen3, Duo Bulb Gen3, Multicolor Bulb, Mini 1PM Gen4, Plus Uni and Pro 3EM have none (sitemap checked 2026-10-16).
+- `tests/test_readme.py` also checks the device pages: the standard sections in order, the state badge against the README, the profile in the commands, and all
+  relative links and anchors.
+- README reworked. The device table has a `Note` column (the `State` column holds only the symbol) and a third state, 🟡 = flashed on a real device, but part of the chain
+  or of the function is not checked: Plug PM Gen3 (readings), Power Strip (outlets) and Duo Bulb Gen3 (OTA not run) move there from ✅/🧪; the legend and the State lines of
+  `docs/devices/README.md` and those three device pages follow. The non-affiliation text is a NOTE next to the WARNING instead of part of it, the Quick start goes
+  in working order (config, compile, `fetch`/`build`/`send`), explains `--insecure`, uses `--ip` (the default `192.168.33.1` is only right on the Shelly's own access point),
+  says to copy the partition CSV next to the YAML, adds the web-server note to the CAUTION and comes before "Another device?". The intro lists the three commands instead of one long
+  sentence, says "no UART needed to install" next to "keep UART ready as your way back" and has a small diagram (Mermaid) of what goes into `build` and what `send` delivers.
+  A summary line above the device table counts the states. The header has the logo (`docs/assets/logo.png`) in front of the title, the tagline below, then
+  the badges and a row of links to the main sections; the badges are status, version, issues and license in a flat style (stars and forks removed, `WIP` in the title replaced
+  by the status badge).
 - Multicolor Bulb E27 Gen3 example config (`configs/shelly-rgbcct-bulb-g3/`): the light is now `rgbw_ct_table` (component of `oxynatOr/esphome-kp18058`) instead of `rgbw`: an RGB mode and a
   colour temperature mode 2700-6500 K (exclusive, like the stock web UI) with the stock firmware's 9-point table and RGB white balance (red 0.856, green 0.701, blue 0.749), linear brightness
   (`gamma_correct: 1.0`) and a 3 s default fade, all read from the 2.0.1 firmware. The packages daylight, daylight_sun, scenes, night, night_sun and wakeup use colour temperature instead of

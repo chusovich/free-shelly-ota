@@ -1,20 +1,40 @@
 # Shelly Plus Plug S (V2 hardware, Gen2)
 
-[Back to the README](../../README.md) · [All commands](../commands.md)
+[← README](../../README.md) · [All devices](README.md) · [Commands](../commands.md)
+
+![State: confirmed](https://img.shields.io/badge/state-confirmed-brightgreen.svg?style=flat-square)
+![Chip: ESP32](https://img.shields.io/badge/chip-ESP32-blue.svg?style=flat-square)
+
+[🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [📍 Pins](#pins) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
 
 The only Gen2 device so far. Classic ESP32 differs from the Gen3/Gen4 models in three ways: the partition table is at the ESP-IDF default `0x8000`, the bootloader sits at `0x1000`, and the ESPHome build needs the 80 MHz flash frequency.
 
-| | |
+| Fact | Value |
 | --- | --- |
 | Profile | `PlusPlugS` |
-| Chip | **ESP32** (classic, Gen2), 4 MB flash |
+| Flash | 4 MB |
 | Official package | 1.7.5 |
 | Partition table | **`0x8000`** (ESP-IDF default) |
 | Bootloader address | `0x1000` |
 | App slot size | `0x190000` |
-| State | ✅ without UART: `restore`, then `send` with `--esphome-factory`; an ESPHome OTA took effect (0.2.0 to 0.2.11) |
+| ESPHome device page | [Shelly Plus Plug S](https://devices.esphome.io/devices/shelly-plus-plug-s/): pins and an example config |
+
+> [!NOTE]
+> **Confirmed:** the whole chain ran on a real device, without UART: `restore`, then `send` with `--esphome-factory`; an ESPHome OTA took effect (0.2.0 to 0.2.11).
+
+## Before you start
+
+- [ ] The device runs Shelly's own firmware, not ESPHome yet.
+- [ ] You know its IP address (`--ip`), or this PC is connected to the device's own access point (the default, `192.168.33.1`).
+- [ ] This PC can be reached from the device: same network, and nothing blocks port 8000 (`--port`).
+- [ ] Your ESPHome config uses the partition table below and is compiled.
+- [ ] A UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md)).
 
 ## ESPHome config
+
+> [!IMPORTANT]
+> `build` refuses a config without Shelly's partition table. Copy `partitions/PlusPlugS-stock.csv` from this repository next to your
+> YAML and keep `CONFIG_PARTITION_TABLE_OFFSET: "0x8000"`.
 
 ```yaml
 esp32:
@@ -35,6 +55,9 @@ ota:
   - platform: esphome
 ```
 
+> [!TIP]
+> The [ESPHome device page](https://devices.esphome.io/devices/shelly-plus-plug-s/) has the pins and an example config. Replace its `esp32:` block with the one above, or `build` refuses it.
+
 ## Pins
 
 | Function | Pin |
@@ -45,18 +68,40 @@ ota:
 | LED ring: LEDs 1 and 2 / LEDs 3 and 4 | GPIO25 / GPIO26 |
 | Power measurement | HLW8012 (CF, CF1 and SEL pins: see the device-database page) |
 
-Source: the [Shelly Plus Plug S page](https://devices.esphome.io/devices/Shelly-Plus-Plug-S/) in the ESPHome device database (config tested by its author, bobkersten; not by
+Source: the Shelly Plus Plug S page in the ESPHome device database (config tested by its author, bobkersten; not by
 this project).
 
 ## Flash it
 
-```
-pip install -r requirements.txt
-python ota.py fetch PlusPlugS --insecure
-python ota.py build PlusPlugS app.ota.bin --esphome-factory app.factory.bin --esphome-yaml plusplugS.yaml
-python ota.py send PlusPlugS out/PlusPlugS-app-<date>.zip --ip <device IP> --dry-run
-python ota.py send PlusPlugS out/PlusPlugS-app-<date>.zip --ip <device IP> --watch 120
-```
+1. **Install the requirements** (once):
+
+   ```
+   pip install -r requirements.txt
+   ```
+
+2. **Fetch** the official package:
+
+   ```
+   python ota.py fetch PlusPlugS --insecure
+   ```
+
+3. **Build:** put your app into it; the ZIP goes to `out/`:
+
+   ```
+   python ota.py build PlusPlugS app.ota.bin --esphome-factory app.factory.bin --esphome-yaml plusplugS.yaml
+   ```
+
+4. **Check the device** first. Nothing is sent:
+
+   ```
+   python ota.py send PlusPlugS out/PlusPlugS-app-<date>.zip --ip <device IP> --dry-run
+   ```
+
+5. **Flash it** and watch the log:
+
+   ```
+   python ota.py send PlusPlugS out/PlusPlugS-app-<date>.zip --ip <device IP> --watch 120
+   ```
 
 `app.ota.bin` and `app.factory.bin` are the two files ESPHome compiles. `--dry-run` only checks the device and, for this
 package, reads the update target slot. Command reference: [Commands](../commands.md).
@@ -65,13 +110,15 @@ package, reads the update target slot. Command reference: [Commands](../commands
 
 In the `--watch` log look for these lines, in this order:
 
-1. `Update target slot: 0 ...` from `send` (the slot check; if it says anything else, run `python ota.py restore PlusPlugS` first).
-2. `Boot: cur ... min ... update? 1`: the installer will write ESPHome's bootloader. `update? 0` means it will not: build again
-   with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)).
-3. `ota_progress` up to 95 %, then `ota_success`. The device restarts into ESPHome.
+| # | Log line | Meaning |
+| --- | --- | --- |
+| 1 | `Update target slot: 0 ...` | The slot check of `send`. Anything else: run `python ota.py restore PlusPlugS` first |
+| 2 | `Boot: cur ... min ... update? 1` | The installer will write ESPHome's bootloader. `update? 0` means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
+| 3 | `ota_progress` up to 95 %, then `ota_success` | The device restarts into ESPHome |
 
-The package wipes NVS: Wi-Fi and settings are gone, ESPHome opens its own access point or joins the Wi-Fi from your config.
-If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
+> [!NOTE]
+> The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.
+> If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
 
 ## Notes for this device
 
@@ -95,3 +142,10 @@ burned; the meaning of the bits is unknown ([eFuse note](../troubleshooting.md#e
 ## Way back
 
 While Shelly firmware runs: `python ota.py restore PlusPlugS`. Otherwise [Recovery over UART](../recovery-uart.md).
+
+---
+
+> [!TIP]
+> **Flashed this device?** Tell us how it went, also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
+
+[Bootloader and slots](../bootloader-and-slots.md) · [Troubleshooting](../troubleshooting.md) · [Recovery over UART](../recovery-uart.md)
