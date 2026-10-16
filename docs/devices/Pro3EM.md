@@ -13,7 +13,7 @@ A classic ESP32 like the [Plus Plug S](PlusPlugS.md): partition table at the ESP
 | --- | --- |
 | Profile | `Pro3EM` |
 | Flash | 16 MB (bootloader header and partition table) |
-| Official package | 2.0.1 (stable channel) |
+| Official package | 2.1.0 (stable channel since 2026-10-14; Bootloader, partition table and filesystem are the same as in 2.0.1) |
 | Partition table | **`0x8000`** (ESP-IDF default) |
 | Bootloader address | `0x1000` |
 | App slot size | `0x200000` |

@@ -13,7 +13,7 @@ The first device this tool was confirmed on.
 | --- | --- |
 | Profile | `PlugMG3` |
 | Flash | 8 MB |
-| Official package | 2.0.1 |
+| Official package | 2.1.0 (stable since 2026-10-14; Bootloader, partition table and filesystem are the same as in 2.0.1; the hardware runs were made with 2.0.1) |
 | Partition table | `0x10000` |
 | App slot size | `0x2a0000` |
 

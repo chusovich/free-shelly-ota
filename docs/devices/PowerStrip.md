@@ -13,7 +13,7 @@ Gen4 / ESP32-C6. The pins and an example config are on the ESPHome device page (
 | --- | --- |
 | Profile | `PowerStrip` |
 | Flash | 8 MB |
-| Official package | 2.0.1 |
+| Official package | 2.1.0 (stable since 2026-10-14; Bootloader, partition table and filesystem are the same as in 2.0.1; the hardware runs were made with 2.0.1) |
 | Partition table | `0x10000` |
 | App slot size | `0x300000` |
 | Bootloader `min_version` | `1.0.9` (set in the profile) |

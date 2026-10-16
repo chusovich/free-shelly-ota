@@ -13,7 +13,7 @@ A battery device. The partition table is at `0xf000`, so a default ESPHome build
 | --- | --- |
 | Profile | `HTG3` |
 | Flash | 8 MB |
-| Official package | 2.0.1 |
+| Official package | 2.0.1 (the hardware runs); Shelly lists only the beta 2.2.0-beta1 now, see the notes |
 | Partition table | **`0xf000`** (not `0x10000`) |
 | App slot size | `0x280000` |
 | Bootloader `min_version` | `1.0.9` (set in the profile) |
@@ -83,16 +83,17 @@ on the board are bare test points: pogo pins or test clips work, or solder tempo
    pip install -r requirements.txt
    ```
 
-2. **Fetch** the official package:
+2. **Fetch** the official package. Shelly's update API lists only a beta for this device at the moment, so ask for it
+   (see the notes; a `fetch` without `--channel beta` finds no release):
 
    ```
-   python ota.py fetch HTG3 --insecure
+   python ota.py fetch HTG3 --insecure --channel beta
    ```
 
-3. **Build:** put your app into it; the ZIP goes to `out/`:
+3. **Build:** put your app into it; the ZIP goes to `out/`. A pre-release is only used with `--version` (or when it is all that is cached):
 
    ```
-   python ota.py build HTG3 app.ota.bin --esphome-factory app.factory.bin --esphome-yaml app.yaml
+   python ota.py build HTG3 app.ota.bin --version 2.2.0-beta1 --esphome-factory app.factory.bin --esphome-yaml app.yaml
    ```
 
 4. **Check the device** first. Nothing is sent:
@@ -126,6 +127,10 @@ In the `--watch` log look for these lines, in this order:
 
 ## Notes for this device
 
+- **Official package:** Shelly's server stopped serving the 2.0.1 package for this device (checked 2026-10-10), and the update API lists no
+  stable release. By 2026-10-15 at the latest it lists the beta `2.2.0-beta1`. Compared with 2.0.1, it has the same partition table and the same bootloader
+  header, and the app is 90 % of the slot. It was **not flashed with this tool**; the hardware runs above used 2.0.1. If you still have the 2.0.1
+  ZIP, give it to `build` with `--official`.
 - **Battery:** the stock updater refuses to start below 30 %: HTTP 500, `OTA not allowed (Battery below 30 percent. )`. Charge
   first and keep the device awake ([Troubleshooting](../troubleshooting.md#battery-devices-ht-gen3)).
 - **`min_version`:** this device reports an installed loader 1.0.3, so the default (1.0.3) was skipped; with 1.0.9 the installer

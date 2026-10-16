@@ -14,7 +14,7 @@ This plug **only measures**: Shelly lists the Plug PM Gen3 as a monitoring devic
 | Profile | `PlugPMG3` |
 | Model | S3PL-30116EU |
 | Flash | 8 MB |
-| Official package | 2.0.1 |
+| Official package | 2.1.0 (stable since 2026-10-14; Bootloader, partition table and filesystem are the same as in 2.0.1; the hardware run was made with 2.0.1) |
 | Partition table | `0x10000` |
 | App slot size | `0x280000` (smaller than the Plug M and Plug S, `0x2a0000`) |
 
