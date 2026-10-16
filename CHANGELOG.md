@@ -37,6 +37,9 @@ All notable changes to this project are documented here. The format follows
   colour temperature mode 2700-6500 K (exclusive, like the stock web UI) with the stock firmware's 9-point table and RGB white balance (red 0.856, green 0.701, blue 0.749), linear brightness
   (`gamma_correct: 1.0`) and a 3 s default fade, all read from the 2.0.1 firmware. The packages daylight, daylight_sun, scenes, night, night_sun and wakeup use colour temperature instead of
   mixing RGB with the white (the white-mixing modes are gone); dimrange is only needed with gamma 2.8. The YAML pulls the component from `oxynatOr/esphome-kp18058@main`, where `rgbw_ct_table` has been published since 2026-10-15. Flashed on the bulb, it runs (owner, 2026-10-16); the colours were not compared with the stock firmware.
+- Profile `PlugSG3` (revision 2): `boot_min_version: 1.0.9`. The Plug S Gen3 package carries the same bootloader as the Plug M Gen3 package (byte-identical, loader 1.0.3),
+  so a plug that already runs it would skip the default 1.0.3 and silently keep Shelly's bootloader. The earlier run used the default on a plug with loader 1.0.2; the new
+  value is not run on a Plug S Gen3 yet.
 - Plug PM Gen3: flashed over OTA with this tool on a real plug (owner report, 2026-10-12). The device page, `docs/devices/README.md` and the README row go from 🧪 to ✅
   with "readings not checked"; the log lines (`Boot: cur ... update?`) and the BL0942 readings are not recorded yet.
 - Profile `PlugMG3` (revision 2): `boot_min_version: 1.0.9`. The official package carries Shelly OS loader 1.0.3, so a Plug M restored from it
