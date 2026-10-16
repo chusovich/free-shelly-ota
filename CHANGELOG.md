@@ -33,6 +33,11 @@ All notable changes to this project are documented here. The format follows
   A summary line above the device table counts the states. The header has the logo (`docs/assets/logo.png`) in front of the title, the tagline below, then
   the badges and a row of links to the main sections; the badges are status, version, issues and license in a flat style (stars and forks removed, `WIP` in the title replaced
   by the status badge).
+- `ota.py -h` and the help of every command are easier to scan. The top-level help lists the commands in the groups of `docs/commands.md` (Prepare, Build, Deploy,
+  Tools), a typical run, what to know before flashing and the device names once. Each command has a short usage line, and its options are grouped by topic (`send`:
+  the Shelly, this PC, what to do; `build`: app and bootloader, secrets, output, parts, base firmware). Long option texts are shorter and point to
+  `docs/commands.md`. Options, defaults and behaviour are unchanged; `--color` shows `WHEN` in the usage. `tests/test_help.py` checks that every command is in a group, has a
+  working `-h` and that no help line is wider than the terminal.
 - Multicolor Bulb E27 Gen3 example config (`configs/shelly-rgbcct-bulb-g3/`): the light is now `rgbw_ct_table` (component of `oxynatOr/esphome-kp18058`) instead of `rgbw`: an RGB mode and a
   colour temperature mode 2700-6500 K (exclusive, like the stock web UI) with the stock firmware's 9-point table and RGB white balance (red 0.856, green 0.701, blue 0.749), linear brightness
   (`gamma_correct: 1.0`) and a 3 s default fade, all read from the 2.0.1 firmware. The packages daylight, daylight_sun, scenes, night, night_sun and wakeup use colour temperature instead of
