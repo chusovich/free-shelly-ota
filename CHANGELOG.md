@@ -19,6 +19,10 @@ All notable changes to this project are documented here. The format follows
   by comparing the packages with the cached 2.0.1 ones: bootloader, partition table and filesystem image are identical, `boot.min_version` is still 1.0.2, and the app grows by about
   7.5 kB (the Pro 3EM app shrinks by 68 kB). No profile changes. The `Official package` row of those device pages says 2.1.0 now; the hardware runs were made with 2.0.1. The
   Plug M app fills 98.8 % of its slot in 2.1.0, about 33 kB are left.
+- Plug M Gen3: a second plug reported from outside (device report #54, thanks to 815rx1): stock 1.8.99 to ESPHome with the official **2.1.0** package and `--esphome-factory`,
+  then two ESPHome OTAs (CLI and the Home Assistant builder). The device page records that the 2.1.0 package ran on hardware, the log lines of the run (`Boot: cur 010002ff, ..., update? 1`:
+  `boot_min_version: 1.0.9` also works on a factory unit with loader 1.0.2), that relay and LED needed a power-off of about 30 s although ESPHome, Wi-Fi and the sensors ran at once,
+  and that no `EFUSE write error` appeared. Bootloader and slots and the troubleshooting notes (power cycle, eFuse) got one sentence each. No profile change.
 - H&T Gen3 page: Shelly's update API lists only the beta `2.2.0-beta1` for this device (the 2.0.1 release is no longer served). The page fetches it with `--channel beta`, builds
   with `--version 2.2.0-beta1`, and says that the beta has the same partition table and bootloader header as 2.0.1 but was not flashed with this tool.
 - All device pages (16 profiles on 15 pages, the Mini 1PM Gen4 page covers two) have a new layout: badges for state and chip, quick links with icons, a `Fact | Value` table
