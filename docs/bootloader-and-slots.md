@@ -40,7 +40,9 @@ from it (for example over UART) reports 1.0.3 and would skip a package with 1.0.
 - **Check it:** the update log (`send --watch`) shows `Boot: cur ... min ... update? 0/1` and, when written,
   `Installing BL ... -> boot(0)`. Shelly's loader prints only ROM lines over UART on some models (the Multicolor Bulb prints
   `Shelly OS loader 1.0.2`); ESPHome's prints `ESP-IDF ... 2nd stage bootloader`.
-- **`update? 0`:** build again with a higher `--boot-min-version` (for example `1.0.9`) or set `boot_min_version:` in the
+- **`update? 0`:** `send --watch` (and `restore --watch`) now prints a WARNING when the package carries ESPHome's bootloader and
+  the log says `update? 0` (cur and min shown as versions, `010003ff` = 1.0.3) and leaves out the "no separate bootloader update
+  is needed" note. Build again with a higher `--boot-min-version` (for example `1.0.9`) or set `boot_min_version:` in the
   profile.
 - **Wrong value already installed:** a UART fix (back up first): write ESPHome's bootloader to `0x0` and a clean (all `0xFF`)
   `otadata` to the `otadata` partition, both taken from the package.

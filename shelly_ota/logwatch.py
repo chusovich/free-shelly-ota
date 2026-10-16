@@ -5,6 +5,7 @@ Enabled and disabled over RPC (Sys.SetConfig debug.udp.addr). The previous setti
 
 from __future__ import annotations
 
+import re
 import socket
 import threading
 import time
@@ -13,6 +14,32 @@ from typing import Callable
 
 from . import rpc, ui
 from .builder import OtaError
+
+
+# The updater's bootloader decision, e.g. "Boot: cur 010003ff, new 00000000, min 010003ff, update? 0".
+# Versions are 0xMMmmpp followed by ff (010003ff = 1.0.3); "update? 1" means it writes the package's bootloader.
+BOOT_RE = re.compile(r"Boot: cur ([0-9a-fA-F]{8}), new ([0-9a-fA-F]{8}), min ([0-9a-fA-F]{8}), update\? ([01])")
+
+
+def boot_version(hex8: str) -> str:
+    """'010003ff' -> '1.0.3' (major, minor, patch; the last byte is not part of the version)."""
+    v = int(hex8, 16)
+    return f"{v >> 24 & 0xFF}.{v >> 16 & 0xFF}.{v >> 8 & 0xFF}"
+
+
+def parse_boot_line(text: str) -> dict | None:
+    """cur/min as versions and update as bool from a device log line, or None if it is not the Boot line."""
+    m = BOOT_RE.search(text)
+    if not m:
+        return None
+    return {"cur": boot_version(m.group(1)), "min": boot_version(m.group(3)), "update": m.group(4) == "1"}
+
+
+def boot_skipped_warning(boot: dict) -> str:
+    """The WARNING text for a Boot line with update? 0."""
+    return (f"WARNING: ESPHome's bootloader was NOT written: the device keeps Shelly's loader (installed {boot['cur']}, package "
+            f"min {boot['min']}, update? 0). Later ESPHome OTAs may not take effect or need several restarts. Build again with "
+            f"a higher --boot-min-version (for example 1.0.9) or set boot_min_version: in the profile.")
 
 
 @contextmanager
