@@ -185,6 +185,11 @@ def package_info(zip_path: Path, profile: Profile) -> list[str]:
     return lines
 
 
+def matches_compatible(app: str, pattern: str | None) -> bool:
+    """Does the app name fit the manifest's `compatible` value: one fnmatch pattern or a comma separated list of them."""
+    return any(fnmatch.fnmatchcase(app, p.strip()) for p in (pattern or "").split(",") if p.strip())
+
+
 def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str | None = None,
          port: int = 8000, timeout: float = 300, assume_yes: bool = False, dry_run: bool = False,
          force: bool = False, user: str | None = None, password: str | None = None,
@@ -202,8 +207,8 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
     if info.get("auth_en") and not (user and password):
         raise OtaError("The device has a password set: use --user and --password (user is usually 'admin').")
     exact = app.lower() in (profile.name.lower(), profile.update_id.lower())
-    pattern = manifest.get("compatible")  # e.g. "PlugUSG4*": the package itself says which apps it fits
-    by_pattern = bool(pattern) and fnmatch.fnmatchcase(app, pattern)
+    pattern = manifest.get("compatible")  # e.g. "PlugUSG4*" or "Pro3EM,Pro3EMProAddon": the package says which apps it fits
+    by_pattern = matches_compatible(app, pattern)
     if by_pattern and not exact:
         out(f"NOTE: device app {app!r} is not {profile.name!r} but matches the package's compatible pattern "
             f"{pattern!r} (a variant of the same model).")
