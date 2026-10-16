@@ -122,6 +122,11 @@ def default_output_name(profile: Profile, app_path: Path, today: dt.date | None 
     return f"{profile.name}-{app_path.stem}-{today:%Y%m%d}{suffix}.zip"
 
 
+def check_output_is_no_input(output: Path, *inputs: Path) -> None:
+    if output.resolve() in {i.resolve() for i in inputs}:
+        raise OtaError("Output must not overwrite an input file.")
+
+
 def build(profile: Profile, app_path: Path, official_zip: Path, output: Path, *,
           drop: tuple[str, ...] = (), tag: str | None = None, factory: Path | None = None,
           boot_min_version: str | None = None, secrets: dict[str, list[bytes]] | None = None,
@@ -136,9 +141,7 @@ def build(profile: Profile, app_path: Path, official_zip: Path, output: Path, *,
         raise OtaError("--boot-min-version must look like 1.0.3, or 'keep'.")
     if factory and {"boot", "otadata"} & set(drop):
         raise OtaError("Cannot drop 'boot' or 'otadata' while taking them from a factory image.")
-    resolved = {output.resolve()}
-    if resolved & {official_zip.resolve(), app_path.resolve()}:
-        raise OtaError("Output must not overwrite an input file.")
+    check_output_is_no_input(output, official_zip, app_path)
 
     app = app_path.read_bytes()
     warnings = check_app_image(app, profile.platform, profile.app_slot_size, profile.app_ptn)

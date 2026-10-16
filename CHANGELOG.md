@@ -14,7 +14,14 @@ All notable changes to this project are documented here. The format follows
 - `fetch` and `build --download` take `--from-version VER`: the update API answers per installed version (header `Shelly-Info`, found in the firmware), e.g. `--from-version 1.4.4` returns the stable 2.0.1 for the H&T Gen3 while the plain query returns only a beta.
 - `fetch` and `build --download` take `--channel beta` to download the beta release from the update API (`stable` stays the default). A non-stable channel always asks the API unless `--version` is given.
 
+### Fixed
+- `build --dry-run` no longer touches an existing package. It built to the real output path and deleted it afterwards, so a dry run to check another config on the same day (same
+  automatic name `<Device>-firmware.ota-<date>.zip`, as ESPHome always names the app `firmware.ota.bin`) replaced and removed the package that had just been built and flashed, and left its
+  `.sha256` and `.report.json` behind. The dry run now builds in a scratch directory and prints `DRY RUN, nothing written`. Reported with a Plug M Gen3 build.
+
 ### Changed
+- `build` stops when the automatically named output already exists (`--force` replaces it; `--tag LABEL` or `-o ZIP` give another name). A second build on the same day used to replace the
+  first package silently, which may already be on a device. A name given with `-o` is still replaced without `--force`. `build --dry-run` reports it as a note instead of stopping.
 - Shelly's stable 2.1.0 (built 2026-10-14) checked for the Mini 1PM Gen3, Mini 1PM Gen4 (and Zigbee), PM Mini Gen3, Plug M, Plug PM, Plug S, Power Strip (and Zigbee) and Pro 3EM
   by comparing the packages with the cached 2.0.1 ones: bootloader, partition table and filesystem image are identical, `boot.min_version` is still 1.0.2, and the app grows by about
   7.5 kB (the Pro 3EM app shrinks by 68 kB). No profile changes. The `Official package` row of those device pages says 2.1.0 now; the hardware runs were made with 2.0.1. The
