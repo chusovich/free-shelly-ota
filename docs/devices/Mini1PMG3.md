@@ -13,7 +13,7 @@ This is the Mini with a relay; the measuring-only [PM Mini Gen3](MiniPMG3.md) is
 | --- | --- |
 | Profile | `Mini1PMG3` |
 | Flash | 8 MB |
-| Official package | 2.0.1 |
+| Official package | 2.1.0 (stable since 2026-10-14; Bootloader, partition table and filesystem are the same as in 2.0.1) |
 | Partition table | `0xf000` |
 | App slot size | `0x2a0000` |
 | ESPHome device page | [Shelly 1PM Mini Gen3](https://devices.esphome.io/devices/shelly-1pm-mini-gen3/): pins and an example config |
