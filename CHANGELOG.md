@@ -60,6 +60,9 @@ All notable changes to this project are documented here. The format follows
 - Without `--version`, `build`, `send`, `restore`, `fetch` and `partition-csv` took the highest cached version, and a downloaded pre-release such as `2.2.0-beta1`
   sorted above the stable `2.0.1`, so the beta would have been used silently. The default is now the newest stable cached version; a pre-release needs
   `--version`, or is used only when it is all that is cached.
+- `send` read the package's `compatible` value as one pattern, so a comma separated list never matched. The Pro 3EM package says
+  `Pro3EM,Pro3EMProAddon`, and a unit that reports `Pro3EMProAddon` stopped at the model check. The value is split at the commas now and every pattern is
+  tried; such a unit gets the note "matches the package's compatible pattern" and goes on. No separate `Pro3EMProAddon` profile (not needed for this).
 
 ### Removed
 - Profile `Cury` (Shelly Cury), its partition CSV and device page (added in 0.3.1): the device has an NFC reader, regulated heaters and a
