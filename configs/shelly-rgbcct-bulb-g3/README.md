@@ -2,7 +2,7 @@
 
 Status: **runs on a real bulb.** `ota.py send` with `--esphome-factory` ran through and ESPHome runs (owner, 2026-10-06). The owner tested the light on
 2026-10-11 with an RGBW light: the channel order below is confirmed. Not measured: colour accuracy, the lowest dimming steps, the driver currents
-and the power consumption. **New (not yet flashed):** the config now uses a light with a colour temperature mode and the stock RGB white balance, see "Light".
+and the power consumption. **Flashed and runs (owner, 2026-10-16):** the config uses a light with a colour temperature mode and the stock RGB white balance (`rgbw_ct_table`, published in `oxynatOr/esphome-kp18058` on 2026-10-15), see "Light". How close the colours are to the stock firmware was not compared.
 
 Files: `shelly-rgbcct-bulb-g3.yaml` (config), the LED driver and the light live in their own repository, https://github.com/oxynatOr/esphome-kp18058 (components `kp18058` and `rgbw_ct_table`), `RGBCCTBulbG3-stock.csv` (Shelly's partition table from the
 official 2.0.1 package), `secrets.yaml.example`.

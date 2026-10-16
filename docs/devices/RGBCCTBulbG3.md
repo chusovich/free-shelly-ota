@@ -18,7 +18,7 @@ The LEDs sit behind a **KP18068** 5-channel driver on SDA GPIO4 / SCL GPIO5. ESP
 | App slot size | `0x280000` |
 
 > [!NOTE]
-> **Confirmed:** the whole chain ran on a real device: `send` with `--esphome-factory` ran through, ESPHome runs and the light was tested on the bulb (owner, 2026-10-11): channel order and the single warm white LED confirmed. Colour accuracy, the lowest dimming steps and the driver currents are not measured. The example config got a colour temperature light afterwards (not flashed yet).
+> **Confirmed:** the whole chain ran on a real device: `send` with `--esphome-factory` ran through, ESPHome runs and the light was tested on the bulb (owner, 2026-10-11): channel order and the single warm white LED confirmed. Colour accuracy, the lowest dimming steps and the driver currents are not measured. The colour temperature light of the example config (`rgbw_ct_table`, stock table) was flashed afterwards and runs (owner, 2026-10-16); its colours were not compared with the stock firmware.
 
 ## Before you start
 

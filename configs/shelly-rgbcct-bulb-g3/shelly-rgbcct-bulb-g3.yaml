@@ -2,7 +2,8 @@
 # OUT4 warm white. Brightness and colour accuracy are not measured.
 # LED driver: KP18068 on SDA = GPIO4, SCL = GPIO5. See README.md in this folder.
 # The light behaves like the stock firmware: an RGB mode and a colour temperature mode (2700-6500 K) that are exclusive, linear brightness (gamma 1.0),
-# 3 s default fade. The colour temperature and the RGB white balance come from the stock firmware (README.md, "Light"). NEW, UNTESTED on the bulb.
+# 3 s default fade. The colour temperature and the RGB white balance come from the stock firmware (README.md, "Light"). The light runs on the bulb
+# (owner, 2026-10-16); how close the colours are to the stock firmware was not compared.
 # Copy secrets.yaml.example to secrets.yaml and fill it in.
 
 substitutions:
@@ -49,7 +50,7 @@ ota:
 # The KP18068 LED driver. The component (https://github.com/oxynatOr/esphome-kp18058) bit-bangs the two pins (no i2c: block, GPIO4/5 belong to it).
 # Values as the Shelly firmware sends them: RGB current code 5 (= 9 mA), white current code 11 (= 27.5 mA), analog dimming, 4 kHz.
 #   kp18058 = the driver, rgbw_ct_table = the light with the colour temperature table (both from that repository).
-#   rgbw_ct_table must be on the branch below; pin a commit (@<commit>) once you have a build you want to keep.
+#   rgbw_ct_table is on the branch below since 2026-10-15; pin a commit (@<commit>) once you have a build you want to keep.
 external_components:
   - source: github://oxynatOr/esphome-kp18058@main
     components: [kp18058, rgbw_ct_table]

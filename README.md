@@ -154,6 +154,7 @@ hardware test: nobody can say a device works until someone has flashed one.
 | [Credential check](docs/credential-check.md) | Secrets inside images and packages |
 | [Versions](docs/versions.md) | Tool version, build report, profile revisions |
 | [CHANGELOG](CHANGELOG.md) | What changed |
+| [Roadmap](ROADMAP.md) | What is planned, and where testers can help |
 
 
 ## Credits
