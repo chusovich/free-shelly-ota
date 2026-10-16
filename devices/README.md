@@ -11,7 +11,7 @@ The file name without `.yaml` is the profile name you give to `fetch`, `build`, 
 | Profile | Device | Chip | Revision | Device page |
 | --- | --- | --- | --- | --- |
 | `PlugMG3` | Shelly Plug M Gen3 | ESP32-C3 | 2 | [PlugMG3](../docs/devices/PlugMG3.md) |
-| `PlugSG3` | Shelly Plug S Gen3 | ESP32-C3 | 1 | [PlugSG3](../docs/devices/PlugSG3.md) |
+| `PlugSG3` | Shelly Plug S Gen3 | ESP32-C3 | 2 | [PlugSG3](../docs/devices/PlugSG3.md) |
 | `PlugPMG3` | Shelly Plug PM Gen3 | ESP32-C3 | 2 | [PlugPMG3](../docs/devices/PlugPMG3.md) |
 | `HTG3` | Shelly H&T Gen3 | ESP32-C3 | 2 | [HTG3](../docs/devices/HTG3.md) |
 | `RGBCCTBulbG3` | Shelly Multicolor Bulb E27 Gen3 | ESP32-C3 | 2 | [RGBCCTBulbG3](../docs/devices/RGBCCTBulbG3.md) |
