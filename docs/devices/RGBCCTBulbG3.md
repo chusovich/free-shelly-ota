@@ -52,10 +52,10 @@ ota:
   - platform: esphome
 ```
 
-The full example config (RGB + colour temperature light with the stock firmware's table and white balance, current codes as the Shelly firmware sends them) is in
-[`configs/shelly-rgbcct-bulb-g3/`](../../configs/shelly-rgbcct-bulb-g3). It pulls the driver component through
-`external_components`. The folder also has optional light packages (daylight, scenes, wake-up alarm, night light, over-temperature
-protection, dim range); its README lists them and says what is tested.
+The full example config (RGB + colour temperature light with the stock firmware's table and white balance, current codes as the Shelly firmware sends them)
+and the optional light packages (daylight, scenes, wake-up alarm, night light, over-temperature protection, dim range) are kept in
+[`oxynatOr/esphome-configs`](https://github.com/oxynatOr/esphome-configs), not in this repository. The config pulls the driver component
+[`esphome-kp18058`](https://github.com/oxynatOr/esphome-kp18058) through `external_components`.
 
 Channel order, read from the stock firmware and tested on the bulb (owner, 2026-10-11): OUT1 = blue, OUT2 = red, OUT3 = green,
 OUT4 = the one warm white LED; OUT5 shows nothing on its own. OUT4 and OUT5 get the same value (one white
@@ -118,7 +118,7 @@ In the `--watch` log look for these lines, in this order:
   (hardware-confirmed 2026-10-11).
 - **Dark bulb?** The driver component bit-bangs the two pins and expects an ACK for every byte. Try `ignore_ack: true` first;
   the other suspects are the address byte `0xE1` (Shelly's I2C hardware sends `0xE0`) and the internal pull-ups at a faster clock
-  than Shelly's 100 kHz. Details: [`configs/shelly-rgbcct-bulb-g3/README.md`](../../configs/shelly-rgbcct-bulb-g3/README.md).
+  than Shelly's 100 kHz. Details: [Notes & troubleshooting](https://github.com/oxynatOr/esphome-kp18058#notes--troubleshooting) of the driver component.
 
 ## Way back
 

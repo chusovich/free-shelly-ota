@@ -10,6 +10,7 @@ All notable changes to this project are documented here. The format follows
 - `docs/assets/social-preview.png` (1280×640): the image for GitHub's social preview (Settings → General → Social preview; it cannot be set from the repository).
 - `tests/test_readme.py`: every profile is in the README device table, the "N profiles: ✅ … 🟡 … 🧪 …" line above it matches the table, the state symbols of the README and of
   `docs/devices/README.md` agree, and every relative link, anchor and image of the README exists.
+- `tests/test_readme.py` also checks that no tracked picture lies outside `docs/assets/` (the logo and the social preview): device photos belong on the ESPHome device pages.
 - `fetch` and `build --download` take `--from-version VER`: the update API answers per installed version (header `Shelly-Info`, found in the firmware), e.g. `--from-version 1.4.4` returns the stable 2.0.1 for the H&T Gen3 while the plain query returns only a beta.
 - `fetch` and `build --download` take `--channel beta` to download the beta release from the update API (`stable` stays the default). A non-stable channel always asks the API unless `--version` is given.
 
@@ -73,6 +74,10 @@ All notable changes to this project are documented here. The format follows
   tried; such a unit gets the note "matches the package's compatible pattern" and goes on. No separate `Pro3EMProAddon` profile (not needed for this).
 
 ### Removed
+- The `configs/` folder (example ESPHome configs for the Power Strip 4 Gen4 and the Multicolor Bulb E27 Gen3, with the light packages and pin notes; added in 0.3.0): device
+  configs belong to the ESPHome device pages and to [`oxynatOr/esphome-configs`](https://github.com/oxynatOr/esphome-configs), not to the tool that installs the firmware.
+  The Power Strip and Multicolor Bulb pages and `docs/README.md` no longer point into this repository. The files stay in the git history and in the tags `v0.3.0` and
+  `v0.3.1`. The device pages carry no photos either: pictures belong on the ESPHome device page (`docs/devices/README.md` says so).
 - Profile `Cury` (Shelly Cury), its partition CSV and device page (added in 0.3.1): the device has an NFC reader, regulated heaters and a
   voltage doubler that ESPHome cannot drive, and its pins are not decoded, so it is not a useful target. It is parked outside the repository.
 

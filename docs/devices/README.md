@@ -63,6 +63,9 @@ The pages follow the same layout, so you can jump to the part you need:
 7. **Notes for this device:** things that only apply to this model.
 8. **Way back:** how to get Shelly OS back, with `restore` or over UART.
 
+The pages have no photos and no complete configs. Product photos, pin photos and example configs belong on the ESPHome device page that a page links
+where one exists, and ready-made configs in [`oxynatOr/esphome-configs`](https://github.com/oxynatOr/esphome-configs).
+
 ## Related pages
 
 | Page | What is in it |
