@@ -1,0 +1,134 @@
+# The issue labels of this repository. Apply them to GitHub with `python .github/sync_labels.py` (dry run) and `--apply`.
+#
+# One issue gets: exactly one `type:`; a `status:` while it is open; optionally `device:`, `area:` and `risk:`;
+# every `type: device-request` also gets one `tester:` (the answer to "Can you test it?" in the form).
+# The issue forms set the `type:` label; everything else is set while reading the issue.
+#
+# name         label name on GitHub (at most 50 characters)
+# color        six hex digits, quoted
+# description  shown in the label list and in the label picker (at most 100 characters)
+# aliases      old names that are renamed to `name` instead of creating a second label (keeps the issues)
+# delete       labels GitHub creates by default and this project does not use; the script prints the
+#              command but never deletes
+#
+# `device:` labels are created when a device gets its first issue, not for every profile. The name is the
+# profile name from `python ota.py list`.
+
+labels:
+  # What kind of issue it is. The forms set one of the first three.
+  - name: "type: bug"
+    color: "d73a4a"
+    description: "The tool crashes, a message is wrong, or the documentation does not match what you saw"
+    aliases: [bug]
+  - name: "type: device-report"
+    color: "0e8a16"
+    description: "A flash on a real device that has a profile, worked or not (form: Device report)"
+  - name: "type: device-request"
+    color: "1d76db"
+    description: "Support for a model that has no profile yet (form: Request a new device)"
+    aliases: [new-device]
+  - name: "type: enhancement"
+    color: "84b6eb"
+    description: "A new feature or an improvement of the tool"
+    aliases: [enhancement]
+  - name: "type: docs"
+    color: "0075ca"
+    description: "Documentation is missing, wrong or unclear"
+    aliases: [documentation]
+  - name: "type: question"
+    color: "d876e3"
+    description: "A question about using the tool or an existing profile"
+    aliases: [question]
+
+  # On every device request: who can test it. Taken from the form's answer.
+  - name: "tester: with UART"
+    color: "bfdadc"
+    description: "Has the device and UART or USB access to bring it back: ready to start"
+  - name: "tester: no UART"
+    color: "bfdadc"
+    description: "Has the device but no UART or USB access: only after a profile exists, with the brick warning"
+  - name: "tester: none"
+    color: "bfdadc"
+    description: "Has no device to test: waits for someone who does"
+
+  # Who or what the open issue waits for.
+  - name: "status: needs-info"
+    color: "fbca04"
+    description: "Waiting for the reporter: log, tool version, config"
+  - name: "status: needs-test"
+    color: "f9a03f"
+    description: "The fix or profile is ready; a real device has to try it"
+  - name: "status: needs-docs"
+    color: "fef2c0"
+    description: "The report is read; the device page or table is not updated yet"
+  - name: "status: in-progress"
+    color: "c5def5"
+    description: "A branch with the fix or profile exists"
+  - name: "status: blocked"
+    color: "6e7781"
+    description: "Waiting for something outside the project, such as Shelly's update API or a device"
+
+  # Which part of the tool; matches the ota.py commands.
+  - name: "area: fetch"
+    color: "5319e7"
+    description: "fetch: Shelly update API and the firmware cache"
+  - name: "area: build"
+    color: "5319e7"
+    description: "build: making the package, checks, error messages"
+  - name: "area: send"
+    color: "5319e7"
+    description: "send: upload to the device, slot detection, --watch"
+  - name: "area: restore"
+    color: "5319e7"
+    description: "restore and the way back to Shelly firmware, UART recovery"
+  - name: "area: profiles"
+    color: "5319e7"
+    description: "Profiles and add-device: partitions, boot_min_version, profile data"
+
+  # Which device. Created on demand.
+  - name: "device: PlugMG3"
+    color: "006b75"
+    description: "Plug M Gen3 (ESP32-C3)"
+  - name: "device: PlusUni"
+    color: "006b75"
+    description: "Plus Uni, Gen2 (ESP32)"
+  - name: "device: Pro3EM"
+    color: "006b75"
+    description: "Pro 3EM, Gen2 (ESP32)"
+  - name: "device: MiniPMG3"
+    color: "006b75"
+    description: "PM Mini Gen3 (ESP32-C3)"
+  - name: "device: HTG3"
+    color: "006b75"
+    description: "H&T Gen3 (ESP32-C3)"
+  - name: "device: other"
+    color: "006b75"
+    description: "A device without a profile, or none of the listed ones"
+
+  # Handled first.
+  - name: "risk: needs UART"
+    color: "b60205"
+    description: "The device does not start or can only be brought back over UART"
+
+  # Names GitHub knows: they feed the repository's Contribute page, so they keep their names.
+  - name: "help wanted"
+    color: "008672"
+    description: "A contribution or a test from someone else would help"
+  - name: "good first issue"
+    color: "7057ff"
+    description: "Good for newcomers"
+
+  # How an issue was closed without a fix; use together with "Close as not planned".
+  - name: "duplicate"
+    color: "cfd3d7"
+    description: "This issue or pull request already exists"
+  - name: "wontfix"
+    color: "ffffff"
+    description: "This will not be worked on"
+  - name: "out of scope"
+    color: "e4e669"
+    description: "Outside what this project does, for example ESP8266 (Gen1) devices"
+    aliases: [invalid]
+
+delete:
+  - accessibility

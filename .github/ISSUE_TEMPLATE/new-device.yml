@@ -1,7 +1,7 @@
 name: Request a new device
 description: Ask for support for a Shelly that has no profile yet, or offer to test one.
 title: "[New device] <Shelly model>"
-labels: ["new-device"]
+labels: ["type: device-request"]
 body:
   - type: markdown
     attributes:
