@@ -7,18 +7,18 @@
 
 [🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [📍 Pins](#pins) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
 
-The first device this tool was confirmed on.
+The first device this tool was confirmed on. A second plug, reported by [815rx1](https://github.com/815rx1) (October 2026, thanks), went through the same chain with the 2.1.0 package.
 
 | Fact | Value |
 | --- | --- |
 | Profile | `PlugMG3` |
 | Flash | 8 MB |
-| Official package | 2.1.0 (stable since 2026-10-14; Bootloader, partition table and filesystem are the same as in 2.0.1; the hardware runs were made with 2.0.1) |
+| Official package | 2.1.0 (stable since 2026-10-14; bootloader, partition table and filesystem are the same as in 2.0.1; flashed on a real plug with 2.1.0 and with 2.0.1) |
 | Partition table | `0x10000` |
 | App slot size | `0x2a0000` |
 
 > [!NOTE]
-> **Confirmed:** the whole chain ran on a real device: `send` from stock 1.8.99 (running from slot 1), then two ESPHome OTAs.
+> **Confirmed:** the whole chain ran on two real plugs: `send` from stock 1.8.99 (running from slot 1), then two ESPHome OTAs. The second plug used the official 2.1.0 package and ESPHome 2026.9.1; both OTAs (ESPHome CLI and the Home Assistant ESPHome builder) took effect.
 
 ## Before you start
 
@@ -115,12 +115,26 @@ In the `--watch` log look for these lines, in this order:
 > The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.
 > If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
 
+The reported run of the second plug, from stock 1.8.99 with the 2.1.0 package and `--esphome-factory` (the `Boot:` line is the one to look for):
+
+```
+  log| I a_esp32_backend.cpp:422 Will write to slot 0
+  log| I a_esp32_backend.cpp:672 Boot: cur 010002ff, new 00000000, min 010009ff, update? 1
+  log| I a_esp32_backend.cpp:182 Installing BL 20960@app_0(0x20000) -> boot(0)...
+  log| I shos_ota.cpp:640        Update succeeded (OK), will reboot, uba=3, cd=0/ct=25 s
+  log| W shelly_update.cpp:581   FW signatures: want 07 got 00
+```
+
+No `EFUSE write error` line appeared, only the `FW signatures` one ([eFuse note](../troubleshooting.md#efuse)).
+
 ## Notes for this device
 
 - On stock 1.8.99 the slot check of `send` cannot run: the device logs `Storing core dumps to scratch (0x720000)` instead of `app_N`,
   so `send` warns that the firmware does not reveal the update target slot and goes on. The installer wrote to the slot the stock
   firmware was not running from (device on slot 1, `Will write to slot 0`); look for that line with `--watch`.
 - On this model ESPHome came up after a power-off of about 30 seconds; whether it would also have started without it was not tested.
+- The second plug showed what "not started" can look like: ESPHome, Wi-Fi, the API and the sensors (voltage, frequency, temperature, power under a 1.8 kW load) worked at once, but the relay and the LED did not react, although ESPHome reported the switch as on. After about 30 seconds without power both worked.
+- That plug ran Shelly OS loader 1.0.2 (factory firmware 1.8.99, `Boot: cur 010002ff`). `boot_min_version: 1.0.9` was enough there: `update? 1`, and ESPHome's bootloader was written. A plug that came back from ESPHome through the official 2.0.1 package runs loader 1.0.3 ([why the profile uses 1.0.9](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)).
 - Without `--esphome-factory` ESPHome still boots, but later ESPHome OTAs only take effect after Shelly's attempt counter runs out
   ([details](../bootloader-and-slots.md#without-esphomes-bootloader-plain-package)).
 

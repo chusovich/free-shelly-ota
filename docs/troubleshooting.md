@@ -64,7 +64,8 @@ Charge or replace the battery first. The device must also be awake.
 - A real **power cycle** may be needed after the first boot (the cause is not understood; some state of the stock firmware
   seems to survive a soft reset). Disconnect the device from mains, wait at least 30 seconds so the capacitors can discharge
   (a rule of thumb, not measured), then reconnect. Do not open a device that is connected to mains. On the Plug M Gen3,
-  ESPHome came up after a power-off of about 30 seconds.
+  ESPHome came up after a power-off of about 30 seconds; on a second Plug M it ran at once (Wi-Fi, API, sensors), but the relay and the LED
+  reacted only after such a power-off.
 - UART shows what runs: `ESP-IDF ... 2nd stage bootloader` and `Loaded app from partition at offset 0x20000` are good signs.
 
 ## ESPHome OTAs "work" but the version does not change
@@ -111,6 +112,10 @@ still empty, so treat it as a possible permanent change.
 
 The same marker appeared on a PM Mini Gen3 (stock 2.0.1, package with ESPHome's bootloader): `Incoming fw signatures: 00`, then
 `EFUSE write error bit[1]: 5636`, then a normal reboot. The update succeeded and ESPHome ran.
+
+A Plug M Gen3 (stock 1.8.99, official 2.1.0 package with ESPHome's bootloader) logged `FW signatures: want 07 got 00` but no
+`EFUSE write error`; the update succeeded and ESPHome ran. Whether the bits were written silently or not touched is not known (this
+plug's eFuses were not read back with `espefuse summary`).
 
 ## Safety
 
