@@ -1,6 +1,8 @@
 # Documentation
 
-[Back to the README](../README.md) · [CHANGELOG](../CHANGELOG.md)
+[← README](../README.md) · [CHANGELOG](../CHANGELOG.md) · [Roadmap](../ROADMAP.md) · [Credits](../CREDITS.md)
+
+[🚀 Where to start](#where-to-start) · [📚 Pages](#pages) · [🩺 Something went wrong](#something-went-wrong) · [🗂️ Outside this folder](#outside-this-folder)
 
 How to get your own ESPHome firmware onto a Shelly with `ota.py`, why the tool does what it does, and what to do when it does
 not work. The README has the short version; these pages have the details.
@@ -27,6 +29,9 @@ not work. The README has the short version; these pages have the details.
 
 ## Something went wrong
 
+> [!TIP]
+> Always run `send` with `--watch`: the log answers most questions.
+
 | What you see | Where to look |
 | --- | --- |
 | `send` refuses: update target slot is not 0 | [Troubleshooting](troubleshooting.md#send-refuses-update-target-slot-is-not-0), [The app must land in slot 0](bootloader-and-slots.md#the-app-must-land-in-slot-0) |
@@ -48,3 +53,5 @@ not work. The README has the short version; these pages have the details.
 | [`devices/`](../devices/README.md) | The device profiles (one YAML each) and `profiles.lock` |
 | [`partitions/`](../partitions) | Stock partition tables as ESPHome `partitions:` CSV, one per profile |
 | [CHANGELOG](../CHANGELOG.md) | What changed |
+| [Roadmap](../ROADMAP.md) | What is planned, and where testers can help |
+| [Credits](../CREDITS.md) | Whose work this tool builds on, and who tested it |

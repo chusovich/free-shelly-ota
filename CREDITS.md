@@ -1,8 +1,13 @@
 # Credits
 
+[← README](README.md#credits) · [Documentation](docs/README.md) · [Device pages](docs/devices/README.md) · [Roadmap](ROADMAP.md)
+
+[🧩 Projects](#projects) · [🙌 People](#people) · [🧱 Shelly and the tools underneath](#shelly-and-the-tools-underneath) · [❓ Missing from this list?](#missing-from-this-list)
+
 Almost everything this tool knows was found out by other people: how a Shelly package is built, how its bootloader and slots work, which pin does what on which device. This page says who, and what we took from them. The short version is in the [README](README.md#credits).
 
-Please visit and support these projects and people.
+> [!TIP]
+> Please visit and support these projects and people.
 
 ## Projects
 
@@ -31,6 +36,7 @@ People who tested a device, sent a report or shared what they know. Newest first
 
 ## Missing from this list?
 
-If this project uses something you found out and you are not named, or you would rather not be, please
-[open an issue](https://github.com/oxynatOr/free-shelly-ota/issues/new). If you flashed a device with the tool, a
-[device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) puts you on this list, also when it worked.
+> [!TIP]
+> If this project uses something you found out and you are not named, or you would rather not be, please
+> [open an issue](https://github.com/oxynatOr/free-shelly-ota/issues/new). If you flashed a device with the tool, a
+> [device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) puts you on this list, also when it worked.

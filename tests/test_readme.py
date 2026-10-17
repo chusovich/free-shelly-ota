@@ -142,6 +142,64 @@ class DevicePageTests(unittest.TestCase):
                     self.assertIn(frag, _anchors(target), f"{page.name}: {url}")
 
 
+class TopicPageTests(unittest.TestCase):
+    """The pages that are not device pages share one frame: title, a navigation row that starts with the way back, then the text."""
+
+    PAGES = (
+        "docs/README.md", "docs/commands.md", "docs/bootloader-and-slots.md", "docs/troubleshooting.md", "docs/recovery-uart.md",
+        "docs/credential-check.md", "docs/versions.md", "docs/devices/README.md", "devices/README.md", "ROADMAP.md", "CREDITS.md",
+    )
+    CALLOUTS = {"NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"}
+
+    @staticmethod
+    def _lines_outside_code(text: str) -> list:
+        lines, in_code = [], False
+        for line in text.splitlines():
+            if line.startswith("```"):
+                in_code = not in_code
+            elif not in_code:
+                lines.append(line)
+        return lines
+
+    def _pages(self):
+        for rel in self.PAGES:
+            yield rel, ROOT / rel, (ROOT / rel).read_text(encoding="utf-8")
+
+    def test_title_then_navigation_row_with_the_way_back(self):
+        for rel, _, text in self._pages():
+            lines = text.splitlines()
+            self.assertTrue(lines[0].startswith("# "), rel)
+            self.assertEqual(lines[1], "", rel)
+            self.assertTrue(lines[2].startswith("[← README]("), f"{rel}: line 3 must be the navigation row starting with [← README](...)")
+
+    def test_headings_carry_no_emoji(self):
+        """Emoji only in links: in a heading they end up in the anchor."""
+        emoji = re.compile("[\U0001F300-\U0001FAFF☀-➿️]")
+        for rel, _, text in self._pages():
+            for line in self._lines_outside_code(text):
+                if re.match(r"#{1,6}\s", line):
+                    self.assertIsNone(emoji.search(line), f"{rel}: {line}")
+
+    def test_callouts_are_of_a_kind_github_renders(self):
+        for rel, _, text in self._pages():
+            for line in self._lines_outside_code(text):
+                m = re.match(r">\s*\[!(\w+)\]", line)
+                if m:
+                    self.assertIn(m.group(1), self.CALLOUTS, f"{rel}: {line}")
+
+    def test_relative_links_and_anchors_exist(self):
+        for rel, path, text in self._pages():
+            for m in re.finditer(r"\]\(([^)\s]+)\)", "\n".join(self._lines_outside_code(text))):
+                url = m.group(1)
+                if re.match(r"[a-z]+://|mailto:", url):
+                    continue
+                target_part, _, frag = url.partition("#")
+                target = (path.parent / target_part) if target_part else path
+                self.assertTrue(target.exists(), f"{rel}: {url}")
+                if frag and target.suffix == ".md":
+                    self.assertIn(frag, _anchors(target), f"{rel}: {url}")
+
+
 class RepositoryTests(unittest.TestCase):
     def test_images_only_in_docs_assets(self):
         """The logo and the social preview live in docs/assets. Device photos belong on the ESPHome device pages."""

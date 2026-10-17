@@ -1,6 +1,6 @@
 # Device pages
 
-[Back to the README](../../README.md) · [All commands](../commands.md)
+[← README](../../README.md) · [Documentation](../README.md) · [Commands](../commands.md) · [Device profiles](../../devices/README.md)
 
 One page per device: the ESPHome config with the partition table that device needs, the pins where they are known, the exact
 commands, the log lines to look for and the way back to Shelly OS. Pick your device below, then read
