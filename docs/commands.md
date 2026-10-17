@@ -66,8 +66,9 @@ file.
 | `--fail-on-secrets` | no | off | Stop (no output) if the image contains credentials. Use it for packages meant to be shared |
 | `--tag LABEL` | no | none | Own label for file name and report; the manifest stays untouched |
 | `--drop LIST` | no | nothing | Leave out parts: `boot,pt,otadata,nvs,fs` (dropping `nvs`/`otadata` is untested on devices) |
-| `-o`, `--output ZIP` | no | `out/<auto name>` | Output file |
-| `--dry-run` | no | off | Check everything, keep no output |
+| `-o`, `--output ZIP` | no | `out/<auto name>` | Output file. A name given here is replaced if it exists |
+| `--force` | no | off | Replace the automatically named output if it already exists. Without it, `build` stops: the name carries only the app file name, the date and the tag, so two builds on one day (ESPHome always calls the app `firmware.ota.bin`) get the same one, and the first package may already be on a device. Use `--tag` or `-o` for a second package |
+| `--dry-run` | no | off | Check everything, write nothing. It builds in a scratch directory, so an existing package and its `.sha256` and `.report.json` stay as they are. If the real build would stop because the output exists, it says so |
 
 <details>
 <summary>More options</summary>

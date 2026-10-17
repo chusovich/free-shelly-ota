@@ -12,6 +12,7 @@ import json
 import os
 import shutil
 import sys
+import tempfile
 import textwrap
 from pathlib import Path
 
@@ -150,6 +151,13 @@ def cmd_partition_csv(args) -> None:
 
 def cmd_build(args) -> None:
     p = profile.load_profile(args.device)
+    # The automatic name only carries app file name, date and tag: two builds on one day get the same one, and ESPHome
+    # always calls the app firmware.ota.bin. An existing package may already be on a device, so it is never replaced
+    # silently (a name given with -o is deliberate and is overwritten, as before).
+    output = args.output or MODULE_DIR / "out" / builder.default_output_name(p, args.app, tag=builder.check_tag(args.tag))
+    would_replace = output.exists() and args.output is None and not args.force
+    if would_replace and not args.dry_run:
+        raise builder.OtaError(f"{output} already exists. Use --tag LABEL or -o ZIP for another name, or --force to replace it.")
     if args.esphome_yaml:
         problems = lint.lint_esphome(args.esphome_yaml, p)
         if problems:
@@ -173,15 +181,25 @@ def cmd_build(args) -> None:
                 f"run 'ota.py fetch {p.name}', or add --download to build.")
         official = _fetch_official(p, version=args.version, insecure=args.insecure, channel=args.channel,
                                   from_version=args.from_version)
-    output = args.output or MODULE_DIR / "out" / builder.default_output_name(p, args.app, tag=builder.check_tag(args.tag))
-    result = builder.build(p, args.app, official, output, drop=drop, tag=args.tag, factory=args.esphome_factory,
-                           boot_min_version=args.boot_min_version, secrets=secrets,
-                           fail_on_secrets=args.fail_on_secrets)
-    if not args.dry_run:
-        builder.write_report(result)
+
+    def run_build(target: Path) -> builder.BuildResult:
+        return builder.build(p, args.app, official, target, drop=drop, tag=args.tag, factory=args.esphome_factory,
+                             boot_min_version=args.boot_min_version, secrets=secrets,
+                             fail_on_secrets=args.fail_on_secrets)
+
+    if args.dry_run:
+        # Build in a scratch directory, so that an existing package (or its .sha256 and .report.json) stays untouched.
+        builder.check_output_is_no_input(output, official, args.app)
+        with tempfile.TemporaryDirectory(prefix="free-shelly-ota-dryrun-") as scratch:
+            result = run_build(Path(scratch) / output.name)
+        ui.say(f"DRY RUN, nothing written (a real build would write {output})")
+        if would_replace:
+            ui.say(f"  NOTE: {output.name} already exists, so a real build would stop here. "
+                   f"Use --tag LABEL or -o ZIP for another name, or --force to replace it.")
     else:
-        output.unlink()
-    ui.say(f"{'DRY RUN, removed: ' if args.dry_run else 'OK: '}{result.output}")
+        result = run_build(output)
+        builder.write_report(result)
+        ui.say(f"OK: {result.output}")
     ui.say(f"  base firmware {result.official_version} ({result.official_build_id}), "
           f"app {result.app_size} bytes, parts {result.parts}")
     if result.secrets_found == []:
@@ -410,7 +428,10 @@ def build_parser() -> argparse.ArgumentParser:
     g = b.add_argument_group("output")
     g.add_argument("-o", "--output", type=Path, metavar="ZIP", help="output file (default: out/<auto name>)")
     g.add_argument("--tag", metavar="LABEL", help="own label for file name and report (manifest unchanged)")
-    g.add_argument("--dry-run", action="store_true", help="check only, keep no output")
+    g.add_argument("--dry-run", action="store_true", help="check only, write nothing (an existing output is left alone)")
+    g.add_argument("--force", action="store_true",
+                   help="replace the automatically named output if it already exists (default: stop; a name given "
+                        "with -o is always replaced)")
     g = b.add_argument_group("parts")
     g.add_argument("--drop", default="", metavar="LIST", help="leave out parts: boot,pt,otadata,nvs,fs")
     g.add_argument("--drop-fs", action="store_true", help="same as --drop fs")
