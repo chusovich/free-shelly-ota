@@ -80,6 +80,11 @@ All notable changes to this project are documented here. The format follows
   sentence under the device table.
 
 ### Fixed
+- `send` no longer blames the firewall when the device's log works but does not name an app slot. The Plug M Gen3 on stock 1.8.99 logs `Storing core dumps to scratch (0x720000)`
+  instead of `app_N`; `send` showed "the update target slot could not be read (UDP log blocked? ...)" although the datagrams arrived. It now says that this firmware does not reveal the
+  target slot before the update, names the line it saw and points to `Will write to slot N` in the `--watch` log. Still only a warning: the slot is unknown, so nothing is refused. The installer
+  wrote to slot 0 there (device running from slot 1), which the Plug M Gen3 page and [Bootloader and slots](docs/bootloader-and-slots.md#the-app-must-land-in-slot-0) now record.
+  `probe_target_slot()` returns a `SlotProbe(slot, core_dump_target)` instead of an `int | None`. Found in a device report.
 - Without `--version`, `build`, `send`, `restore`, `fetch` and `partition-csv` took the highest cached version, and a downloaded pre-release such as `2.2.0-beta1`
   sorted above the stable `2.0.1`, so the beta would have been used silently. The default is now the newest stable cached version; a pre-release needs
   `--version`, or is used only when it is all that is cached.

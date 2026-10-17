@@ -22,11 +22,12 @@ from shelly_ota import builder, devicegen, firmware, lint, logwatch, profile, rp
 class FakeRpcShelly:
     """Shelly simulator with RPC, optional digest auth (SHA-256) and UDP debug log."""
 
-    def __init__(self, password=None, slot=1, app="DuoBulbG3", target_slot=None):
+    def __init__(self, password=None, slot=1, app="DuoBulbG3", target_slot=None, core_dump_target=None):
         self.app = app
         self.password = password
         self.slot = slot
         self.target_slot = target_slot  # if set, the debug log announces "Storing core dumps to app_<n>" like a real updater
+        self.core_dump_target = core_dump_target  # if set instead: "Storing core dumps to <name>", like the Plug M Gen3 on 1.8.99 ("scratch")
         self.udp_addr = None
         self.updates = []
         outer = self
@@ -86,6 +87,9 @@ class FakeRpcShelly:
                         if outer.target_slot is not None:
                             sock.sendto(f"shos_ota_esp32_back:949 Storing core dumps to app_{outer.target_slot} "
                                         f"(0x200000)\n".encode(), (host, int(port)))
+                        elif outer.core_dump_target:
+                            sock.sendto(f"a_esp32_backend.cpp:815 Storing core dumps to {outer.core_dump_target} "
+                                        f"(0x720000)\n".encode(), (host, int(port)))
                         sock.close()
                     return self._reply({"id": 1, "result": {"restart_required": False}})
                 self._reply({"id": 1, "error": {"code": -105, "message": "unknown"}})

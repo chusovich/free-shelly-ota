@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from shelly_ota import bootswap, builder, firmware, profile, sender  # noqa: E402
+from shelly_ota import bootswap, builder, firmware, profile, sender, ui  # noqa: E402
 from shelly_ota.devicegen import parse_partitions  # noqa: E402
 from test_extras import FakeRpcShelly, free_udp_port  # noqa: E402
 from test_builder import fake_app  # noqa: E402
@@ -198,9 +198,9 @@ class BootswapTests(unittest.TestCase):
             builder.check_app_image(fake_app(100_000), "esp32c3", 50_000, "app_0")
         self.assertIn("COMPILER_OPTIMIZATION_SIZE", str(cm.exception))
 
-    def _send_dry(self, target_slot, **kw):
+    def _send_dry(self, target_slot, core_dump_target=None, **kw):
         res = self._build(make_factory(self.official, self.app))        # a package that replaces the bootloader
-        shelly = FakeRpcShelly(app="PlugMG3", target_slot=target_slot)
+        shelly = FakeRpcShelly(app="PlugMG3", target_slot=target_slot, core_dump_target=core_dump_target)
         self.addCleanup(shelly.close)
         lines = []
         try:
@@ -232,7 +232,37 @@ class BootswapTests(unittest.TestCase):
     def test_unreadable_target_slot_only_warns(self):
         lines, error, _ = self._send_dry(target_slot=None)
         self.assertIsNone(error)
-        self.assertTrue(any("could not be read" in l for l in lines), lines)
+        self.assertTrue(any("could not be read" in l and "UDP log blocked" in l for l in lines), lines)
+
+    def test_core_dump_line_without_an_app_slot_is_not_blamed_on_the_firewall(self):
+        """Plug M Gen3, stock 1.8.99: 'Storing core dumps to scratch (0x720000)'. The log works, it just names no app slot."""
+        lines, error, _ = self._send_dry(target_slot=None, core_dump_target="scratch")
+        self.assertIsNone(error)                                     # a warning, never a refusal: the slot is unknown
+        warn = [l for l in lines if "does not reveal the update target slot" in l]
+        self.assertEqual(len(warn), 1, lines)
+        self.assertIn("'Storing core dumps to scratch'", warn[0])
+        self.assertIn("--watch", warn[0])
+        self.assertFalse(any("UDP log blocked" in l or "could not be read" in l for l in lines), lines)
+        painted = ui.paint(warn[0], enabled=True).split("\n")       # yellow, not orange: send has nothing to prevent here
+        self.assertEqual(len(painted), 2)
+        self.assertTrue(all(l.startswith(ui.YELLOW) for l in painted), painted)   # "Will write to slot N" keeps the color above
+
+    def test_probe_reports_what_the_core_dump_line_names(self):
+        cases = ((dict(target_slot=0), sender.SlotProbe(0, "app_0")),
+                 (dict(target_slot=1), sender.SlotProbe(1, "app_1")),
+                 (dict(core_dump_target="scratch"), sender.SlotProbe(None, "scratch")),
+                 (dict(), sender.SlotProbe(None, None)))               # no such line at all
+        for kw, expected in cases:
+            shelly = FakeRpcShelly(app="PlugMG3", **kw)
+            self.addCleanup(shelly.close)
+            probe = sender.probe_target_slot(shelly.addr, "127.0.0.1", free_udp_port(), wait=1.5)
+            self.assertEqual(probe, expected, kw)
+
+    def test_core_dump_pattern_matches_the_lines_seen_on_devices(self):
+        for line, name in (("shos_ota_esp32_back:949 Storing core dumps to app_1 (0x200000)", "app_1"),
+                           ("I a_esp32_backend.cpp:815 Storing core dumps to scratch (0x720000)", "scratch")):
+            self.assertEqual(sender.CORE_DUMP_RE.search(line).group(1), name)
+        self.assertIsNone(sender.CORE_DUMP_RE.search("I a_esp32_backend.cpp:422 Will write to slot 0"))
 
     def test_classic_esp32_bootloader_at_0x1000_is_swapped(self):
         """Gen2 (ESP32): bootloader at 0x1000, partition table at 0x8000, otadata at 0xd000, chip id 0."""
