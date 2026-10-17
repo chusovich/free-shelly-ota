@@ -1,7 +1,7 @@
 name: Bug or wrong message
 description: The tool crashed, a message is wrong, or the documentation does not match what you saw.
 title: "[Bug] <short summary>"
-labels: ["bug"]
+labels: ["type: bug"]
 body:
   - type: markdown
     attributes:
