@@ -13,6 +13,9 @@ app 2.0.1 up with its access point, factory data intact.
 > [!WARNING]
 > Disconnect the device from mains and power it from the adapter (3.3 V). Never connect UART to a device that is on mains.
 
+> [!TIP]
+> Try it on a dev board first: `ota.py devkit` writes the same parts as one image ([Test the update on a dev board](devkit.md)).
+
 ## Steps
 
 1. **Download mode:** put the chip into download mode (GPIO0 to GND at reset; on an ESP32-C3 it is GPIO9).

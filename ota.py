@@ -16,7 +16,7 @@ import tempfile
 import textwrap
 from pathlib import Path
 
-from shelly_ota import (MODULE_DIR, buildinfo, builder, devicegen, firmware, lint, logwatch, profile, secrets_check,
+from shelly_ota import (MODULE_DIR, buildinfo, builder, devicegen, devkit, firmware, lint, logwatch, profile, secrets_check,
                         sender, ui)
 
 DESCRIPTION = ("Pack your ESPHome app image into an official-style Shelly OTA ZIP (Gen2 ESP32, Gen3 ESP32-C3, Gen4 ESP32-C6) "
@@ -39,6 +39,7 @@ COMMANDS = [
     ]),
     ("Tools", [
         ("inspect", "show and verify an OTA ZIP"),
+        ("devkit", "write a flash image of a package for a dev board"),
         ("list", "show devices and cached firmware"),
         ("profiles", "list the device profiles with their revision, check devices/profiles.lock"),
         ("clean", "delete old ZIPs in out/ (shows what, needs --yes)"),
@@ -147,6 +148,23 @@ def cmd_partition_csv(args) -> None:
         ui.say(f"Wrote {args.output}")
     else:
         print(text, end="")
+
+
+def cmd_devkit(args) -> None:
+    p = profile.load_profile(args.device)
+    source = args.zip or firmware.cached_zip(p.name, args.version)
+    if source is None:
+        raise builder.OtaError(f"No official {p.name} ZIP cached. Run 'ota.py fetch {p.name}' first, or pass --zip <package>.")
+    image = devkit.build_image(source, p, flash_size=args.flash_size)
+    output = args.output or MODULE_DIR / "out" / f"{p.name}-devkit-{image.version}.bin"
+    if output.exists() and not args.force:
+        raise builder.OtaError(f"{output} already exists (use --force to overwrite).")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(image.data)
+    ui.say(devkit.summary(image, output, source, args.port))
+    note = secrets_check.report_note(source) if args.zip else None
+    if note:
+        ui.say(f"{note[0]}: {note[1]}")
 
 
 def cmd_build(args) -> None:
@@ -408,6 +426,22 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--official", type=Path, metavar="ZIP", help="use this official ZIP instead of the cache")
     g.add_argument("--version", metavar="VER", help="use this cached version (default: the newest stable one)")
     pc.set_defaults(func=cmd_partition_csv)
+
+    dk = _command(sub, "devkit", usage="ota.py devkit DEVICE [options]",
+                  epilog=_epilog("devkit PlusUni", "devkit",
+                                 "Writes out/<Device>-devkit-<version>.bin and prints the esptool commands. It flashes nothing itself."))
+    dk.add_argument("device", metavar="DEVICE", help=dev_help)
+    g = dk.add_argument_group("package")
+    g.add_argument("--zip", type=Path, metavar="ZIP",
+                   help="use this package instead of the cached official one (your own build gives the state after an install)")
+    g.add_argument("--version", metavar="VER", help="use this cached official version (default: the newest stable one)")
+    g = dk.add_argument_group("image")
+    g.add_argument("-o", "--output", type=Path, metavar="BIN", help="write to this file (default: out/<Device>-devkit-<version>.bin)")
+    g.add_argument("--force", action="store_true", help="overwrite an existing output file")
+    g.add_argument("--flash-size", choices=list(devkit.FLASH_SIZES), metavar="SIZE",
+                   help="stop if the layout needs more flash than the board has: 4MB, 8MB or 16MB")
+    g.add_argument("--port", default="COMx", metavar="PORT", help="serial port in the printed esptool commands (default: %(default)s)")
+    dk.set_defaults(func=cmd_devkit)
 
     b = _command(sub, "build", usage="ota.py build DEVICE APP.bin [options]",
                  epilog=_epilog("build PlugMG3 app.ota.bin --esphome-factory app.factory.bin", "build"))
