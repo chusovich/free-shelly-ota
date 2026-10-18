@@ -24,6 +24,7 @@ not work. The README has the short version; these pages have the details.
 | [Bootloader and slots](bootloader-and-slots.md) | Why ESPHome's bootloader is shipped, `min_version`, why the app must land in slot 0 |
 | [Troubleshooting](troubleshooting.md) | Header errors, empty log, battery devices, eFuse, power cycle |
 | [Recovery over UART](recovery-uart.md) | Back to Shelly OS with `esptool` |
+| [Test on a dev board](devkit.md) | A flash image of a package for a board: play the whole update through, for any device |
 | [Credential check](credential-check.md) | Secrets inside images and packages |
 | [Versions](versions.md) | Tool version, build report, profile revisions |
 

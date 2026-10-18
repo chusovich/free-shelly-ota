@@ -2,7 +2,7 @@
 
 [← README](../README.md) · [Documentation](README.md) · [Device pages](devices/README.md) · [Troubleshooting](troubleshooting.md)
 
-[📥 fetch](#fetch) · [🔨 build](#build) · [📤 send](#send) · [↩️ restore](#restore) · [➕ add-device](#add-device) · [📋 partition-csv](#partition-csv) · [🔍 inspect](#inspect) · [🧹 clean](#clean) · [📜 log](#log) · [🎨 Colors](#colors)
+[📥 fetch](#fetch) · [🔨 build](#build) · [📤 send](#send) · [↩️ restore](#restore) · [➕ add-device](#add-device) · [📋 partition-csv](#partition-csv) · [🔍 inspect](#inspect) · [🧪 devkit](#devkit) · [🧹 clean](#clean) · [📜 log](#log) · [🎨 Colors](#colors)
 
 The usual workflow is three steps:
 
@@ -22,6 +22,7 @@ python ota.py send  PlugMG3 out/<file>.zip --watch 60   # 3. send it to the devi
 | Deploy | [`restore`](#restore) | Send the cached official firmware back |
 | Deploy | [`log`](#log) | Show the device's live debug log |
 | Tools | [`inspect`](#inspect) | Show and verify a ZIP |
+| Tools | [`devkit`](#devkit) | Write a flash image of a package for a dev board and print the `esptool` commands |
 | Tools | `list` | Show devices and cached firmware |
 | Tools | `profiles` | List the profiles with their revision, check `devices/profiles.lock` (`--update-lock` writes it) |
 | Tools | [`clean`](#clean) | Delete old ZIPs in `out/` (needs `--yes`) |
@@ -168,6 +169,23 @@ profile's `pt_offset`.
 
 Shows and verifies a ZIP (manifest, part hashes, credential warnings): `python ota.py inspect out/<file>.zip`. `--device DEVICE` also shows how full
 the app slot is.
+
+## devkit
+
+Writes a flash image of a package, to play the whole update through on a dev board ([Test the update on a dev board](devkit.md)):
+`python ota.py devkit PlusUni`. The image goes to `out/<Device>-devkit-<version>.bin`; the tool prints the `esptool` commands and does not run them.
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `--zip ZIP` | the cached official package | Use this package instead (one from `build` gives the state after an install) |
+| `--version VER` | the newest stable one | Use this cached official version |
+| `-o`, `--output BIN` | `out/<Device>-devkit-<version>.bin` | Write to this file |
+| `--force` | off | Overwrite an existing output file |
+| `--flash-size SIZE` | none | Stop if the layout needs more flash than the board has: `4MB`, `8MB` or `16MB` |
+| `--port PORT` | `COMx` | Serial port in the printed commands |
+
+> [!WARNING]
+> The image overwrites the whole flash of a board and holds Shelly's firmware. Use a spare board, not a device, and do not share the file.
 
 ## clean
 

@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- `ota.py devkit PROFILE`: a flash image of a package for a dev board, so the whole update (`send`, the installer, the bootloader swap, the slot logic) can be played through on a board
+  instead of a device, for every profile. It takes the cached official package or any package (`--zip`; one from `build` gives the state after an install), puts every part at the offset of
+  its partition table (NVS empty, no `shelly` or `aux` data), refuses a part that does not fit its partition, overlaps, or a board with too little flash (`--flash-size`), writes
+  `out/<Device>-devkit-<version>.bin` and prints the `esptool` commands; it flashes nothing itself. New page `docs/devkit.md` (board table per profile, stages, what to look for, variations,
+  limits). Not run on a board yet: whether the Shelly app starts on a board that is not a Shelly is open. `tests/test_devkit.py` checks the image of every profile.
 - `ROADMAP.md`: what is planned (now, next, later) and where testers can help; linked from the README.
 - `docs/assets/social-preview.png` (1280×640): the image for GitHub's social preview (Settings → General → Social preview; it cannot be set from the repository).
 - `tests/test_readme.py`: every profile is in the README device table, the "N profiles: ✅ … 🟡 … 🧪 …" line above it matches the table, the state symbols of the README and of

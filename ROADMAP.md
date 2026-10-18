@@ -15,6 +15,9 @@ Where the project stands and where it goes next.
 - **Release 0.4.0.** Since 0.3.1: the PM Mini Gen3 profile (the first outside report), the reachability check in `send`,
   `fetch --channel` and `--from-version`, "newest stable" as the default cached firmware, the new README and device pages.
   Steps: CHANGELOG, version, `python ota.py profiles --update-lock`, tag, GitHub Release.
+- **Dev board test bench.** `ota.py devkit` writes a flash image of a package, so the whole update (`send`, the installer, the bootloader swap, the slot logic) can be played
+  through on a dev board instead of a device, for any profile. The first runs are on a classic ESP32 (Plus Uni) and an ESP32-C3 (Plug M). Open: whether the Shelly app starts on a
+  board that is not a Shelly. What the boards showed goes into [Test on a dev board](docs/devkit.md#seen-on-a-board).
 - **Decide on a `Pro3EMProAddon` profile.** The Pro 3EM package says `Pro3EM,Pro3EMProAddon`; `send` splits that list since [#49](https://github.com/oxynatOr/free-shelly-ota/pull/49), so a unit
   that reports `Pro3EMProAddon` passes the model check. Whether it needs a profile of its own is open.
 
@@ -28,6 +31,8 @@ Where the project stands and where it goes next.
 - **Device pages on devices.esphome.io** for the Plug M, Plug PM and PM Mini (new pages) and a correction of the Plug S page, each with the
   OTA route via this tool. A page for the Multicolor Bulb can follow now that its light component is published; Duo Bulb and Mini 1 Gen3
   when their hardware is checked.
+- **More of the test bench.** The profiles that need other boards (the ESP32-C6 devices and the Pro 3EM with 16 MB flash), and a plan B if the Shelly app wants its `shelly` partition:
+  one taken from an own dump, never shared.
 - **Tests without the firmware cache.** Many tests need the local `fw/` folder, which is not in git. Small synthetic packages as
   fixtures, then a GitHub Actions run on every pull request.
 - **More devices on request.** Plug US Gen4 (parked), and whatever the "Request a new device" form brings.
@@ -51,6 +56,7 @@ Where the project stands and where it goes next.
 | --- | --- | --- |
 | Flash a 🧪 device and report the `--watch` log | Owners of the 🧪 devices in the [table](README.md#supported-devices), 7 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Pro 3EM: a first hardware report. Plus Uni and Pro 3EM: the pins | Owners | Issues [#36](https://github.com/oxynatOr/free-shelly-ota/issues/36) and [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46) |
+| A board for the rest of the test bench: ESP32-C6 with 8 MB, classic ESP32 with 16 MB | Anyone with such a board | [Which board](docs/devkit.md#which-board) |
 | Plug PM Gen3: readings against a reference meter | Owners | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Your device is missing | Anyone | [Request a new device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml) |
 

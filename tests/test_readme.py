@@ -155,7 +155,7 @@ class TopicPageTests(unittest.TestCase):
 
     PAGES = (
         "docs/README.md", "docs/commands.md", "docs/bootloader-and-slots.md", "docs/troubleshooting.md", "docs/recovery-uart.md",
-        "docs/credential-check.md", "docs/versions.md", "docs/devices/README.md", "devices/README.md", "ROADMAP.md", "CREDITS.md",
+        "docs/credential-check.md", "docs/versions.md", "docs/devkit.md", "docs/devices/README.md", "devices/README.md", "ROADMAP.md", "CREDITS.md",
     )
     CALLOUTS = {"NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"}
 
