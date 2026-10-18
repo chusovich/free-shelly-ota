@@ -368,16 +368,6 @@ class OfflineTests(unittest.TestCase):
         y = self._yaml(self.GOOD + "ota:\n  - platform: esphome\n    allow_partition_access: true\n")
         self.assertEqual(lint.lint_warnings(y, bootloader_shipped=True), [])
 
-    def test_send_prints_bootloader_follow_up_note(self):
-        zip_path = self.tmp / "t.zip"
-        shutil.copy(firmware.cached_zip("DuoBulbG3"), zip_path)
-        s = FakeRpcShelly()
-        self.addCleanup(s.close)
-        lines = []
-        sender.send(profile.load_profile("DuoBulbG3"), zip_path, s.addr, port=0, assume_yes=True, timeout=10,
-                    out=lines.append)
-        self.assertTrue(any("--esphome-factory" in l and "Shelly's bootloader" in l for l in lines), lines)
-
 
 if __name__ == "__main__":
     unittest.main()

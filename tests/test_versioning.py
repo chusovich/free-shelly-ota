@@ -133,7 +133,8 @@ class ReportTests(unittest.TestCase):
         shelly = FakeRpcShelly(app="PlugMG3")
         self.addCleanup(shelly.close)
         lines = []
-        sender.send(self.profile, out, shelly.addr, port=0, dry_run=True, out=lines.append)
+        # a package without ESPHome's bootloader is only sent with --force (this one is built without a factory image)
+        sender.send(self.profile, out, shelly.addr, port=0, dry_run=True, force=True, out=lines.append)
         package = [l for l in lines if l.startswith("Package: built")]
         self.assertEqual(len(package), 1, lines)
         self.assertIn(f"by free-shelly-ota {__version__}", package[0])
@@ -141,7 +142,7 @@ class ReportTests(unittest.TestCase):
         self.assertFalse(any("has changed since this package" in l for l in lines), lines)
         newer = dataclasses.replace(self.profile, revision=self.profile.revision + 1)
         lines.clear()
-        sender.send(newer, out, shelly.addr, port=0, dry_run=True, out=lines.append)
+        sender.send(newer, out, shelly.addr, port=0, dry_run=True, force=True, out=lines.append)
         self.assertTrue(any("has changed since this package was built" in l for l in lines), lines)
 
     def test_a_package_without_report_just_has_no_origin_line(self):
