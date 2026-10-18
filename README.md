@@ -87,6 +87,7 @@ esp32:
       enable_ota_rollback: false
 ota:
   - platform: esphome
+    allow_partition_access: true
 ```
 
 **2. Compile it.**

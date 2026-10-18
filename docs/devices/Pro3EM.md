@@ -50,6 +50,7 @@ esp32:
 
 ota:
   - platform: esphome
+    allow_partition_access: true
 ```
 
 ## Flash it

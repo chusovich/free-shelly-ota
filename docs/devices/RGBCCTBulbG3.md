@@ -50,6 +50,7 @@ esp32:
 
 ota:
   - platform: esphome
+    allow_partition_access: true
 ```
 
 The full example config (RGB + colour temperature light with the stock firmware's table and white balance, current codes as the Shelly firmware sends them)
