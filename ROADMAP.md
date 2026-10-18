@@ -8,18 +8,13 @@ Where the project stands and where it goes next.
 
 > [!NOTE]
 > This is a plan, not a promise: the order changes when a test report or a new device shows up.
-> State: 2026-10-18, after the tag `v0.3.1` and the unreleased changes in the [CHANGELOG](CHANGELOG.md).
+> State: 2026-10-18, at release 0.4.0 (see the [CHANGELOG](CHANGELOG.md)).
 
 ## Now
 
-- **Release 0.4.0.** Since 0.3.1: the PM Mini Gen3 profile (the first outside report), the reachability check in `send`,
-  `fetch --channel` and `--from-version`, "newest stable" as the default cached firmware, the new README and device pages.
-  Steps: CHANGELOG, version, `python ota.py profiles --update-lock`, tag, GitHub Release.
 - **Dev board test bench.** `ota.py devkit` writes a flash image of a package, so the whole update (`send`, the installer, the bootloader swap, the slot logic) can be played
   through on a dev board instead of a device, for any profile. The first runs are on a classic ESP32 (Plus Uni) and an ESP32-C3 (Plug M). Open: whether the Shelly app starts on a
   board that is not a Shelly. What the boards showed goes into [Test on a dev board](docs/devkit.md#seen-on-a-board).
-- **Decide on a `Pro3EMProAddon` profile.** The Pro 3EM package says `Pro3EM,Pro3EMProAddon`; `send` splits that list since [#49](https://github.com/oxynatOr/free-shelly-ota/pull/49), so a unit
-  that reports `Pro3EMProAddon` passes the model check. Whether it needs a profile of its own is open.
 
 ## Next
 
@@ -27,7 +22,9 @@ Where the project stands and where it goes next.
   the Power Strip outlets and metering, the Duo Bulb over OTA, the Plus Uni with this profile's `boot_min_version` 1.0.9 (the first report ran with 1.0.3 and kept Shelly's loader).
 - **Multicolor Bulb.** The colour temperature light (`rgbw_ct_table`, published in `oxynatOr/esphome-kp18058` since 2026-10-15) runs on the
   bulb. Still open: its colours against the stock UI at 2700, 4000 and 6500 K, the optional light packages (daylight, scenes, wake-up alarm,
-  night light), and pinning a commit of the component in the bulb config (kept in `oxynatOr/esphome-configs`) instead of `@main`.
+  night light). The bulb config lives in `oxynatOr/esphome-configs` and pins the published commit of the component; the bulb first ran an earlier local build of it.
+- **esphome-configs 0.2.0.** The Power Strip, Multicolor Bulb and Duo Bulb projects there point to `@v0.1.0`, which does not contain them; they can be adopted
+  from the dashboard after the next tag (`scripts/bump-tag.py`).
 - **Device pages on devices.esphome.io** for the Plug M, Plug PM and PM Mini (new pages) and a correction of the Plug S page, each with the
   OTA route via this tool. A page for the Multicolor Bulb can follow now that its light component is published; Duo Bulb and Mini 1 Gen3
   when their hardware is checked.
@@ -70,3 +67,6 @@ Items that stood under "Now" in an earlier version of this page.
 | `send` splits a comma separated `compatible` list into patterns | [#49](https://github.com/oxynatOr/free-shelly-ota/pull/49) |
 | Official package 2.1.0 compared with 2.0.1 for the profiles with a cached package, `Official package` rows updated | [#50](https://github.com/oxynatOr/free-shelly-ota/pull/50) |
 | Mini 1 Gen3: profile and device page | [#52](https://github.com/oxynatOr/free-shelly-ota/pull/52) |
+| Pro 3EM add-on (`Pro3EMProAddon`): no profile of its own, the `compatible` list covers it | [#49](https://github.com/oxynatOr/free-shelly-ota/pull/49) |
+| `send` stops before it sends a package that keeps Shelly's bootloader; the route without ESPHome's bootloader is described as the loader works | [#64](https://github.com/oxynatOr/free-shelly-ota/pull/64), [#65](https://github.com/oxynatOr/free-shelly-ota/pull/65) |
+| Release 0.4.0 | [CHANGELOG](CHANGELOG.md#040---2026-10-18) |
