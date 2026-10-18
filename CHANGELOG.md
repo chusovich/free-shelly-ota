@@ -21,6 +21,16 @@ All notable changes to this project are documented here. The format follows
   `.sha256` and `.report.json` behind. The dry run now builds in a scratch directory and prints `DRY RUN, nothing written`. Reported with a Plug M Gen3 build.
 
 ### Changed
+- Plus Uni: first device report ([#46](https://github.com/oxynatOr/free-shelly-ota/issues/46), thanks to [yasdfgr](https://github.com/yasdfgr)): flashed over OTA from stock 2.0.1 with
+  `--esphome-factory`, ESPHome runs and one later ESPHome OTA took effect; further ones were written but never started. The device page, `docs/devices/README.md` and the README row go from
+  🧪 to 🟡 (the counter is now 6 ✅, 4 🟡, 7 🧪), because the tester's package had `min_version` 1.0.3 (a profile that is not in this repository), which was not higher than the installed loader
+  1.0.3 (`Boot: cur 010003ff ... update? 0`): ESPHome's bootloader was skipped, so the step with this profile's `boot_min_version: 1.0.9` is not checked on this model. The page records the
+  log lines, the loader (1.0.3, the first seen on a Plus Uni), the `BURN BLOCK3 - OK` lines, the ESPHome warnings about `minimum_chip_revision` and `sram1_as_iram` (do not add them for the package)
+  and the 7-pin UART header from Shelly's Knowledge Base (read from its drawing, not checked on a board). `docs/troubleshooting.md` (eFuse) and `CREDITS.md` follow.
+- `docs/bootloader-and-slots.md` ("Without ESPHome's bootloader") and the Plug M page described Shelly's loader wrongly ("later OTAs take effect after the attempt counter runs out"). Read from the
+  loader code and reproduced on a plain ESP32 test board with the Plus Uni loader: ESPHome gets three starts, the loader then goes back to the other slot and commits it, and only an ESPHome OTA that
+  arrives during those starts changes that, once; later OTAs are written but never started. The UART fix in the same file gives ESPHome's bootloader address per chip (`0x1000` on the classic ESP32,
+  not `0x0`) and the simpler way, the `.factory.bin` at `0x0`.
 - `send` stops before it sends an ESPHome package that keeps Shelly's bootloader (built without `--esphome-factory`). The message is written in capitals and says what happens: Shelly's loader
   starts the ESPHome image three times, goes back to the other slot and keeps it, and only an ESPHome OTA during those starts changes that, once; after it, OTAs are written but never started
   and only UART helps (Plus Uni, issue #46). `--force` sends anyway, with the same text as a warning. The official package (`restore`, or sent by hand) is not affected. The note after

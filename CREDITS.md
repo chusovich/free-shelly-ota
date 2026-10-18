@@ -24,6 +24,7 @@ People who tested a device, sent a report or shared what they know. Newest first
 | Who | What |
 | --- | --- |
 | [815rx1](https://github.com/815rx1) | A device report of a Plug M Gen3 (October 2026): the first run with the official 2.1.0 package and from factory firmware 1.8.99, with the full `--watch` log, the bootloader swap from loader 1.0.2, two later ESPHome OTAs (CLI and Home Assistant) and the power-cycle behaviour of relay and LED on the [device page](docs/devices/PlugMG3.md) |
+| [yasdfgr](https://github.com/yasdfgr) | A device report for the [Plus Uni](docs/devices/PlusUni.md) (October 2026, [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46)): a successful OTA run with the full log, the first loader version seen on that device (1.0.3) and the eFuse lines |
 | [imsandli](https://github.com/imsandli) | The first external device report (PM Mini Gen3, October 2026): a successful OTA run with logs, the BL0942 RX pull-up and a voltage calibration for the [device page](docs/devices/MiniPMG3.md), and the idea for the check that the device can reach the PC |
 | bobkersten | Author of the ESPHome device-database page for the [Shelly Plus Plug S](https://devices.esphome.io/devices/Shelly-Plus-Plug-S/), whose pins and config the [Plus Plug S page](docs/devices/PlusPlugS.md) uses (tested by the author, not by this project) |
 

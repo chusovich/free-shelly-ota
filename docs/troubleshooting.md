@@ -135,6 +135,10 @@ A Plug M Gen3 (stock 1.8.99, official 2.1.0 package with ESPHome's bootloader) l
 `EFUSE write error`; the update succeeded and ESPHome ran. Whether the bits were written silently or not touched is not known (this
 plug's eFuses were not read back with `espefuse summary`).
 
+A Plus Uni (classic ESP32, stock 2.0.1) logged `FW signatures: want 07 got 00` and then, twice, `BURN BLOCK3` followed by
+`BURN BLOCK3 - OK (all write block bits are set)`: no error this time. Whether the eFuse changed was not checked (no
+`espefuse summary` before and after). On the Plus Plug S unit that was brought back over UART, `BLOCK3` had a byte `0x07` set.
+
 ## Safety
 
 Nothing is downloaded unless you run `fetch` (or pass `--download`). Shelly firmware is not part of this repository (`fw/` and

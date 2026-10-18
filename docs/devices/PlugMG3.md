@@ -135,8 +135,8 @@ No `EFUSE write error` line appeared, only the `FW signatures` one ([eFuse note]
 - On this model ESPHome came up after a power-off of about 30 seconds; whether it would also have started without it was not tested.
 - The second plug showed what "not started" can look like: ESPHome, Wi-Fi, the API and the sensors (voltage, frequency, temperature, power under a 1.8 kW load) worked at once, but the relay and the LED did not react, although ESPHome reported the switch as on. After about 30 seconds without power both worked.
 - That plug ran Shelly OS loader 1.0.2 (factory firmware 1.8.99, `Boot: cur 010002ff`). `boot_min_version: 1.0.9` was enough there: `update? 1`, and ESPHome's bootloader was written. A plug that came back from ESPHome through the official 2.0.1 package runs loader 1.0.3 ([why the profile uses 1.0.9](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)).
-- Without `--esphome-factory` ESPHome still boots, but later ESPHome OTAs only take effect after Shelly's attempt counter runs out
-  ([details](../bootloader-and-slots.md#without-esphomes-bootloader-plain-package)).
+- Without `--esphome-factory` Shelly's loader stays: ESPHome runs for three starts, then the old firmware comes back unless an ESPHome OTA arrived in time, and only the first
+  such OTA can take effect. `send` refuses such a package without `--force` ([details](../bootloader-and-slots.md#without-esphomes-bootloader-plain-package)).
 
 ## Way back
 
