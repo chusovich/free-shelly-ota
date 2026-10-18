@@ -113,7 +113,7 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 | --- | --- | --- | --- |
 | `DEVICE`, `ZIP` | yes | | Profile name and the ZIP to send |
 | `--ip IP` | no | `192.168.33.1` | Address of the Shelly |
-| `--watch SEC` | no | off | Show the device's debug log (UDP, switched on over RPC and restored afterwards) and keep listening SEC seconds after the download |
+| `--watch SEC` | no | off | Show the device's debug log (UDP, switched on over RPC and restored afterwards) and keep listening SEC seconds after the download. Warns if the log says `update? 0` for a package that replaces the bootloader |
 | `--user USER` / `--password PW` | no | `admin` / none | Login, if the device has a password (digest auth) |
 | `--yes` | no | off | Do not ask before flashing |
 | `--dry-run` | no | off | Check the device (also whether it can reach this PC), send nothing |

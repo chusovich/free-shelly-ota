@@ -202,6 +202,20 @@ def matches_compatible(app: str, pattern: str | None) -> bool:
     return any(fnmatch.fnmatchcase(app, p.strip()) for p in (pattern or "").split(",") if p.strip())
 
 
+class BootWatch:
+    """Passes device log lines on and warns once if the updater says it keeps Shelly's bootloader (update? 0)."""
+
+    def __init__(self, out: Callable[[str], None], expect_new_loader: bool):
+        self.out, self.expect_new_loader, self.skipped = out, expect_new_loader, False
+
+    def feed(self, text: str) -> None:
+        self.out(text)
+        boot = logwatch.parse_boot_line(text)
+        if boot and not boot["update"] and self.expect_new_loader and not self.skipped:
+            self.skipped = True
+            self.out(logwatch.boot_skipped_warning(boot))
+
+
 def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str | None = None,
          port: int = 8000, timeout: float = 300, assume_yes: bool = False, dry_run: bool = False,
          force: bool = False, user: str | None = None, password: str | None = None,
@@ -304,8 +318,11 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
         text = reach_text(state, detail, host, server.port)
         out(text if state else f"{'WARNING' if state is False else 'NOTE'}: {text}")  # never blocks: the download decides
         with contextlib.ExitStack() as stack:
+            boot_watch = BootWatch(out, expect_new_loader=bool(boot_replaced))
+            log_out = boot_watch.feed
+
             if watch > 0:
-                stack.enter_context(logwatch.udp_log(addr, host, log_port, out, **auth))
+                stack.enter_context(logwatch.udp_log(addr, host, log_port, log_out, **auth))
             trigger = f"http://{addr}/rpc/Shelly.Update?url={urllib.parse.quote(url, safe='')}"
             answer = rpc.request(trigger, timeout=30, **auth).decode(errors="replace").strip()
             out(f"Device accepted the request: {answer or 'ok'}")
@@ -316,15 +333,19 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
             time.sleep(1)
             out("Done: the device downloaded the ZIP. It now flashes and reboots; if it stays silent, "
                 "disconnect it from power for at least 30 s.")
-            if boot_replaced:
+            if boot_replaced and watch > 0:
+                # the Boot line may arrive after the download: listen first, then decide on the closing note
+                out(f"Still listening to the device log for {watch:.0f}s ...")
+                time.sleep(watch)
+            if boot_replaced and not boot_watch.skipped:
                 out("After the first ESPHome boot: the log line 'ota data invalid, no current app. Assuming factory' is "
                     "expected. The package carried ESPHome's bootloader, so no separate bootloader update is needed.")
-            else:
+            elif not boot_replaced:
                 out("After the first ESPHome boot: the log line 'ota data invalid, no current app. Assuming factory' is "
                     "expected. This package keeps Shelly's bootloader, which counts uncommitted boots and may switch back "
                     "to the old firmware after a few restarts. For a lasting install build with --esphome-factory "
                     "(README, 'After the first boot').")
-            if watch > 0:
+            if watch > 0 and not boot_replaced:
                 out(f"Still listening to the device log for {watch:.0f}s ...")
                 time.sleep(watch)
         return True
