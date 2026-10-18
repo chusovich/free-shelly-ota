@@ -21,6 +21,10 @@ All notable changes to this project are documented here. The format follows
   `.sha256` and `.report.json` behind. The dry run now builds in a scratch directory and prints `DRY RUN, nothing written`. Reported with a Plug M Gen3 build.
 
 ### Changed
+- The `ota:` block in the config examples (the README and 13 device pages) has `allow_partition_access: true` now, as the Plug M and Plug PM pages already had:
+  ESPHome can then update the bootloader later (ESPHome Builder's "Update bootloader"). `tests/test_readme.py` keeps the pages that way. The `--esphome-yaml` check warns about a
+  missing `allow_partition_access` with `--esphome-factory` too now (it stayed silent there before: the package carries ESPHome's bootloader, but without the entry ESPHome cannot
+  update it later; changed after the Plus Uni report, issue #46); the text of the warning differs for the two cases.
 - The pages outside the README and the device pages have the same frame as those: a navigation row that starts with `← README`, a row of links to the sections, callouts (NOTE, TIP, IMPORTANT, WARNING, CAUTION) for what must not be missed, tables where a list of cases was, and related links at the end. This covers `docs/*.md`, `devices/README.md`, `ROADMAP.md` and `CREDITS.md`; `docs/troubleshooting.md` groups its sections (sending and building, after the update, background), `docs/versions.md` has one heading per kind of version, `docs/bootloader-and-slots.md` starts with a table of the four questions. Headings keep their text, so every existing link and anchor still works. `tests/test_readme.py` checks the frame (title, navigation row, no emoji in headings, known callout types, links and anchors).
 - `ROADMAP.md`: the items of "Now" that are done (Plug S Gen3 `boot_min_version`, the `compatible` list, the 2.1.0 check, the Mini 1 Gen3 profile) moved to a new "Done" table with their pull requests; the state date and the count of untested devices are current.
 - `build` stops when the automatically named output already exists (`--force` replaces it; `--tag LABEL` or `-o ZIP` give another name). A second build on the same day used to replace the

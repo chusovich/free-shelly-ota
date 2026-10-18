@@ -128,6 +128,14 @@ class DevicePageTests(unittest.TestCase):
             self.assertIn(f"python ota.py fetch {first} --insecure", text, page.name)
             self.assertIn(f"python ota.py restore {first}", text, page.name)
 
+    def test_config_snippets_allow_partition_access(self):
+        """The ota block of every config snippet lets ESPHome update the bootloader later."""
+        block = "ota:\n  - platform: esphome\n    allow_partition_access: true"
+        for page in self.pages + [README]:
+            text = page.read_text(encoding="utf-8").replace("\r\n", "\n")
+            if "platform: esphome" in text:
+                self.assertIn(block, text, page.name)
+
     def test_relative_links_exist(self):
         for page in self.pages + [DEVICE_OVERVIEW]:
             text = page.read_text(encoding="utf-8")

@@ -361,7 +361,12 @@ class OfflineTests(unittest.TestCase):
         self.assertEqual(lint.lint_warnings(y), [])
         y = self._yaml(self.GOOD)  # no ota block at all
         self.assertEqual(len(lint.lint_warnings(y)), 1)
-        self.assertEqual(lint.lint_warnings(y, bootloader_shipped=True), [])  # --esphome-factory: nothing to update later
+        # with --esphome-factory the bootloader is shipped, the flag is still wanted (a later bootloader update needs it)
+        shipped = lint.lint_warnings(y, bootloader_shipped=True)
+        self.assertEqual(len(shipped), 1)
+        self.assertIn("carries ESPHome's bootloader", shipped[0])
+        y = self._yaml(self.GOOD + "ota:\n  - platform: esphome\n    allow_partition_access: true\n")
+        self.assertEqual(lint.lint_warnings(y, bootloader_shipped=True), [])
 
     def test_send_prints_bootloader_follow_up_note(self):
         zip_path = self.tmp / "t.zip"

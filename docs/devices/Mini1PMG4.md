@@ -47,6 +47,7 @@ esp32:
 
 ota:
   - platform: esphome
+    allow_partition_access: true
 ```
 
 The C6 needs the 80 MHz flash header, otherwise `build` refuses to replace the bootloader. If it complains, add under `esphome:`:

@@ -53,6 +53,7 @@ esp32:
 
 ota:
   - platform: esphome
+    allow_partition_access: true
 ```
 
 Add this under `esphome:` (the C6 needs the 80 MHz flash header, otherwise `build` refuses):

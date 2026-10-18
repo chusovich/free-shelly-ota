@@ -54,6 +54,7 @@ esp32:
 
 ota:
   - platform: esphome
+    allow_partition_access: true
 ```
 
 The `esp32:` block is the tester's working one (the report did not include the `ota:` block, this is the usual one). Like the [H&T Gen3](HTG3.md), the device keeps its partition table at `0xf000`, so a default ESPHome build does not match and `build` refuses it.
