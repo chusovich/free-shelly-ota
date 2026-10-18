@@ -216,11 +216,26 @@ class BootWatch:
             self.out(logwatch.boot_skipped_warning(boot))
 
 
+PLAIN_PACKAGE_DOC = "docs/bootloader-and-slots.md#without-esphomes-bootloader-plain-package"
+
+
+def plain_package_text(name: str, forced: bool = False) -> str:
+    """The message for an ESPHome package that keeps Shelly's bootloader: the refusal, or with --force the warning."""
+    ending = ("  --force given: sending anyway." if forced else
+              "  Only if you want exactly this and have UART at hand: add --force.")
+    return ("THIS PACKAGE KEEPS SHELLY'S BOOTLOADER, NOT ESPHOME'S (it was not built with --esphome-factory).\n"
+            "  Shelly's loader starts the ESPHome image only three times, then it goes back to the other slot (the old Shelly\n"
+            "  firmware) and keeps it. An ESPHome OTA during those starts changes that once. After it, further OTAs are written\n"
+            f"  but never started, and only UART helps (Plus Uni, issue #46; see {PLAIN_PACKAGE_DOC}).\n"
+            f"  Build the package with ESPHome's bootloader instead:  python ota.py build {name} app.ota.bin "
+            "--esphome-factory app.factory.bin ...\n" + ending)
+
+
 def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str | None = None,
          port: int = 8000, timeout: float = 300, assume_yes: bool = False, dry_run: bool = False,
          force: bool = False, user: str | None = None, password: str | None = None,
          watch: float = 0, log_port: int = 9514, ignore_slot: bool = False, probe_wait: float = 4.0,
-         ask: Callable[[str], str] = input, out: Callable[[str], None] = ui.say) -> bool:
+         restoring: bool = False, ask: Callable[[str], str] = input, out: Callable[[str], None] = ui.say) -> bool:
     """Returns True if the device downloaded the whole ZIP (or on a successful dry run)."""
     with zipfile.ZipFile(zip_path) as zf:
         manifest = read_official_manifest(zf, profile.name)
@@ -251,10 +266,20 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
     out(f"Download URL for the device: {url}")
     official_zip = firmware.cached_zip(profile.name)
     boot_replaced: bool | None = None  # None: cannot tell (no cached official ZIP to compare with)
+    keeps_loader = False  # an ESPHome app in a package that leaves Shelly's bootloader in place (no --esphome-factory)
     if official_zip:
         with zipfile.ZipFile(official_zip) as oz:
-            official_boot = json.loads(oz.read("manifest.json"))["parts"].get("boot", {}).get("cs_sha256")
+            official_parts = json.loads(oz.read("manifest.json"))["parts"]
+        official_boot = official_parts.get("boot", {}).get("cs_sha256")
         boot_replaced = manifest["parts"].get("boot", {}).get("cs_sha256") != official_boot
+        # the official package itself (restore, or sent by hand) keeps Shelly's bootloader by definition and is fine
+        app_changed = manifest["parts"].get("app", {}).get("cs_sha256") != official_parts.get("app", {}).get("cs_sha256")
+        keeps_loader = not boot_replaced and app_changed and not restoring
+        if keeps_loader:
+            if not force:
+                server.httpd.server_close()
+                raise OtaError(plain_package_text(profile.name))
+            out("WARNING: " + plain_package_text(profile.name, forced=True))
         if boot_replaced:
             out("WARNING: this package replaces Shelly's bootloader. If it does not suit the device, only UART can "
                 "bring it back. Do not interrupt the power during the update.")
@@ -340,11 +365,11 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
             if boot_replaced and not boot_watch.skipped:
                 out("After the first ESPHome boot: the log line 'ota data invalid, no current app. Assuming factory' is "
                     "expected. The package carried ESPHome's bootloader, so no separate bootloader update is needed.")
-            elif not boot_replaced:
-                out("After the first ESPHome boot: the log line 'ota data invalid, no current app. Assuming factory' is "
-                    "expected. This package keeps Shelly's bootloader, which counts uncommitted boots and may switch back "
-                    "to the old firmware after a few restarts. For a lasting install build with --esphome-factory "
-                    "(README, 'After the first boot').")
+            elif keeps_loader:
+                out("WARNING: this package keeps Shelly's bootloader: ESPHome gets three starts, then Shelly's loader goes back "
+                    "to the other slot (the old firmware) and keeps it. Only an ESPHome OTA during those starts changes that, "
+                    f"once; see {PLAIN_PACKAGE_DOC}. For a lasting install build with --esphome-factory. The log line "
+                    "'ota data invalid, no current app. Assuming factory' is expected.")
             if watch > 0 and not boot_replaced:
                 out(f"Still listening to the device log for {watch:.0f}s ...")
                 time.sleep(watch)

@@ -21,6 +21,10 @@ All notable changes to this project are documented here. The format follows
   `.sha256` and `.report.json` behind. The dry run now builds in a scratch directory and prints `DRY RUN, nothing written`. Reported with a Plug M Gen3 build.
 
 ### Changed
+- `send` stops before it sends an ESPHome package that keeps Shelly's bootloader (built without `--esphome-factory`). The message is written in capitals and says what happens: Shelly's loader
+  starts the ESPHome image three times, goes back to the other slot and keeps it, and only an ESPHome OTA during those starts changes that, once; after it, OTAs are written but never started
+  and only UART helps (Plus Uni, issue #46). `--force` sends anyway, with the same text as a warning. The official package (`restore`, or sent by hand) is not affected. The note after
+  the update no longer says "may switch back after a few restarts" and no longer points to a README section that does not exist; it is only printed for such a package, not after `restore`.
 - The `ota:` block in the config examples (the README and 13 device pages) has `allow_partition_access: true` now, as the Plug M and Plug PM pages already had:
   ESPHome can then update the bootloader later (ESPHome Builder's "Update bootloader"). `tests/test_readme.py` keeps the pages that way. The `--esphome-yaml` check warns about a
   missing `allow_partition_access` with `--esphome-factory` too now (it stayed silent there before: the package carries ESPHome's bootloader, but without the entry ESPHome cannot

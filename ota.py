@@ -210,11 +210,12 @@ def cmd_build(args) -> None:
         ui.say(f"  WARNING: {output} is inside a git work tree and not ignored there; git add would pick up this package.")
 
 
-def _send(args, zip_path: Path) -> None:
+def _send(args, zip_path: Path, restoring: bool = False) -> None:
     p = profile.load_profile(args.device)
     sender.send(p, zip_path, args.ip, host=args.host, port=args.port, timeout=args.timeout,
                 assume_yes=args.yes, dry_run=args.dry_run, force=args.force, user=args.user,
-                password=args.password, watch=args.watch, log_port=args.log_port, ignore_slot=args.ignore_slot)
+                password=args.password, watch=args.watch, log_port=args.log_port, ignore_slot=args.ignore_slot,
+                restoring=restoring)
 
 
 def cmd_send(args) -> None:
@@ -238,7 +239,7 @@ def cmd_restore(args) -> None:
     ui.say(f"Restoring the official firmware from {zip_path}")
     ui.say(RESTORE_NOTE)
     try:
-        _send(args, zip_path)
+        _send(args, zip_path, restoring=True)
     except builder.OtaError as e:
         if str(e).startswith("No answer from the Shelly"):
             raise builder.OtaError(f"{e}\n  Is the Shelly firmware still running? A device with ESPHome on it "
@@ -295,7 +296,8 @@ def send_options() -> argparse.ArgumentParser:
     g = o.add_argument_group("what to do")
     g.add_argument("--dry-run", action="store_true", help="check the device, send nothing")
     g.add_argument("--yes", action="store_true", help="do not ask before flashing")
-    g.add_argument("--force", action="store_true", help="send even if the device model does not match")
+    g.add_argument("--force", action="store_true",
+                   help="send even if the device model does not match, or the package keeps Shelly's bootloader (no --esphome-factory)")
     g.add_argument("--ignore-slot", action="store_true",
                    help="send even if the installer would write to a slot that ESPHome's bootloader does not start")
     g.add_argument("--watch", type=float, default=0, metavar="SEC",

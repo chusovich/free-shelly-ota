@@ -124,7 +124,7 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `--force` | off | Send even if the device model does not match |
+| `--force` | off | Send even if the device model does not match, or if the package keeps Shelly's bootloader (not built with `--esphome-factory`). Without `--force`, `send` stops in that case: the old image would come back after three starts, and only the first ESPHome OTA could change that ([why](bootloader-and-slots.md#without-esphomes-bootloader-plain-package)) |
 | `--host IP` | auto | This PC's address as seen by the Shelly |
 | `--port PORT` | `8000` | Local web server port |
 | `--log-port PORT` | `9514` | UDP port for the debug log |
