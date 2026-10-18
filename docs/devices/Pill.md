@@ -16,6 +16,7 @@ Reported: the USB-C port exposes the chip's USB Serial/JTAG, so this device can 
 | Official package | 2.0.1 |
 | Partition table | `0x10000` |
 | App slot size | `0x280000` |
+| Bootloader `min_version` | `1.0.9` (set in the profile) |
 | ESPHome device page | [Shelly The Pill](https://devices.esphome.io/devices/shelly-the-pill/): pins and an example config |
 
 ## Before you start

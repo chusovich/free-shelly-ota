@@ -17,6 +17,7 @@ The only Gen2 device so far. Classic ESP32 differs from the Gen3/Gen4 models in 
 | Partition table | **`0x8000`** (ESP-IDF default) |
 | Bootloader address | `0x1000` |
 | App slot size | `0x190000` |
+| Bootloader `min_version` | `1.0.9` (set in the profile) |
 | ESPHome device page | [Shelly Plus Plug S](https://devices.esphome.io/devices/shelly-plus-plug-s/): pins and an example config |
 
 > [!NOTE]

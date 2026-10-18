@@ -134,6 +134,13 @@ class BootswapTests(unittest.TestCase):
         self.assertEqual(profile.load_profile("HTG3").boot_min_version, "1.0.9")
         self.assertEqual(profile.load_profile("PlugMG3").boot_min_version, "1.0.9")   # restored Plug M runs loader 1.0.3
 
+    def test_every_profile_sets_a_boot_min_version_above_the_loaders_seen(self):
+        """Without one the default is 1.0.3, which a unit that already runs loader 1.0.3 skips (issue #46)."""
+        for name in profile.list_devices():
+            value = profile.load_profile(name).boot_min_version
+            self.assertIsNotNone(value, f"{name} has no boot_min_version")
+            self.assertGreaterEqual(tuple(int(x) for x in value.split(".")), (1, 0, 9), name)
+
     def _error_for(self, **factory_kw) -> str:
         with self.assertRaises(builder.OtaError) as cm:
             self._build(make_factory(self.official, self.app, **factory_kw))
