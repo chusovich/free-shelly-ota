@@ -1,6 +1,8 @@
 # Recovery over UART
 
-[Back to the README](../README.md)
+[← README](../README.md) · [Documentation](README.md) · [Commands](commands.md#restore) · [Troubleshooting](troubleshooting.md)
+
+[🪜 Steps](#steps) · [🚫 Not a way back](#not-a-way-back-pushing-the-official-app-over-esphome-ota)
 
 The official package is also a way back for a device that no longer boots (or runs something else). Its `manifest.json` says
 where every part goes; the parts can be written over UART with `esptool`. This brought a Shelly Plus Plug S (V2 hardware,
@@ -10,6 +12,8 @@ app 2.0.1 up with its access point, factory data intact.
 
 > [!WARNING]
 > Disconnect the device from mains and power it from the adapter (3.3 V). Never connect UART to a device that is on mains.
+
+## Steps
 
 1. **Download mode:** put the chip into download mode (GPIO0 to GND at reset; on an ESP32-C3 it is GPIO9).
 2. **Back up the whole flash first:** `esptool read-flash 0x0 <size> backup.bin` (size from `esptool flash-id`). Writing it
@@ -38,7 +42,8 @@ app 2.0.1 up with its access point, factory data intact.
    and no package contains them. If they are blank, the firmware may start without calibration or identity (the MAC lives in
    the eFuses).
 
-Other devices use other addresses, so take them from the manifest and the partition CSV, not from the examples.
+> [!IMPORTANT]
+> Other devices use other addresses, so take them from the manifest and the partition CSV, not from the examples.
 
 ## Not a way back: pushing the official app over ESPHome OTA
 
@@ -47,3 +52,10 @@ ESP-IDF's OTA writes `otadata` in its own format, and the Shelly app only reads 
 package). On a Plug M Gen3 it stops with `no valid boot state!` and `ShOS init failed: -32` and restarts in a loop (with
 ESPHome's OTA rollback on, the bootloader returns to ESPHome after the first restart instead). `restore` never gets a chance to
 run, so use the UART steps above.
+
+---
+
+> [!TIP]
+> **Brought a device back this way?** Tell us how it went: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
+
+[`restore`](commands.md#restore) · [Bootloader and slots](bootloader-and-slots.md) · [Troubleshooting](troubleshooting.md)

@@ -1,19 +1,22 @@
 # Roadmap
 
-Where the project stands and where it goes next. This is a plan, not a promise: the order changes when a test report or a new device
-shows up. State: 2026-10-16, after the tag `v0.3.1` and the unreleased changes in the [CHANGELOG](CHANGELOG.md).
+[← README](README.md) · [Documentation](docs/README.md) · [CHANGELOG](CHANGELOG.md) · [Credits](CREDITS.md)
+
+[🎯 Now](#now) · [⏭️ Next](#next) · [💭 Later](#later-ideas-not-planned) · [🙋 Help wanted](#help-wanted) · [✅ Done](#done)
+
+Where the project stands and where it goes next.
+
+> [!NOTE]
+> This is a plan, not a promise: the order changes when a test report or a new device shows up.
+> State: 2026-10-18, after the tag `v0.3.1` and the unreleased changes in the [CHANGELOG](CHANGELOG.md).
 
 ## Now
 
 - **Release 0.4.0.** Since 0.3.1: the PM Mini Gen3 profile (the first outside report), the reachability check in `send`,
   `fetch --channel` and `--from-version`, "newest stable" as the default cached firmware, the new README and device pages.
   Steps: CHANGELOG, version, `python ota.py profiles --update-lock`, tag, GitHub Release.
-- **Check the new stable 2.1.0.** The update API lists 2.1.0 (built 2026-10-14) for the Mini 1PM Gen3 and the PM Mini Gen3. Compare the
-  partition table and the loader with the 2.0.1 profiles, and update `Official package` on the pages where it changed.
-- **Fix the model check for `compatible` lists.** The Pro 3EM package says `Pro3EM,Pro3EMProAddon`, and `send` reads that as one pattern,
-  so a unit that reports `Pro3EMProAddon` stops at the model check. Split the list, then decide on a `Pro3EMProAddon` profile.
-- **Decide `boot_min_version` for the Plug S Gen3.** Its official package carries the same bootloader file as the Plug M, Plug PM and
-  Multicolor Bulb packages (loader 1.0.3). Those profiles set 1.0.9; the Plug S profile still uses the default, which would skip it.
+- **Decide on a `Pro3EMProAddon` profile.** The Pro 3EM package says `Pro3EM,Pro3EMProAddon`; `send` splits that list since [#49](https://github.com/oxynatOr/free-shelly-ota/pull/49), so a unit
+  that reports `Pro3EMProAddon` passes the model check. Whether it needs a profile of its own is open.
 
 ## Next
 
@@ -27,8 +30,7 @@ shows up. State: 2026-10-16, after the tag `v0.3.1` and the unreleased changes i
   when their hardware is checked.
 - **Tests without the firmware cache.** Many tests need the local `fw/` folder, which is not in git. Small synthetic packages as
   fixtures, then a GitHub Actions run on every pull request.
-- **More devices on request.** Mini 1 Gen3 (a profile is prepared locally), Plug US Gen4 (parked), and whatever the
-  "Request a new device" form brings.
+- **More devices on request.** Plug US Gen4 (parked), and whatever the "Request a new device" form brings.
 
 ## Later (ideas, not planned)
 
@@ -47,7 +49,18 @@ shows up. State: 2026-10-16, after the tag `v0.3.1` and the unreleased changes i
 
 | What | Who can help | Where |
 | --- | --- | --- |
-| Flash a 🧪 device and report the `--watch` log | Owners of the 🧪 devices in the [table](README.md#supported-devices), 7 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
+| Flash a 🧪 device and report the `--watch` log | Owners of the 🧪 devices in the [table](README.md#supported-devices), 8 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Plus Uni and Pro 3EM: a first hardware report, the pins | Owners | Issues [#35](https://github.com/oxynatOr/free-shelly-ota/issues/35) and [#36](https://github.com/oxynatOr/free-shelly-ota/issues/36) |
 | Plug PM Gen3: readings against a reference meter | Owners | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Your device is missing | Anyone | [Request a new device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml) |
+
+## Done
+
+Items that stood under "Now" in an earlier version of this page.
+
+| What | Pull request |
+| --- | --- |
+| Plug S Gen3: `boot_min_version` 1.0.9, like the Plug M, Plug PM and Multicolor Bulb profiles | [#48](https://github.com/oxynatOr/free-shelly-ota/pull/48) |
+| `send` splits a comma separated `compatible` list into patterns | [#49](https://github.com/oxynatOr/free-shelly-ota/pull/49) |
+| Official package 2.1.0 compared with 2.0.1 for the profiles with a cached package, `Official package` rows updated | [#50](https://github.com/oxynatOr/free-shelly-ota/pull/50) |
+| Mini 1 Gen3: profile and device page | [#52](https://github.com/oxynatOr/free-shelly-ota/pull/52) |

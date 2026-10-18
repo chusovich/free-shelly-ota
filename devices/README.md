@@ -1,6 +1,8 @@
 # Device profiles
 
-[Back to the README](../README.md) · [Device pages](../docs/devices/README.md) · [Commands](../docs/commands.md)
+[← README](../README.md) · [Device pages](../docs/devices/README.md) · [Commands](../docs/commands.md) · [Versions](../docs/versions.md)
+
+[📋 Profiles](#profiles) · [🧾 What a profile contains](#what-a-profile-contains) · [✏️ Changing a profile](#changing-a-profile) · [➕ Adding a profile](#adding-a-profile)
 
 One small YAML file per device. A profile holds what the tool needs to turn an official Shelly package into yours: no pins and
 no partition layout. Those are on the [device pages](../docs/devices/README.md) and in [`partitions/`](../partitions).
@@ -64,9 +66,12 @@ Every profile has a `revision:`. When you change anything else in the file:
 1. Raise `revision:` by one.
 2. Run `python ota.py profiles --update-lock`.
 
+> [!IMPORTANT]
+> The test suite fails if a profile changed without a higher revision.
+
 [`profiles.lock`](profiles.lock) stores the revision and a content hash of each profile (the `revision:` line is not part of
-the hash). `python ota.py profiles` checks the lock, and the test suite fails if a profile changed without a higher revision.
-`build` writes the revision into the report next to the package, and `send` prints it. More in [Versions](../docs/versions.md).
+the hash). `python ota.py profiles` checks the lock. `build` writes the revision into the report next to the package, and `send`
+prints it. More in [Versions](../docs/versions.md).
 
 ## Adding a profile
 
@@ -75,6 +80,13 @@ the hash). `python ota.py profiles` checks the lock, and the test suite fails if
 2. Write the stock partition table for ESPHome: `python ota.py partition-csv <Profile> -o partitions/<Profile>-stock.csv`.
 3. Run `python ota.py profiles --update-lock`.
 
-To list the device publicly, also add a page under [`docs/devices/`](../docs/devices/README.md), a row to the table in the
-README and an entry to the device list in `.github/ISSUE_TEMPLATE/device-report.yml`.
-Without a profile of your own: [request the device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml).
+> [!NOTE]
+> To list the device publicly, also add a page under [`docs/devices/`](../docs/devices/README.md), a row to the table in the
+> README and an entry to the device list in `.github/ISSUE_TEMPLATE/device-report.yml`.
+
+---
+
+> [!TIP]
+> **No profile of your own?** [Request the device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml); it helps most if you offer to test it.
+
+[`add-device`](../docs/commands.md#add-device) · [`partition-csv`](../docs/commands.md#partition-csv) · [Bootloader and slots](../docs/bootloader-and-slots.md)

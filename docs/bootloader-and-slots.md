@@ -1,9 +1,18 @@
 # Bootloader and slots
 
-[Back to the README](../README.md)
+[← README](../README.md) · [Documentation](README.md) · [Device pages](devices/README.md) · [Troubleshooting](troubleshooting.md)
+
+[✅ Recommended](#recommended-ship-esphomes-bootloader) · [🔢 min_version](#is-the-new-bootloader-really-written-min_version) · [🎯 Slot 0](#the-app-must-land-in-slot-0) · [📦 Plain package](#without-esphomes-bootloader-plain-package)
 
 Two things decide whether an ESPHome image started from a Shelly package keeps working: whose **bootloader** runs, and which
-**slot** the installer writes the app to. Every [device page](devices) repeats the commands; this page explains the why.
+**slot** the installer writes the app to. Every [device page](devices/README.md) repeats the commands; this page explains the why.
+
+| Question | Short answer |
+| --- | --- |
+| Whose bootloader should run? | ESPHome's: build with `--esphome-factory` |
+| Does the installer write it? | Only if the package's `min_version` is higher than the loader it considers installed |
+| Which slot does the app land in? | It has to be slot 0, otherwise the old app starts again; `send` refuses if it is not |
+| What if Shelly's loader stays? | ESPHome boots, but later ESPHome OTAs only take effect after Shelly's attempt counter runs out |
 
 ## Recommended: ship ESPHome's bootloader
 
@@ -64,17 +73,19 @@ first (briefly switching on the UDP log, so allow UDP port 9514) and **refuses t
 `ota.py restore <Device>` first. `--ignore-slot` sends anyway. The `slot=` value in the first output line is not a reliable
 predictor, so the check uses the log line.
 
-Not every firmware prints an app slot there. The Plug M Gen3 on stock 1.8.99 logs `Storing core dumps to scratch (0x720000)`,
-which names no slot. `send` then prints `this firmware does not reveal the update target slot before the update` and goes on
-(it does not refuse, and it does not blame the firewall: the log did arrive). With `--watch`, look for `Will write to slot N`
-yourself. That device ran from slot 1 and the installer wrote to slot 0, as the rule above says; with N = 1 the old app starts
-again and the cure below applies.
+> [!NOTE]
+> Not every firmware prints an app slot there. The Plug M Gen3 on stock 1.8.99 logs `Storing core dumps to scratch (0x720000)`,
+> which names no slot. `send` then prints `this firmware does not reveal the update target slot before the update` and goes on
+> (it does not refuse, and it does not blame the firewall: the log did arrive). With `--watch`, look for `Will write to slot N`
+> yourself. That device ran from slot 1 and the installer wrote to slot 0, as the rule above says; with N = 1 the old app starts
+> again and the cure below applies.
 
-Then the cure is: `python ota.py restore <Device>` (official firmware, Shelly's bootloader back), then `send` again; the
-target is then slot 0. The Plus Plug S went through exactly this ([page](devices/PlusPlugS.md)).
-
-Stuck anyway (ESPHome in `app_1`, old app in `app_0`, no way to run `restore`)? A UART step also works:
-[Select slot 1 with a hand-made otadata](troubleshooting.md#select-slot-1-with-a-hand-made-otadata).
+> [!TIP]
+> **The cure:** `python ota.py restore <Device>` (official firmware, Shelly's bootloader back), then `send` again; the
+> target is then slot 0. The Plus Plug S went through exactly this ([page](devices/PlusPlugS.md)).
+>
+> Stuck anyway (ESPHome in `app_1`, old app in `app_0`, no way to run `restore`)? A UART step also works:
+> [Select slot 1 with a hand-made otadata](troubleshooting.md#select-slot-1-with-a-hand-made-otadata).
 
 ## Without ESPHome's bootloader (plain package)
 
@@ -90,6 +101,12 @@ The Plug US project handles this in two steps:
    alternates between the stock `app_0` and `app_1` slots.
 2. Run ESPHome Builder's **Update bootloader** action. It replaces the bootloader and keeps Shelly's partition table.
 
-**Do not interrupt power while the bootloader updates.** If it fails you need UART. This step was documented for the Shelly
-Plus Plug US (ESP32); it has **not been tested here on any device** (the package route above avoids it). Thanks to
-[inventor7777](https://github.com/inventor7777/ESPHome-Shelly-Plus-Plug-US) for working this out.
+> [!WARNING]
+> **Do not interrupt power while the bootloader updates.** If it fails you need UART.
+
+This step was documented for the Shelly Plus Plug US (ESP32); it has **not been tested here on any device** (the package route
+above avoids it). Thanks to [inventor7777](https://github.com/inventor7777/ESPHome-Shelly-Plus-Plug-US) for working this out.
+
+---
+
+[Troubleshooting](troubleshooting.md) · [Recovery over UART](recovery-uart.md) · [`build` options](commands.md#build)

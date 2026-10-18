@@ -1,6 +1,8 @@
 # Commands
 
-[Back to the README](../README.md)
+[← README](../README.md) · [Documentation](README.md) · [Device pages](devices/README.md) · [Troubleshooting](troubleshooting.md)
+
+[📥 fetch](#fetch) · [🔨 build](#build) · [📤 send](#send) · [↩️ restore](#restore) · [➕ add-device](#add-device) · [📋 partition-csv](#partition-csv) · [🔍 inspect](#inspect) · [🧹 clean](#clean) · [📜 log](#log) · [🎨 Colors](#colors)
 
 The usual workflow is three steps:
 
@@ -12,22 +14,23 @@ python ota.py send  PlugMG3 out/<file>.zip --watch 60   # 3. send it to the devi
 
 | Group | Command | What it does |
 | --- | --- | --- |
-| Prepare | `fetch` | Download the official package and keep it in `fw/` |
-| Prepare | `add-device` | Create a device profile from an official ZIP (`--parent` for a variant) |
-| Prepare | `partition-csv` | Write the stock partition table as ESPHome `partitions:` CSV (`-o FILE`) |
-| Build | `build` | Replace the app part, check the image, write the ZIP to `out/` |
-| Deploy | `send` | Check the device, serve the ZIP, trigger the update |
-| Deploy | `restore` | Send the cached official firmware back |
-| Deploy | `log` | Show the device's live debug log |
-| Tools | `inspect` | Show and verify a ZIP |
+| Prepare | [`fetch`](#fetch) | Download the official package and keep it in `fw/` |
+| Prepare | [`add-device`](#add-device) | Create a device profile from an official ZIP (`--parent` for a variant) |
+| Prepare | [`partition-csv`](#partition-csv) | Write the stock partition table as ESPHome `partitions:` CSV (`-o FILE`) |
+| Build | [`build`](#build) | Replace the app part, check the image, write the ZIP to `out/` |
+| Deploy | [`send`](#send) | Check the device, serve the ZIP, trigger the update |
+| Deploy | [`restore`](#restore) | Send the cached official firmware back |
+| Deploy | [`log`](#log) | Show the device's live debug log |
+| Tools | [`inspect`](#inspect) | Show and verify a ZIP |
 | Tools | `list` | Show devices and cached firmware |
 | Tools | `profiles` | List the profiles with their revision, check `devices/profiles.lock` (`--update-lock` writes it) |
-| Tools | `clean` | Delete old ZIPs in `out/` (needs `--yes`) |
-| Tools | `colors` | Show every message color once and say whether colors are on |
+| Tools | [`clean`](#clean) | Delete old ZIPs in `out/` (needs `--yes`) |
+| Tools | [`colors`](#colors) | Show every message color once and say whether colors are on |
 
-`python ota.py -h` lists the commands in the groups of this table, a typical run and what to know before you flash;
-`python ota.py <command> -h` shows the options of one command, grouped by topic; `python ota.py --version` the tool version
-([Versions](versions.md)).
+> [!TIP]
+> `python ota.py -h` lists the commands in the groups of this table, a typical run and what to know before you flash;
+> `python ota.py <command> -h` shows the options of one command, grouped by topic; `python ota.py --version` the tool version
+> ([Versions](versions.md)).
 
 ## Colors
 
@@ -40,7 +43,10 @@ so logs and pipes read the same. No colors when the output is not a terminal or 
 ## fetch
 
 Downloads the official package to `fw/shelly/<Device>/<version>/` (with a `meta.json`) and verifies the hash in the download
-URL. Shelly's servers use a private CA, so TLS verification fails; `--insecure` skips it.
+URL.
+
+> [!NOTE]
+> Shelly's servers use a private CA, so TLS verification fails; `--insecure` skips it.
 
 | Option | Required | Default | Description |
 | --- | --- | --- | --- |
@@ -128,10 +134,14 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 
 ## restore
 
-Takes the same options as `send`, but sends the cached official firmware instead of a ZIP you choose. It works only while
-Shelly firmware is still running: a device that already runs ESPHome with ESPHome's bootloader does not answer, and the way
-back is UART ([Recovery over UART](recovery-uart.md)). The official package may also reset NVS and `otadata`, so Wi-Fi
-credentials and settings can be lost (a PM Mini Gen3 that went from 2.0.1 to 2.0.1 this way kept both; do not count on it).
+Takes the same options as `send`, but sends the cached official firmware instead of a ZIP you choose.
+
+> [!WARNING]
+> It works only while Shelly firmware is still running: a device that already runs ESPHome with ESPHome's bootloader does not
+> answer, and the way back is UART ([Recovery over UART](recovery-uart.md)).
+
+The official package may also reset NVS and `otadata`, so Wi-Fi credentials and settings can be lost (a PM Mini Gen3 that went
+from 2.0.1 to 2.0.1 this way kept both; do not count on it).
 
 ## add-device
 
@@ -168,3 +178,7 @@ Deletes old ZIPs in `out/`. `--keep N` keeps the newest N (default 5); nothing i
 Shows the live debug log of a Shelly without sending anything:
 `python ota.py log --ip 192.168.1.50 --seconds 30`. Options: `--ip`, `--user`, `--password`, `--host`, `--log-port` and
 `--seconds` (default: until Ctrl+C).
+
+---
+
+[Device pages](devices/README.md) · [Bootloader and slots](bootloader-and-slots.md) · [Credential check](credential-check.md) · [Versions](versions.md)
