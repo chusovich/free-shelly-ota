@@ -16,6 +16,7 @@ Gen4 / ESP32-C6.
 | Official package | 2.1.0 (stable since 2026-10-14, also for the Zigbee variant; Bootloader, partition table and filesystem are the same as in 2.0.1) |
 | Partition table | `0x10000` |
 | App slot size | `0x300000` |
+| Bootloader `min_version` | `1.0.9` (set in the profile) |
 
 ## Before you start
 

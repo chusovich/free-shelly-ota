@@ -16,20 +16,20 @@
     "hash": "04e6f6e42ba7"
   },
   "Mini1PMG4": {
-    "revision": 1,
-    "hash": "1d0db62a1950"
+    "revision": 2,
+    "hash": "97c488531b3c"
   },
   "Mini1PMG4ZB": {
-    "revision": 1,
-    "hash": "f10944c4b4f8"
+    "revision": 2,
+    "hash": "aabfb2cb73b6"
   },
   "MiniPMG3": {
     "revision": 1,
     "hash": "6985edc1c4ea"
   },
   "Pill": {
-    "revision": 1,
-    "hash": "cba4d5a12023"
+    "revision": 2,
+    "hash": "1cde80306026"
   },
   "PlugMG3": {
     "revision": 2,
@@ -44,8 +44,8 @@
     "hash": "7d2bdda62aa5"
   },
   "PlusPlugS": {
-    "revision": 1,
-    "hash": "984fb1da55ce"
+    "revision": 2,
+    "hash": "bc7faafcd5b9"
   },
   "PlusUni": {
     "revision": 1,
@@ -56,8 +56,8 @@
     "hash": "7ca7d0c0d4b2"
   },
   "PowerStripZB": {
-    "revision": 1,
-    "hash": "df6be0d10ec0"
+    "revision": 2,
+    "hash": "6d3a647469d4"
   },
   "Pro3EM": {
     "revision": 1,

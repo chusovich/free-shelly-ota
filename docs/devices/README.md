@@ -43,8 +43,8 @@ does not match the profile. Details per device are on its page.
   (16 MB, so `flash_size: 16MB`, and an extra `emdata` partition).
 - **Gen4 / ESP32-C6:** [Power Strip](PowerStrip.md), [Power Strip (Zigbee)](PowerStripZB.md) and
   [Mini 1PM Gen4](Mini1PMG4.md) have the largest app slots (`0x300000`).
-- **Bootloader `min_version` 1.0.9:** the profiles for `DuoBulbG3`, `HTG3`, `Mini1PMG3`, `MiniPMG3`, `PlugMG3`, `PlugPMG3`, `PlusUni`, `PowerStrip`, `Pro3EM` and `RGBCCTBulbG3` set it, because a device that runs
-  Shelly's loader 1.0.3 would otherwise skip ESPHome's bootloader. Background:
+- **Bootloader `min_version` 1.0.9:** every profile sets it, because a device that runs Shelly's loader 1.0.3 would otherwise skip
+  ESPHome's bootloader (the default is one patch above the official loader, 1.0.3; a test checks that no profile lacks it). Background:
   [Bootloader and slots](../bootloader-and-slots.md).
 - **Variants:** `PowerStripZB` and `Mini1PMG4ZB` are the Zigbee firmware of the same hardware as `PowerStrip` and `Mini1PMG4`.
   The Power Strip variant has its own page, the Mini variant a section on the Mini 1PM Gen4 page.

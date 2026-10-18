@@ -26,6 +26,9 @@ All notable changes to this project are documented here. The format follows
   `.sha256` and `.report.json` behind. The dry run now builds in a scratch directory and prints `DRY RUN, nothing written`. Reported with a Plug M Gen3 build.
 
 ### Changed
+- Profiles `Mini1PMG4`, `Mini1PMG4ZB`, `Pill`, `PlusPlugS` and `PowerStripZB` (revision 2): `boot_min_version: 1.0.9`. Without it the default is one patch above the official loader, 1.0.3,
+  and the installer skips ESPHome's bootloader on a unit that already runs loader 1.0.3 (`update? 0`, as in the Plus Uni report [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46);
+  also seen on the H&T). Every profile sets 1.0.9 now and a test checks it. The new value was not run on these devices; the Plus Plug S route was confirmed with the old one.
 - Plus Uni: first device report ([#46](https://github.com/oxynatOr/free-shelly-ota/issues/46), thanks to [yasdfgr](https://github.com/yasdfgr)): flashed over OTA from stock 2.0.1 with
   `--esphome-factory`, ESPHome runs and one later ESPHome OTA took effect; further ones were written but never started. The device page, `docs/devices/README.md` and the README row go from
   🧪 to 🟡 (the counter is now 6 ✅, 4 🟡, 7 🧪), because the tester's package had `min_version` 1.0.3 (a profile that is not in this repository), which was not higher than the installed loader
