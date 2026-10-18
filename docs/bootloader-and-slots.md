@@ -12,7 +12,7 @@ Two things decide whether an ESPHome image started from a Shelly package keeps w
 | Whose bootloader should run? | ESPHome's: build with `--esphome-factory` |
 | Does the installer write it? | Only if the package's `min_version` is higher than the loader it considers installed |
 | Which slot does the app land in? | It has to be slot 0, otherwise the old app starts again; `send` refuses if it is not |
-| What if Shelly's loader stays? | ESPHome boots, but later ESPHome OTAs only take effect after Shelly's attempt counter runs out |
+| What if Shelly's loader stays? | ESPHome runs for three starts; only an ESPHome OTA during that time can keep it, and only once. After that only UART helps. `send` stops before it sends such a package (`--force` overrides) |
 
 ## Recommended: ship ESPHome's bootloader
 
@@ -53,8 +53,9 @@ from it (for example over UART) reports 1.0.3 and would skip a package with 1.0.
   the log says `update? 0` (cur and min shown as versions, `010003ff` = 1.0.3) and leaves out the "no separate bootloader update
   is needed" note. Build again with a higher `--boot-min-version` (for example `1.0.9`) or set `boot_min_version:` in the
   profile.
-- **Wrong value already installed:** a UART fix (back up first): write ESPHome's bootloader to `0x0` and a clean (all `0xFF`)
-  `otadata` to the `otadata` partition, both taken from the package.
+- **Wrong value already installed:** a UART fix (back up first): write ESPHome's bootloader to `0x0` (ESP32-C3, ESP32-C6) or `0x1000`
+  (classic ESP32: Plus Plug S, Plus Uni, Pro 3EM) and a clean (all `0xFF`) `otadata` to the `otadata` partition, both taken from the
+  package. Simpler: flash the `.factory.bin` of an ESPHome build that uses the device's stock partition CSV at `0x0`; it carries both.
 - **Untested:** a later `restore` of the official package, whose `min_version` is lower than 1.0.9, may leave ESPHome's
   bootloader in place.
 
@@ -91,11 +92,30 @@ predictor, so the check uses the log line.
 
 ## Without ESPHome's bootloader (plain package)
 
-Shelly's loader stays. A later ESPHome OTA writes the new image into the other slot, but the device keeps booting the old
-one until Shelly's attempt counter runs out. The loader prints `Uncommitted boot of app 0 (attempts 1)` and counts down on
-every start (about three restarts here); then the next start switches slot. ESPHome never commits, so the counter keeps
-running; whether the loader later switches back has not been checked. The ESPHome log shows
-`esp_ota_ops: ota data invalid, no current app. Assuming factory`; that is expected and does not stop ESPHome from booting.
+> [!WARNING]
+> A package built without `--esphome-factory` keeps Shelly's loader, and that does not give a lasting install (see below). `send` stops before it
+> sends such a package; `--force` sends it anyway.
+
+Shelly's loader stays. It keeps its own boot state in the `otadata` area and starts only the slot recorded there; it never
+looks at the entry that an ESPHome OTA writes (`esp_ota_set_boot_partition`). After a Shelly-style install the state is
+"uncommitted" with three attempts left: the loader prints `Uncommitted boot of app 0 (attempts 3)` (then 2, 1) on each start,
+and on the next one `App 0 failed to boot, reverting to 1`. It then switches to the other slot (the rollback slot, where the old
+firmware ran) and marks it **committed**. From then on it only prints `Booting app N` and never switches again. ESPHome does
+not change that state and never commits.
+
+What that means for a unit:
+
+- ESPHome runs for three starts after the install. Then the old Shelly firmware comes back, unless an ESPHome OTA arrived in time.
+- An ESPHome OTA writes its image into the other slot, which is the rollback slot. If it is there when the countdown ends (about three
+  restarts after the install; the restart after the OTA counts), the switch lands on the new image and commits it. That works **once**.
+- After that, further OTAs are written but never started: the unit keeps running the image it switched to. Restarts, safe mode and the
+  web OTA do not change that. Only UART helps: ESPHome's bootloader and a clean `otadata` (see "Wrong value already installed" above).
+
+This is read from the loader code (Plus Uni and Plug M Gen3, both loader 1.0.3). It was reproduced on a plain ESP32 test board that runs the
+Plus Uni loader with the boot state of the Plus Uni report ([#46](https://github.com/oxynatOr/free-shelly-ota/issues/46), October 2026): the
+countdown, the switch, the committed state and an ESPHome OTA that is written but never started. It was not repeated on a Plus Uni or a
+Plug M with UART. The way without UART is the package with ESPHome's bootloader (`--esphome-factory`).
+The ESPHome log shows `esp_ota_ops: ota data invalid, no current app. Assuming factory`; that is expected and does not stop ESPHome from booting.
 
 The Plug US project handles this in two steps:
 

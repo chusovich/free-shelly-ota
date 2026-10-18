@@ -28,7 +28,7 @@ checked yet, 🧪 = the package builds and verifies, but nobody has flashed it y
 | Mini 1PM Gen3 | [`Mini1PMG3`](Mini1PMG3.md) | ESP32-C3 | **`0xf000`** | `0x2a0000` | 🧪 |
 | Mini 1PM Gen4 | [`Mini1PMG4`](Mini1PMG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](Mini1PMG4.md#zigbee-variant) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
-| Plus Uni (Gen2) | [`PlusUni`](PlusUni.md) | **ESP32** | **`0x8000`** | `0x190000` | 🧪 |
+| Plus Uni (Gen2) | [`PlusUni`](PlusUni.md) | **ESP32** | **`0x8000`** | `0x190000` | 🟡 flashed over OTA, bootloader step not checked |
 | Pro 3EM (Gen2) | [`Pro3EM`](Pro3EM.md) | **ESP32** | **`0x8000`** | `0x200000` | 🧪 |
 
 The partition table offset goes into your ESPHome config as `CONFIG_PARTITION_TABLE_OFFSET`; `build` refuses a config that

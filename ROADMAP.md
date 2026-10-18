@@ -21,7 +21,7 @@ Where the project stands and where it goes next.
 ## Next
 
 - **Hardware checks** (these turn 🟡 into ✅): the Plug PM Gen3 readings (and the BL0942 RX pull-up found on the PM Mini),
-  the Power Strip outlets and metering, the Duo Bulb over OTA.
+  the Power Strip outlets and metering, the Duo Bulb over OTA, the Plus Uni with this profile's `boot_min_version` 1.0.9 (the first report ran with 1.0.3 and kept Shelly's loader).
 - **Multicolor Bulb.** The colour temperature light (`rgbw_ct_table`, published in `oxynatOr/esphome-kp18058` since 2026-10-15) runs on the
   bulb. Still open: its colours against the stock UI at 2700, 4000 and 6500 K, the optional light packages (daylight, scenes, wake-up alarm,
   night light), and pinning a commit of the component in the bulb config (kept in `oxynatOr/esphome-configs`) instead of `@main`.
@@ -49,8 +49,8 @@ Where the project stands and where it goes next.
 
 | What | Who can help | Where |
 | --- | --- | --- |
-| Flash a 🧪 device and report the `--watch` log | Owners of the 🧪 devices in the [table](README.md#supported-devices), 8 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
-| Plus Uni and Pro 3EM: a first hardware report, the pins | Owners | Issues [#35](https://github.com/oxynatOr/free-shelly-ota/issues/35) and [#36](https://github.com/oxynatOr/free-shelly-ota/issues/36) |
+| Flash a 🧪 device and report the `--watch` log | Owners of the 🧪 devices in the [table](README.md#supported-devices), 7 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
+| Pro 3EM: a first hardware report. Plus Uni and Pro 3EM: the pins | Owners | Issues [#36](https://github.com/oxynatOr/free-shelly-ota/issues/36) and [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46) |
 | Plug PM Gen3: readings against a reference meter | Owners | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Your device is missing | Anyone | [Request a new device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml) |
 

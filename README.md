@@ -42,7 +42,7 @@ flowchart LR
 
 ## Supported devices
 
-**17 profiles:** ✅ 6 confirmed · 🟡 3 partly checked · 🧪 8 untested
+**17 profiles:** ✅ 6 confirmed · 🟡 4 partly checked · 🧪 7 untested
 
 Click the profile for the device page: ESPHome config, the exact commands and what to expect.
 
@@ -63,7 +63,7 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | Mini 1PM Gen3 | [`Mini1PMG3`](docs/devices/Mini1PMG3.md) | ESP32&#8209;C3 | 🧪 | |
 | Mini 1PM Gen4 | [`Mini1PMG4`](docs/devices/Mini1PMG4.md) | ESP32&#8209;C6 | 🧪 | |
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](docs/devices/Mini1PMG4.md#zigbee-variant) | ESP32&#8209;C6 | 🧪 | |
-| Plus Uni (Gen2) | [`PlusUni`](docs/devices/PlusUni.md) | ESP32 | 🧪 | |
+| Plus Uni (Gen2) | [`PlusUni`](docs/devices/PlusUni.md) | ESP32 | 🟡 | Flashed over OTA, ESPHome's bootloader step not checked |
 | Pro 3EM (Gen2) | [`Pro3EM`](docs/devices/Pro3EM.md) | ESP32 | 🧪 | |
 
 > - ✅ The whole chain ran on a real device.
