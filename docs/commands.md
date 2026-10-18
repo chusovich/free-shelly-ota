@@ -89,8 +89,8 @@ file.
 
 </details>
 
-Without `--esphome-factory`, `--esphome-yaml` also warns if `allow_partition_access` is missing in the `ota:` block (needed to
-update the bootloader later).
+`--esphome-yaml` also warns if `allow_partition_access` is missing in the `ota:` block, with and without `--esphome-factory`:
+ESPHome needs it to update the bootloader later (without `--esphome-factory` also to avoid falling back to the previous image).
 
 ## send
 

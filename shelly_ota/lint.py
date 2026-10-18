@@ -66,17 +66,19 @@ def lint_esphome(yaml_path: Path, profile: Profile) -> list[str]:
 def lint_warnings(yaml_path: Path, *, bootloader_shipped: bool = False) -> list[str]:
     """Things that do not block the build but matter after the first boot.
 
-    bootloader_shipped: the package already carries ESPHome's bootloader (--esphome-factory), so no later bootloader
-    update is needed and the missing allow_partition_access is not a problem.
+    bootloader_shipped: the package carries ESPHome's bootloader (--esphome-factory). allow_partition_access is still
+    wanted then: without it ESPHome cannot update that bootloader later.
     """
-    if bootloader_shipped:
-        return []
     cfg = yaml.load(yaml_path.read_text(encoding="utf-8"), Loader=_Loader) or {}
     ota = cfg.get("ota")
     entries = ota if isinstance(ota, list) else [ota] if isinstance(ota, dict) else []
     esphome_ota = [e for e in entries if isinstance(e, dict) and e.get("platform") == "esphome"]
     if not any(e.get("allow_partition_access") is True for e in esphome_ota):
+        if bootloader_shipped:
+            return ["ota: no 'platform: esphome' entry with 'allow_partition_access: true'. The package carries ESPHome's "
+                    "bootloader, but without this entry ESPHome cannot update it later (Builder's 'Update bootloader'). "
+                    "Add it to the config (see the device page)."]
         return ["ota: no 'platform: esphome' entry with 'allow_partition_access: true'. Without it ESPHome cannot "
                 "update the bootloader later, and a later ESPHome OTA may fall back to the previous image "
-                "(see README, 'After the first boot')."]
+                "(see docs/bootloader-and-slots.md)."]
     return []
