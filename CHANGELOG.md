@@ -5,30 +5,73 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-18
+
 ### Added
+- Profiles `PlusUni` (Shelly Plus Uni) and `Pro3EM` (Shelly Pro 3EM), both classic ESP32 (Gen2) made from the official 2.0.1 packages, with partition CSVs
+  and device pages. The Pro 3EM has 16 MB flash (app slot `0x200000`, extra `emdata` partition), the Plus Uni 4 MB (`0x190000`). Both set
+  `boot_min_version: 1.0.9` (the packages carry loader 1.0.2; the first report from a real unit, issue #46, showed 1.0.3). Packages build and verify; not tested on
+  hardware. No pin tables: the ESPHome device database has no page for either device. `Pro3EMProAddon` (Pro 3EM with Pro Sensor Addon) has no profile.
+- Profile `Mini1G3` (Shelly Mini 1 Gen3, the Mini 1PM Gen3 without the power meter; partition table at `0xf000`, `boot_min_version: 1.0.9`) with partition CSV and a device page. Package builds and verifies; not tested on hardware.
+- Profile `PlugPMG3` (Shelly Plug PM Gen3, S3PL-30116EU; it only measures, there is no relay) with its partition CSV, generated from the official
+  2.0.1 package (app slots `0x280000`, smaller than the Plug M / Plug S). The profile sets `boot_min_version: 1.0.9`: the device runs Shelly OS
+  loader 1.0.3, so the default 1.0.3 was skipped and later ESPHome OTAs did not take effect. The plug was flashed over OTA with this tool (owner report, 2026-10-12); its readings are not checked, so the page says 🟡.
+- Profile `MiniPMG3` (Shelly PM Mini Gen3, S3PM-001PCEU16; measures only, no relay) with partition CSV and device page, made from the official 2.1.0 package (partition table `0xf000`, app slot
+  `0x280000`, `boot_min_version: 1.0.9`). Hardware-confirmed by the first external device report ([imsandli](https://github.com/imsandli)): `send` from stock 2.0.1 with ESPHome's bootloader (loader 1.0.2 replaced), ESPHome OTAs
+  afterwards, BL0942 readings. The page documents the BL0942 UART pins, the RX pull-up it needs and a voltage calibration. This is not the Mini 1PM Gen3 (`Mini1PMG3`), which stays untested.
+- Device page `docs/devices/PlugPMG3.md` and a README row for the Plug PM Gen3: ESPHome `esp32:` block, pin table (read from the stock 2.0.1 firmware,
+  not verified in a running ESPHome), commands and a UART restore command derived from the package manifest (not run on this plug).
 - `ota.py devkit PROFILE`: a flash image of a package for a dev board, so the whole update (`send`, the installer, the bootloader swap, the slot logic) can be played through on a board
   instead of a device, for every profile. It takes the cached official package or any package (`--zip`; one from `build` gives the state after an install), puts every part at the offset of
   its partition table (NVS empty, no `shelly` or `aux` data), refuses a part that does not fit its partition, overlaps, or a board with too little flash (`--flash-size`), writes
   `out/<Device>-devkit-<version>.bin` and prints the `esptool` commands; it flashes nothing itself. New page `docs/devkit.md` (board table per profile, stages, what to look for, variations,
   limits). Not run on a board yet: whether the Shelly app starts on a board that is not a Shelly is open. `tests/test_devkit.py` checks the image of every profile.
+- `send` (and `restore`) ask the device to fetch `http://<this PC>:<port>/` itself (RPC `HTTP.GET`) before they send. `--dry-run` fails with the device's
+  `Connection error` if it cannot reach this PC, a real `send` prints a warning and goes on, and a device without `HTTP.GET` only gets a note. Suggested by [imsandli](https://github.com/imsandli) in the
+  first device report (PM Mini Gen3), where the Shelly sat in an IoT VLAN that could not reach the PC and the plain run would have ended in the 300 s timeout.
+  Not run on a real device yet: the exact error reply of the device is known from the report only.
+- `fetch` and `build --download` take `--from-version VER`: the update API answers per installed version (header `Shelly-Info`, found in the firmware), e.g. `--from-version 1.4.4` returns the stable 2.0.1 for the H&T Gen3 while the plain query returns only a beta.
+- `fetch` and `build --download` take `--channel beta` to download the beta release from the update API (`stable` stays the default). A non-stable channel always asks the API unless `--version` is given.
+- GitHub issue form **Request a new device** (model, `app` name, firmware, chip, whether you can test it; no dumps or secrets). The README links to it.
+- GitHub issue forms: **Device report** (device, tool and Shelly version, method, result, `send --watch` output, with a reminder to remove
+  secrets and the device cloud key) and **Bug or wrong message**. The README links to the device report.
+- `.github/labels.yml` and `.github/sync_labels.py`: the issue labels as a file. The groups `type:`, `tester:`, `status:`, `area:`, `device:` and `risk:` replace GitHub's default labels; `new-device` becomes `type: device-request`, and every request also gets a `tester:` label (the answer to "Can you test it?": with UART, no UART, none), so a wish and an offer to test can be told apart. `sync_labels.py` makes GitHub match the file with `gh` (a dry run unless `--apply`; it never deletes). The three issue forms set `type: bug`, `type: device-report` and `type: device-request`: the label `device-report` the form asked for never existed on GitHub, so device reports came in without a label. `tests/test_labels.py` checks that the forms only use labels from the file.
+- Index pages: `docs/README.md` (where to start, all pages, what to read when something goes wrong), `docs/devices/README.md` (all device pages with partition
+  table offset and app slot size, where devices differ, what a page contains) and `devices/README.md` (the profiles, the profile keys, how to change a profile).
+- `CREDITS.md`: the projects the tool learned from (as in the README), the people who tested devices and sent reports (imsandli, bobkersten), Shelly and the tooling, and how to get on or off the list. The README links to it.
 - `ROADMAP.md`: what is planned (now, next, later) and where testers can help; linked from the README.
 - `docs/assets/social-preview.png` (1280×640): the image for GitHub's social preview (Settings → General → Social preview; it cannot be set from the repository).
 - `tests/test_readme.py`: every profile is in the README device table, the "N profiles: ✅ … 🟡 … 🧪 …" line above it matches the table, the state symbols of the README and of
   `docs/devices/README.md` agree, and every relative link, anchor and image of the README exists.
 - `tests/test_readme.py` also checks that no tracked picture lies outside `docs/assets/` (the logo and the social preview): device photos belong on the ESPHome device pages.
-- `fetch` and `build --download` take `--from-version VER`: the update API answers per installed version (header `Shelly-Info`, found in the firmware), e.g. `--from-version 1.4.4` returns the stable 2.0.1 for the H&T Gen3 while the plain query returns only a beta.
-- `fetch` and `build --download` take `--channel beta` to download the beta release from the update API (`stable` stays the default). A non-stable channel always asks the API unless `--version` is given.
-- `.github/labels.yml` and `.github/sync_labels.py`: the issue labels as a file. The groups `type:`, `tester:`, `status:`, `area:`, `device:` and `risk:` replace GitHub's default labels; `new-device` becomes `type: device-request`, and every request also gets a `tester:` label (the answer to "Can you test it?": with UART, no UART, none), so a wish and an offer to test can be told apart. `sync_labels.py` makes GitHub match the file with `gh` (a dry run unless `--apply`; it never deletes). The three issue forms set `type: bug`, `type: device-report` and `type: device-request`: the label `device-report` the form asked for never existed on GitHub, so device reports came in without a label. `tests/test_labels.py` checks that the forms only use labels from the file.
-
-### Fixed
-- `build --dry-run` no longer touches an existing package. It built to the real output path and deleted it afterwards, so a dry run to check another config on the same day (same
-  automatic name `<Device>-firmware.ota-<date>.zip`, as ESPHome always names the app `firmware.ota.bin`) replaced and removed the package that had just been built and flashed, and left its
-  `.sha256` and `.report.json` behind. The dry run now builds in a scratch directory and prints `DRY RUN, nothing written`. Reported with a Plug M Gen3 build.
 
 ### Changed
+- `send` stops before it sends an ESPHome package that keeps Shelly's bootloader (built without `--esphome-factory`). The message is written in capitals and says what happens: Shelly's loader
+  starts the ESPHome image three times, goes back to the other slot and keeps it, and only an ESPHome OTA during those starts changes that, once; after it, OTAs are written but never started
+  and only UART helps (Plus Uni, issue #46). `--force` sends anyway, with the same text as a warning. The official package (`restore`, or sent by hand) is not affected. The note after
+  the update no longer says "may switch back after a few restarts" and no longer points to a README section that does not exist; it is only printed for such a package, not after `restore`.
+- Shelly's stable 2.1.0 (built 2026-10-14) checked for the Mini 1PM Gen3, Mini 1PM Gen4 (and Zigbee), PM Mini Gen3, Plug M, Plug PM, Plug S, Power Strip (and Zigbee) and Pro 3EM
+  by comparing the packages with the cached 2.0.1 ones: bootloader, partition table and filesystem image are identical, `boot.min_version` is still 1.0.2, and the app grows by about
+  7.5 kB (the Pro 3EM app shrinks by 68 kB). No profile changes. The `Official package` row of those device pages says 2.1.0 now; the hardware runs were made with 2.0.1. The
+  Plug M app fills 98.8 % of its slot in 2.1.0, about 33 kB are left.
+- The `ota:` block in the config examples (the README and 13 device pages) has `allow_partition_access: true` now, as the Plug M and Plug PM pages already had:
+  ESPHome can then update the bootloader later (ESPHome Builder's "Update bootloader"). `tests/test_readme.py` keeps the pages that way. The `--esphome-yaml` check warns about a
+  missing `allow_partition_access` with `--esphome-factory` too now (it stayed silent there before: the package carries ESPHome's bootloader, but without the entry ESPHome cannot
+  update it later; changed after the Plus Uni report, issue #46); the text of the warning differs for the two cases.
 - Profiles `Mini1PMG4`, `Mini1PMG4ZB`, `Pill`, `PlusPlugS` and `PowerStripZB` (revision 2): `boot_min_version: 1.0.9`. Without it the default is one patch above the official loader, 1.0.3,
   and the installer skips ESPHome's bootloader on a unit that already runs loader 1.0.3 (`update? 0`, as in the Plus Uni report [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46);
   also seen on the H&T). Every profile sets 1.0.9 now and a test checks it. The new value was not run on these devices; the Plus Plug S route was confirmed with the old one.
+- Profile `PlugSG3` (revision 2): `boot_min_version: 1.0.9`. The Plug S Gen3 package carries the same bootloader as the Plug M Gen3 package (byte-identical, loader 1.0.3),
+  so a plug that already runs it would skip the default 1.0.3 and silently keep Shelly's bootloader. The earlier run used the default on a plug with loader 1.0.2; the new
+  value is not run on a Plug S Gen3 yet.
+- Profile `PlugMG3` (revision 2): `boot_min_version: 1.0.9`. The official package carries Shelly OS loader 1.0.3, so a Plug M restored from it
+  would skip the default 1.0.3 and silently keep Shelly's bootloader (same cause as on the H&T and the Plug PM Gen3).
+- Profile `RGBCCTBulbG3` (revision 2): `boot_min_version: 1.0.9`. After a return to stock the Multicolor Bulb runs Shelly OS loader 1.0.3, so the default
+  1.0.3 would be skipped; with 1.0.9 the ESPHome bootloader was written (hardware-confirmed on a real bulb, 2026-10-11).
+- Profile `DuoBulbG3` (revision 2): `boot_min_version: 1.0.9`, like the other Gen3 devices that needed it (Multicolor Bulb, same main board, loader 1.0.3 after a return to stock).
+  Without it the installer may skip ESPHome's bootloader. Not run on a Duo Bulb yet.
+- Profile `Mini1PMG3` (revision 2): `boot_min_version: 1.0.9`, like the other Gen3 profiles: the installed loader on the Gen3 devices seen so far was 1.0.2 or 1.0.3
+  (not logged on this model yet), and a value that is not higher than the installed one is skipped. Not run on a Mini 1PM Gen3.
 - Plus Uni: first device report ([#46](https://github.com/oxynatOr/free-shelly-ota/issues/46), thanks to [yasdfgr](https://github.com/yasdfgr)): flashed over OTA from stock 2.0.1 with
   `--esphome-factory`, ESPHome runs and one later ESPHome OTA took effect; further ones were written but never started. The device page, `docs/devices/README.md` and the README row go from
   🧪 to 🟡 (the counter is now 6 ✅, 4 🟡, 7 🧪), because the tester's package had `min_version` 1.0.3 (a profile that is not in this repository), which was not higher than the installed loader
@@ -39,29 +82,12 @@ All notable changes to this project are documented here. The format follows
   loader code and reproduced on a plain ESP32 test board with the Plus Uni loader: ESPHome gets three starts, the loader then goes back to the other slot and commits it, and only an ESPHome OTA that
   arrives during those starts changes that, once; later OTAs are written but never started. The UART fix in the same file gives ESPHome's bootloader address per chip (`0x1000` on the classic ESP32,
   not `0x0`) and the simpler way, the `.factory.bin` at `0x0`.
-- `send` stops before it sends an ESPHome package that keeps Shelly's bootloader (built without `--esphome-factory`). The message is written in capitals and says what happens: Shelly's loader
-  starts the ESPHome image three times, goes back to the other slot and keeps it, and only an ESPHome OTA during those starts changes that, once; after it, OTAs are written but never started
-  and only UART helps (Plus Uni, issue #46). `--force` sends anyway, with the same text as a warning. The official package (`restore`, or sent by hand) is not affected. The note after
-  the update no longer says "may switch back after a few restarts" and no longer points to a README section that does not exist; it is only printed for such a package, not after `restore`.
-- The `ota:` block in the config examples (the README and 13 device pages) has `allow_partition_access: true` now, as the Plug M and Plug PM pages already had:
-  ESPHome can then update the bootloader later (ESPHome Builder's "Update bootloader"). `tests/test_readme.py` keeps the pages that way. The `--esphome-yaml` check warns about a
-  missing `allow_partition_access` with `--esphome-factory` too now (it stayed silent there before: the package carries ESPHome's bootloader, but without the entry ESPHome cannot
-  update it later; changed after the Plus Uni report, issue #46); the text of the warning differs for the two cases.
-- The pages outside the README and the device pages have the same frame as those: a navigation row that starts with `← README`, a row of links to the sections, callouts (NOTE, TIP, IMPORTANT, WARNING, CAUTION) for what must not be missed, tables where a list of cases was, and related links at the end. This covers `docs/*.md`, `devices/README.md`, `ROADMAP.md` and `CREDITS.md`; `docs/troubleshooting.md` groups its sections (sending and building, after the update, background), `docs/versions.md` has one heading per kind of version, `docs/bootloader-and-slots.md` starts with a table of the four questions. Headings keep their text, so every existing link and anchor still works. `tests/test_readme.py` checks the frame (title, navigation row, no emoji in headings, known callout types, links and anchors).
-- `ROADMAP.md`: the items of "Now" that are done (Plug S Gen3 `boot_min_version`, the `compatible` list, the 2.1.0 check, the Mini 1 Gen3 profile) moved to a new "Done" table with their pull requests; the state date and the count of untested devices are current.
-- `build` stops when the automatically named output already exists (`--force` replaces it; `--tag LABEL` or `-o ZIP` give another name). A second build on the same day used to replace the
-  first package silently, which may already be on a device. A name given with `-o` is still replaced without `--force`. `build --dry-run` reports it as a note instead of stopping.
-- Shelly's stable 2.1.0 (built 2026-10-14) checked for the Mini 1PM Gen3, Mini 1PM Gen4 (and Zigbee), PM Mini Gen3, Plug M, Plug PM, Plug S, Power Strip (and Zigbee) and Pro 3EM
-  by comparing the packages with the cached 2.0.1 ones: bootloader, partition table and filesystem image are identical, `boot.min_version` is still 1.0.2, and the app grows by about
-  7.5 kB (the Pro 3EM app shrinks by 68 kB). No profile changes. The `Official package` row of those device pages says 2.1.0 now; the hardware runs were made with 2.0.1. The
-  Plug M app fills 98.8 % of its slot in 2.1.0, about 33 kB are left.
 - Plug M Gen3: a second plug reported from outside (device report #54, thanks to 815rx1): stock 1.8.99 to ESPHome with the official **2.1.0** package and `--esphome-factory`,
   then two ESPHome OTAs (CLI and the Home Assistant builder). The device page records that the 2.1.0 package ran on hardware, the log lines of the run (`Boot: cur 010002ff, ..., update? 1`:
   `boot_min_version: 1.0.9` also works on a factory unit with loader 1.0.2), that relay and LED needed a power-off of about 30 s although ESPHome, Wi-Fi and the sensors ran at once,
   and that no `EFUSE write error` appeared. Bootloader and slots and the troubleshooting notes (power cycle, eFuse) got one sentence each. No profile change.
 - H&T Gen3 page: Shelly's update API lists only the beta `2.2.0-beta1` for this device (the 2.0.1 release is no longer served). The page fetches it with `--channel beta`, builds
   with `--version 2.2.0-beta1`, and says that the beta has the same partition table and bootloader header as 2.0.1 but was not flashed with this tool.
-- All device pages (16 profiles on 15 pages, the Mini 1PM Gen4 page covers two) have a new layout: badges for state and chip, quick links with icons, a `Fact | Value` table
 - All device pages (17 profiles on 16 pages, the Mini 1PM Gen4 page covers two) have a new layout: badges for state and chip, quick links with icons, a `Fact | Value` table
   (the state and the chip are only in the badges), a "Before you start" checklist, callouts (NOTE for what was confirmed or checked, IMPORTANT for the partition table,
   TIP to start from the ESPHome device page, WARNING for the way back, TIP to send a device report), "Flash it" as numbered steps and the log lines of "What to expect" as
@@ -70,8 +96,9 @@ All notable changes to this project are documented here. The format follows
   describes the layout.
 - Device pages link the ESPHome device page where one exists: Plug S Gen3, H&T Gen3, The Pill, Plus Plug S, Power Strip 4 Gen4, PM Mini Gen3, Mini 1PM Gen3 (the database calls it
   "Shelly 1PM Mini Gen3") and Mini 1 Gen3 ("Shelly 1 Mini Gen3"). The Plug M Gen3, Plug PM Gen3, Duo Bulb Gen3, Multicolor Bulb, Mini 1PM Gen4, Plus Uni and Pro 3EM have none (sitemap checked 2026-10-16).
-- `tests/test_readme.py` also checks the device pages: the standard sections in order, the state badge against the README, the profile in the commands, and all
-  relative links and anchors.
+- Device pages: pin tables for Plug S Gen3, Duo Bulb Gen3, H&T Gen3, The Pill and Plus Plug S, taken from the ESPHome device database pages of the owner
+  (and bobkersten for the Plus Plug S) and checked against the firmware where possible. The Plug S Gen3 state is plain ✅ now; the Duo Bulb pages say
+  the ESPHome config runs (UART) while the OTA path is not run.
 - README reworked. The device table has a `Note` column (the `State` column holds only the symbol) and a third state, 🟡 = flashed on a real device, but part of the chain
   or of the function is not checked: Plug PM Gen3 (readings), Power Strip (outlets) and Duo Bulb Gen3 (OTA not run) move there from ✅/🧪; the legend and the State lines of
   `docs/devices/README.md` and those three device pages follow. The non-affiliation text is a NOTE next to the WARNING instead of part of it, the Quick start goes
@@ -81,38 +108,30 @@ All notable changes to this project are documented here. The format follows
   A summary line above the device table counts the states. The header has the logo (`docs/assets/logo.png`) in front of the title, the tagline below, then
   the badges and a row of links to the main sections; the badges are status, version, issues and license in a flat style (stars and forks removed, `WIP` in the title replaced
   by the status badge).
+- README: "Another device?" is a section of its own (request it, make a profile yourself, send a device report) instead of one
+  sentence under the device table.
+- The pages outside the README and the device pages have the same frame as those: a navigation row that starts with `← README`, a row of links to the sections, callouts (NOTE, TIP, IMPORTANT, WARNING, CAUTION) for what must not be missed, tables where a list of cases was, and related links at the end. This covers `docs/*.md`, `devices/README.md`, `ROADMAP.md` and `CREDITS.md`; `docs/troubleshooting.md` groups its sections (sending and building, after the update, background), `docs/versions.md` has one heading per kind of version, `docs/bootloader-and-slots.md` starts with a table of the four questions. Headings keep their text, so every existing link and anchor still works. `tests/test_readme.py` checks the frame (title, navigation row, no emoji in headings, known callout types, links and anchors).
 - `ota.py -h` and the help of every command are easier to scan. The top-level help lists the commands in the groups of `docs/commands.md` (Prepare, Build, Deploy,
   Tools), a typical run, what to know before flashing and the device names once. Each command has a short usage line, and its options are grouped by topic (`send`:
   the Shelly, this PC, what to do; `build`: app and bootloader, secrets, output, parts, base firmware). Long option texts are shorter and point to
   `docs/commands.md`. Options, defaults and behaviour are unchanged; `--color` shows `WHEN` in the usage. `tests/test_help.py` checks that every command is in a group, has a
   working `-h` and that no help line is wider than the terminal.
-- Multicolor Bulb E27 Gen3 example config (`configs/shelly-rgbcct-bulb-g3/`): the light is now `rgbw_ct_table` (component of `oxynatOr/esphome-kp18058`) instead of `rgbw`: an RGB mode and a
-  colour temperature mode 2700-6500 K (exclusive, like the stock web UI) with the stock firmware's 9-point table and RGB white balance (red 0.856, green 0.701, blue 0.749), linear brightness
-  (`gamma_correct: 1.0`) and a 3 s default fade, all read from the 2.0.1 firmware. The packages daylight, daylight_sun, scenes, night, night_sun and wakeup use colour temperature instead of
-  mixing RGB with the white (the white-mixing modes are gone); dimrange is only needed with gamma 2.8. The YAML pulls the component from `oxynatOr/esphome-kp18058@main`, where `rgbw_ct_table` has been published since 2026-10-15. Flashed on the bulb, it runs (owner, 2026-10-16); the colours were not compared with the stock firmware.
-- Profile `PlugSG3` (revision 2): `boot_min_version: 1.0.9`. The Plug S Gen3 package carries the same bootloader as the Plug M Gen3 package (byte-identical, loader 1.0.3),
-  so a plug that already runs it would skip the default 1.0.3 and silently keep Shelly's bootloader. The earlier run used the default on a plug with loader 1.0.2; the new
-  value is not run on a Plug S Gen3 yet.
-- Plug PM Gen3: flashed over OTA with this tool on a real plug (owner report, 2026-10-12). The device page, `docs/devices/README.md` and the README row go from 🧪 to ✅
-  with "readings not checked"; the log lines (`Boot: cur ... update?`) and the BL0942 readings are not recorded yet.
-- Profile `PlugMG3` (revision 2): `boot_min_version: 1.0.9`. The official package carries Shelly OS loader 1.0.3, so a Plug M restored from it
-  would skip the default 1.0.3 and silently keep Shelly's bootloader (same cause as on the H&T and the Plug PM Gen3).
-- Profile `RGBCCTBulbG3` (revision 2): `boot_min_version: 1.0.9`. After a return to stock the Multicolor Bulb runs Shelly OS loader 1.0.3, so the default
-  1.0.3 would be skipped; with 1.0.9 the ESPHome bootloader was written (hardware-confirmed on a real bulb, 2026-10-11).
-- Profile `DuoBulbG3` (revision 2): `boot_min_version: 1.0.9`, like the other Gen3 devices that needed it (Multicolor Bulb, same main board, loader 1.0.3 after a return to stock).
-  Without it the installer may skip ESPHome's bootloader. Not run on a Duo Bulb yet.
+- `build` stops when the automatically named output already exists (`--force` replaces it; `--tag LABEL` or `-o ZIP` give another name). A second build on the same day used to replace the
+  first package silently, which may already be on a device. A name given with `-o` is still replaced without `--force`. `build --dry-run` reports it as a note instead of stopping.
+- `tests/test_readme.py` also checks the device pages: the standard sections in order, the state badge against the README, the profile in the commands, and all
+  relative links and anchors.
+- `docs/commands.md` documents `add-device`, `inspect`, `clean` and `partition-csv`.
+- `docs/commands.md` and the note `restore` prints: the official package *may* reset NVS (a PM Mini Gen3 going from 2.0.1 to 2.0.1 kept Wi-Fi and settings).
+  `docs/troubleshooting.md`: the eFuse note also lists `EFUSE write error bit[1]: 5636` after `Incoming fw signatures: 00` on a PM Mini Gen3 (update and ESPHome were fine).
+  Both from the first device report by [imsandli](https://github.com/imsandli).
 - Recovery over UART: the ESP32-C3 command for the Plug M Gen3 (restored from ESPHome, boot log reviewed), and a note that pushing the
   official app image over ESPHome OTA is not a way back (the Shelly app cannot read ESP-IDF's `otadata`).
-- Power Strip example config (`configs/shelly-power-strip-gen4/`): README and YAML name this tool instead of "ShellyOTA", the build command is relative to the
-  repository root, and the slot-0 note links the Power Strip device page and "The app must land in slot 0" instead of a README section that is gone.
-- Device pages: pin tables for Plug S Gen3, Duo Bulb Gen3, H&T Gen3, The Pill and Plus Plug S, taken from the ESPHome device database pages of the owner
-  (and bobkersten for the Plus Plug S) and checked against the firmware where possible. The Plug S Gen3 state is plain ✅ now; the Duo Bulb pages say
-  the ESPHome config runs (UART) while the OTA path is not run.
-- `docs/commands.md` documents `add-device`, `inspect`, `clean` and `partition-csv`.
-- README: "Another device?" is a section of its own (request it, make a profile yourself, send a device report) instead of one
-  sentence under the device table.
+- `ROADMAP.md`: the items of "Now" that are done (Plug S Gen3 `boot_min_version`, the `compatible` list, the 2.1.0 check, the Mini 1 Gen3 profile, the decision against a `Pro3EMProAddon` profile, the description of the route without ESPHome's bootloader) moved to a new "Done" table with their pull requests; the state date and the count of untested devices are current.
 
 ### Fixed
+- `build --dry-run` no longer touches an existing package. It built to the real output path and deleted it afterwards, so a dry run to check another config on the same day (same
+  automatic name `<Device>-firmware.ota-<date>.zip`, as ESPHome always names the app `firmware.ota.bin`) replaced and removed the package that had just been built and flashed, and left its
+  `.sha256` and `.report.json` behind. The dry run now builds in a scratch directory and prints `DRY RUN, nothing written`. Reported with a Plug M Gen3 build.
 - `send` no longer blames the firewall when the device's log works but does not name an app slot. The Plug M Gen3 on stock 1.8.99 logs `Storing core dumps to scratch (0x720000)`
   instead of `app_N`; `send` showed "the update target slot could not be read (UDP log blocked? ...)" although the datagrams arrived. It now says that this firmware does not reveal the
   target slot before the update, names the line it saw and points to `Will write to slot N` in the `--watch` log. Still only a warning: the slot is unknown, so nothing is refused. The installer
@@ -130,41 +149,10 @@ All notable changes to this project are documented here. The format follows
 - The `configs/` folder (example ESPHome configs for the Power Strip 4 Gen4 and the Multicolor Bulb E27 Gen3, with the light packages and pin notes; added in 0.3.0): device
   configs belong to the ESPHome device pages and to [`oxynatOr/esphome-configs`](https://github.com/oxynatOr/esphome-configs), not to the tool that installs the firmware.
   The Power Strip and Multicolor Bulb pages and `docs/README.md` no longer point into this repository. The files stay in the git history and in the tags `v0.3.0` and
-  `v0.3.1`. The device pages carry no photos either: pictures belong on the ESPHome device page (`docs/devices/README.md` says so).
+  `v0.3.1`. The Multicolor Bulb config had the colour temperature light `rgbw_ct_table` (component of `oxynatOr/esphome-kp18058`) and eight optional light packages;
+  they, the Power Strip config and a Duo Bulb config are in `oxynatOr/esphome-configs` now. The device pages carry no photos either: pictures belong on the ESPHome device page (`docs/devices/README.md` says so).
 - Profile `Cury` (Shelly Cury), its partition CSV and device page (added in 0.3.1): the device has an NFC reader, regulated heaters and a
   voltage doubler that ESPHome cannot drive, and its pins are not decoded, so it is not a useful target. It is parked outside the repository.
-
-### Added
-- `send` (and `restore`) ask the device to fetch `http://<this PC>:<port>/` itself (RPC `HTTP.GET`) before they send. `--dry-run` fails with the device's
-  `Connection error` if it cannot reach this PC, a real `send` prints a warning and goes on, and a device without `HTTP.GET` only gets a note. Suggested by [imsandli](https://github.com/imsandli) in the
-  first device report (PM Mini Gen3), where the Shelly sat in an IoT VLAN that could not reach the PC and the plain run would have ended in the 300 s timeout.
-  Not run on a real device yet: the exact error reply of the device is known from the report only.
-- Profiles `PlusUni` (Shelly Plus Uni) and `Pro3EM` (Shelly Pro 3EM), both classic ESP32 (Gen2) made from the official 2.0.1 packages, with partition CSVs
-  and device pages. The Pro 3EM has 16 MB flash (app slot `0x200000`, extra `emdata` partition), the Plus Uni 4 MB (`0x190000`). Both set
-  `boot_min_version: 1.0.9` (the packages carry loader 1.0.2; the loader of a real unit has not been seen). Packages build and verify; not tested on
-  hardware. No pin tables: the ESPHome device database has no page for either device. `Pro3EMProAddon` (Pro 3EM with Pro Sensor Addon) has no profile.
-- Profile `Mini1G3` (Shelly Mini 1 Gen3, the Mini 1PM Gen3 without the power meter; partition table at `0xf000`, `boot_min_version: 1.0.9`) with partition CSV and a device page. Package builds and verifies; not tested on hardware.
-- Profile `PlugPMG3` (Shelly Plug PM Gen3, S3PL-30116EU; it only measures, there is no relay) with its partition CSV, generated from the official
-  2.0.1 package (app slots `0x280000`, smaller than the Plug M / Plug S). The profile sets `boot_min_version: 1.0.9`: the device runs Shelly OS
-  loader 1.0.3, so the default 1.0.3 was skipped and later ESPHome OTAs did not take effect. The hardware result of the package route is not
-  recorded here yet, so the state is 🧪.
-- Device page `docs/devices/PlugPMG3.md` and a README row for the Plug PM Gen3: ESPHome `esp32:` block, pin table (read from the stock 2.0.1 firmware,
-  not verified in a running ESPHome), commands and a UART restore command derived from the package manifest (not run on this plug).
-- Index pages: `docs/README.md` (where to start, all pages, what to read when something goes wrong), `docs/devices/README.md` (all device pages with partition
-  table offset and app slot size, where devices differ, what a page contains), `devices/README.md` (the profiles, the profile keys, how to change a profile)
-  and `configs/README.md` (the example configs and how to use one).
-- GitHub issue form **Request a new device** (model, `app` name, firmware, chip, whether you can test it; no dumps or secrets). The README links to it.
-- GitHub issue forms: **Device report** (device, tool and Shelly version, method, result, `send --watch` output, with a reminder to remove
-  secrets and the device cloud key) and **Bug or wrong message**. The README links to the device report.
-- Multicolor Bulb E27 Gen3 example config (`configs/shelly-rgbcct-bulb-g3/`): eight optional packages (daylight by time and by the real sun, scenes,
-  wake-up alarm, over-temperature protection, night light by time and by sun, dim range), each with its settings in its header. The per-channel test
-  lights are gone: the channel order (OUT1 blue, OUT2 red, OUT3 green, OUT4 warm white) is tested on the bulb (2026-10-11). The main file gets the
-  Home Assistant time component, an `id` on the light and `color_interlock: false`. The README and the device page mark the bulb as ✅ now; the folder
-  README says what is tested.
-- Profile `MiniPMG3` (Shelly PM Mini Gen3, S3PM-001PCEU16; measures only, no relay) with partition CSV and device page, made from the official 2.1.0 package (partition table `0xf000`, app slot
-  `0x280000`, `boot_min_version: 1.0.9`). Hardware-confirmed by the first external device report ([imsandli](https://github.com/imsandli)): `send` from stock 2.0.1 with ESPHome's bootloader (loader 1.0.2 replaced), ESPHome OTAs
-  afterwards, BL0942 readings. The page documents the BL0942 UART pins, the RX pull-up it needs and a voltage calibration. This is not the Mini 1PM Gen3 (`Mini1PMG3`), which stays untested.
-- `CREDITS.md`: the projects the tool learned from (as in the README), the people who tested devices and sent reports (imsandli, bobkersten), Shelly and the tooling, and how to get on or off the list. The README links to it.
 
 ## [0.3.1] - 2026-10-06
 
