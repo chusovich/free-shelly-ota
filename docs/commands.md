@@ -2,7 +2,7 @@
 
 [← README](../README.md) · [Documentation](README.md) · [Device pages](devices/README.md) · [Troubleshooting](troubleshooting.md)
 
-[📥 fetch](#fetch) · [🔨 build](#build) · [📤 send](#send) · [↩️ restore](#restore) · [➕ add-device](#add-device) · [📋 partition-csv](#partition-csv) · [🔍 inspect](#inspect) · [🧪 devkit](#devkit) · [🧹 clean](#clean) · [📜 log](#log) · [🎨 Colors](#colors)
+[📥 fetch](#fetch) · [🔨 build](#build) · [📤 send](#send) · [↩️ restore](#restore) · [➕ add-device](#add-device) · [📋 partition-csv](#partition-csv) · [🔍 inspect](#inspect) · [🧪 devkit](#devkit) · [📃 list](#list) · [🧹 clean](#clean) · [📜 log](#log) · [🎨 Colors](#colors)
 
 The usual workflow is three steps:
 
@@ -215,6 +215,10 @@ Writes a flash image of a package, to play the whole update through on a dev boa
 
 > [!WARNING]
 > The image overwrites the whole flash of a board and holds Shelly's firmware. Use a spare board, not a device, and do not share the file.
+
+## list
+
+`python ota.py list` shows one line per device: profile, name, app slot size and the cached official firmware versions. The device name is shortened to fit the terminal. `--details` (or `--all`) shows two lines per device with the profile revision and the build id of each cached firmware.
 
 ## clean
 

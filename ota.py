@@ -13,6 +13,7 @@ import os
 import shutil
 import sys
 import tempfile
+import zipfile
 import textwrap
 import zipfile
 from pathlib import Path
@@ -78,13 +79,31 @@ PC_GROUP = "this PC"
 
 
 def cmd_list(args) -> None:
-    for name in profile.list_devices():
-        p = profile.load_profile(name)
-        ui.say(f"{name:12s} {p.display_name:24s} app size=0x{p.app_slot_size:x}  profile rev {p.revision}")
-        for ver in firmware.list_versions(name):
-            meta_path = firmware.FW_DIR / name / ver / "meta.json"
-            build_id = json.loads(meta_path.read_text(encoding="utf-8")).get("build_id") if meta_path.is_file() else None
-            ui.say(f"    fw {ver}  {build_id or ''}")
+    names = profile.list_devices()
+    profiles = {name: profile.load_profile(name) for name in names}
+    name_w = max((len(n) for n in names), default=0)
+    if args.details:
+        title_w = max((len(p.display_name) for p in profiles.values()), default=0)
+        for name in names:
+            p = profiles[name]
+            ui.say(f"{name:{name_w}s}  {p.display_name:{title_w}s}  app size=0x{p.app_slot_size:x}  profile rev {p.revision}")
+            for ver in firmware.list_versions(name):
+                meta_path = firmware.FW_DIR / name / ver / "meta.json"
+                build_id = json.loads(meta_path.read_text(encoding="utf-8")).get("build_id") if meta_path.is_file() else None
+                ui.say(f"    fw {ver}  {build_id or ''}")
+        return
+    # one line per device; the device title is shortened so the line fits the terminal
+    width = shutil.get_terminal_size((100, 24)).columns
+    rows = [(name, profiles[name].display_name, f"0x{profiles[name].app_slot_size:x}",
+             ", ".join(firmware.list_versions(name)) or "-") for name in names]
+    slot_w = max((len(r[2]) for r in rows), default=0)
+    fw_w = max((len(r[3]) for r in rows), default=0)
+    title_w = max(10, min(max((len(r[1]) for r in rows), default=0), width - name_w - slot_w - fw_w - 6))
+    for name, title, slot, fws in rows:
+        if len(title) > title_w:
+            title = title[:title_w - 2] + ".."
+        ui.say(f"{name:{name_w}s}  {title:{title_w}s}  {slot:{slot_w}s}  {fws}")
+    ui.say("(app slot size and cached firmware versions; --details shows revision and build ids)")
 
 
 def cmd_colors(args) -> None:
@@ -105,8 +124,10 @@ def cmd_profiles(args) -> None:
     if args.update_lock:
         lock = profile.write_lock()
         ui.say(f"Wrote devices/{profile.LOCK_FILE} ({len(lock)} profiles)")
-    for name in profile.list_devices():
-        ui.say(f"{name:12s} revision {profile.load_profile(name).revision:<3d} content {profile.content_hash(name)}")
+    names = profile.list_devices()
+    name_w = max((len(n) for n in names), default=0)
+    for name in names:
+        ui.say(f"{name:{name_w}s}  revision {profile.load_profile(name).revision:<3d} content {profile.content_hash(name)}")
     problems = profile.check_lock()
     for problem in problems:
         ui.say(f"WARNING: {problem}")
@@ -291,14 +312,13 @@ def cmd_send(args) -> None:
     _send(args, args.zip)
 
 
-RESTORE_NOTE = """NOTE: restore sends the cached official package. It only works while the Shelly firmware is still running (only it
-      understands Shelly.Update); a device that already runs ESPHome does not answer, and the way back is then UART with a
-      flash backup.
-      The official package may reset NVS and otadata, so Wi-Fi credentials and settings can be lost (a PM Mini Gen3
-      kept them going from 2.0.1 to 2.0.1; do not count on it).
-      If ESPHome's bootloader is installed, the installer puts Shelly's back (seen once, on the Plus Plug S:
-      'Boot: cur 00000000 ... update? 1'). It also moves the stock firmware to the other slot, which is what the next send of an
-      ESPHome package needs when send reports that the installer would write to slot 1."""
+RESTORE_NOTE = """NOTE: restore sends the cached official package. It only works while the Shelly firmware is still running. A device
+      that already runs ESPHome does not answer; the way back is then UART, with a flash backup.
+
+NOTE: The package may reset NVS and otadata, so Wi-Fi credentials and settings can be lost.
+
+NOTE: If ESPHome's bootloader is installed, the installer writes Shelly's bootloader back and moves the stock firmware to
+      the other slot. That is also what `send` needs when it reports that the installer would write to slot 1."""
 
 
 def cmd_restore(args) -> None:
@@ -409,7 +429,7 @@ class _VersionAction(argparse.Action):
 
 
 def _width() -> int:
-    return max(60, min(shutil.get_terminal_size((100, 24)).columns - 2, 110))
+    return ui.width()
 
 
 def _rows(rows, indent: int, width: int, first_col: int) -> list[str]:
@@ -585,7 +605,9 @@ def build_parser() -> argparse.ArgumentParser:
     i.add_argument("--device", metavar="DEVICE", help="also show how full the app slot is")
     i.set_defaults(func=cmd_inspect)
 
-    _command(sub, "list").set_defaults(func=cmd_list)
+    ls = _command(sub, "list", usage="ota.py list [--details]")
+    ls.add_argument("--details", "--all", action="store_true", help="two lines per device: profile revision and firmware build ids")
+    ls.set_defaults(func=cmd_list)
 
     pr = _command(sub, "profiles")
     pr.add_argument("--update-lock", action="store_true",

@@ -253,7 +253,7 @@ class BootswapTests(unittest.TestCase):
         self.assertFalse(any("UDP log blocked" in l or "could not be read" in l for l in lines), lines)
         painted = ui.paint(warn[0], enabled=True).split("\n")       # yellow, not orange: send has nothing to prevent here
         self.assertEqual(len(painted), 2)
-        self.assertTrue(all(l.startswith(ui.YELLOW) for l in painted), painted)   # "Will write to slot N" keeps the color above
+        self.assertTrue(painted[0].startswith(ui.YELLOW), painted)   # the label only; "Will write to slot N" is not the first sentence
 
     def test_probe_reports_what_the_core_dump_line_names(self):
         cases = ((dict(target_slot=0), sender.SlotProbe(0, "app_0")),

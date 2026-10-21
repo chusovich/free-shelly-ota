@@ -151,6 +151,28 @@ class SenderTests(unittest.TestCase):
         self.assertTrue(s.fetched[0].endswith("/"), s.fetched)  # the root, never the ZIP itself
         self.assertEqual(s.updates, [])
 
+    def _dry(self, level):
+        s = self._shelly(reach="ok")
+        log = []
+        sender.send(self.profile, self.zip, s.addr, port=0, dry_run=True, out=log.append, level=level)
+        return log
+
+    def test_normal_says_the_steps_but_not_the_details(self):
+        log = self._dry(sender.Level.normal)
+        self.assertTrue(any(l.startswith("Device ") and ", fw " in l for l in log), log)
+        self.assertTrue(any(l.startswith("ZIP: ") for l in log), log)
+        self.assertTrue(any(l.startswith("Dry run: nothing sent") for l in log), log)
+        self.assertFalse(any(l.startswith(("Download URL", "  parts:", "  model")) or "can reach this PC" in l for l in log), log)
+
+    def test_verbose_adds_the_details(self):
+        log = self._dry(sender.Level.verbose)
+        self.assertTrue(any(l.startswith("Download URL") for l in log), log)
+        self.assertTrue(any(l.startswith("  parts:") for l in log), log)
+        self.assertTrue(any("can reach this PC" in l for l in log), log)
+
+    def test_quiet_says_nothing_when_all_is_well(self):
+        self.assertEqual(self._dry(sender.Level.quiet), [])
+
     def test_dry_run_fails_when_the_device_cannot_reach_this_pc(self):
         s = self._shelly(reach="blocked")
         with self.assertRaises(builder.OtaError) as cm:

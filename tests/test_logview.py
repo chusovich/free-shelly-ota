@@ -274,7 +274,7 @@ class _Tty(io.StringIO):
 class ProgressTests(unittest.TestCase):
     def setUp(self):
         ui._progress_step.clear()
-        ui._progress_open = False
+        ui._live_text, ui._live_drawn = None, 0
 
     def test_on_a_terminal_it_is_one_line_that_is_updated(self):
         out = _Tty()
@@ -285,22 +285,25 @@ class ProgressTests(unittest.TestCase):
         finally:
             sys.stdout = old
         text = out.getvalue()
-        self.assertEqual(text.count("\r"), 3)
         self.assertEqual(text.count("\n"), 1)                       # only the 100 % line is ended
         self.assertIn("Update [#########-----------]  49 %", text)
-        self.assertTrue(text.endswith("\n"))
+        self.assertTrue(text.endswith("Update [####################] 100 %\n"))
 
-    def test_a_message_wipes_an_open_progress_line_first(self):
+    def test_a_message_wipes_the_progress_line_and_it_is_drawn_again_below(self):
         out = _Tty()
         old, sys.stdout = sys.stdout, out
         try:
             ui.progress("Update", 49)
-            self.assertTrue(ui._progress_open)
+            self.assertIsNotNone(ui._live_text)
+            out.seek(0)
+            out.truncate()
             ui.say("WARNING: something")
         finally:
             sys.stdout = old
-        self.assertFalse(ui._progress_open)
-        self.assertIn("\r" + " " * ui._PROGRESS_WIDTH + "\rWARNING: something\n", out.getvalue())
+        text = out.getvalue()
+        self.assertTrue(text.startswith("\r"))
+        self.assertIn("WARNING: something\n", text)
+        self.assertTrue(text.endswith("Update [#########-----------]  49 %"))
 
     def test_without_a_terminal_it_is_one_line_per_ten_percent(self):
         lines = []

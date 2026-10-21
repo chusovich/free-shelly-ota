@@ -54,7 +54,7 @@ class SendLevelTests(unittest.TestCase):
         self.assertTrue(self._starting_with(DONE_CONFIRMED), self.lines)
         self.assertTrue(self._starting_with("Device 127.0.0.1"))
         self.assertFalse(self._starting_with(DONE_DOWNLOADED))
-        for hidden in ("ZIP:", "Download URL", "Device accepted", "After the first ESPHome boot", "NOTE: the build"):
+        for hidden in ("Download URL", "Device accepted", "After the first ESPHome boot", "NOTE: the build"):
             self.assertFalse(self._starting_with(hidden), (hidden, self.lines))
         self.assertTrue(self.lines[-1].startswith("Device log: ") and "hidden" in self.lines[-1], self.lines[-1])
 

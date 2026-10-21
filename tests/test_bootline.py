@@ -64,5 +64,45 @@ class BootWatchTests(unittest.TestCase):
         self.assertEqual(len(out), 1)
 
 
+class SettleTests(unittest.TestCase):
+    """The wait after a fresh start: one live line on the command line, lines every 30 s otherwise."""
+
+    def settle(self, uptime, answer="yes", live=False, screen=None):
+        from unittest import mock
+        said, sleeps = [], []
+        with mock.patch.object(sender, "device_uptime", return_value=uptime):
+            if screen is not None:
+                with mock.patch("sys.stdout", screen):
+                    sender._settle("x", {}, say=lambda level, text: said.append(text), ask=lambda prompt: answer,
+                                   sleep=sleeps.append, dry_run=False, assume_yes=False, live=live)
+            else:
+                sender._settle("x", {}, say=lambda level, text: said.append(text), ask=lambda prompt: answer,
+                               sleep=sleeps.append, dry_run=False, assume_yes=False, live=live)
+        return said, sleeps
+
+    def test_a_settled_device_is_left_alone(self):
+        self.assertEqual(self.settle(300), ([], []))
+
+    def test_saying_no_does_not_wait(self):
+        said, sleeps = self.settle(57, answer="no")
+        self.assertEqual(sleeps, [])
+        self.assertTrue(any("Not waiting" in l for l in said), said)
+
+    def test_on_the_command_line_the_countdown_is_one_live_line(self):
+        import io
+
+        class Tty(io.StringIO):
+            def isatty(self):
+                return True
+
+        screen = Tty()
+        said, sleeps = self.settle(57, live=True, screen=screen)
+        text = screen.getvalue()
+        self.assertIn("Waiting ... 68 s left", text)
+        self.assertIn("Waiting ... 1 s left", text)
+        self.assertFalse(any(l.startswith("Waiting") for l in said), said)
+        self.assertEqual(len(sleeps), 136)                       # half-second steps
+
+
 if __name__ == "__main__":
     unittest.main()

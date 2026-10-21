@@ -187,7 +187,7 @@ class SlotAndChipTests(unittest.TestCase):
             self.addCleanup(s.close)
             lines = []
             sender.send(profile.load_profile("DuoBulbG3"), z, s.addr, port=0, dry_run=True, out=lines.append)
-            self.assertTrue(any(f"reported slot={slot}" in l for l in lines), lines)
+            self.assertTrue(any(f"reported slot {slot}" in l for l in lines), lines)
             self.assertFalse(any("WARNING" in l for l in lines), lines)
 
 
