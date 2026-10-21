@@ -5,6 +5,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- `send` could not be stopped with Ctrl+C on Windows while it waited for the device to download the ZIP (one 300 s `Event.wait` is not
+  interruptible there). It waits in 0.25 s slices now, restoring the log setting on the way out uses a 3 s timeout, and Ctrl+C ends with
+  "Interrupted (Ctrl+C)." instead of a traceback.
+
+### Added
+- `build --standalone` (H&T Gen3 first): builds the package without Shelly's ZIP, from the new `standalone:` section of the profile and the
+  partition CSV. The H&T 2.0.1 ZIP looked removed from Shelly's update API on 2026-10-10; it was only the missing `Shelly-Info` header (`fetch --from-version 1.4.4` gets it), so this is a way to build and share a package without a Shelly file, not a replacement for a download that is gone. The package holds
+  no Shelly file (ESPHome's bootloader, `otadata` and partition table, erased filesystem image of 0xFF: the installer aborts with "Missing a part" without an `fs` image), so it can be shared. `send` assumes a replaced
+  bootloader for profiles with `standalone:` when no official ZIP is cached. Not yet run on a device.
+
 ## [0.4.0] - 2026-10-18
 
 ### Added

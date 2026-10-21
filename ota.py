@@ -17,7 +17,7 @@ import textwrap
 from pathlib import Path
 
 from shelly_ota import (MODULE_DIR, buildinfo, builder, devicegen, devkit, firmware, lint, logwatch, profile, secrets_check,
-                        sender, ui)
+                        sender, standalone, ui)
 
 DESCRIPTION = ("Pack your ESPHome app image into an official-style Shelly OTA ZIP (Gen2 ESP32, Gen3 ESP32-C3, Gen4 ESP32-C6) "
                "and send it to the device.")
@@ -191,7 +191,17 @@ def cmd_build(args) -> None:
     drop = tuple(x for x in args.drop.split(",") if x)
     if args.drop_fs:
         drop += ("fs",)
-    official = args.official or firmware.cached_zip(p.name, args.version)
+    if args.standalone:
+        if not args.esphome_factory:
+            raise builder.OtaError("--standalone needs --esphome-factory (bootloader and partition table come from it).")
+        if args.official or args.download:
+            raise builder.OtaError("--standalone builds without Shelly's ZIP: drop --official/--download.")
+        scratch = tempfile.TemporaryDirectory()
+        official = Path(scratch.name) / f"{p.name}-reference.zip"
+        official.write_bytes(standalone.reference_zip(p))
+    else:
+        scratch = None
+        official = args.official or firmware.cached_zip(p.name, args.version)
     if official is None:
         if not args.download:
             raise builder.OtaError(
@@ -203,21 +213,28 @@ def cmd_build(args) -> None:
     def run_build(target: Path) -> builder.BuildResult:
         return builder.build(p, args.app, official, target, drop=drop, tag=args.tag, factory=args.esphome_factory,
                              boot_min_version=args.boot_min_version, secrets=secrets,
-                             fail_on_secrets=args.fail_on_secrets)
+                             fail_on_secrets=args.fail_on_secrets, pt_from_factory=bool(args.standalone))
 
-    if args.dry_run:
-        # Build in a scratch directory, so that an existing package (or its .sha256 and .report.json) stays untouched.
-        builder.check_output_is_no_input(output, official, args.app)
-        with tempfile.TemporaryDirectory(prefix="free-shelly-ota-dryrun-") as scratch:
-            result = run_build(Path(scratch) / output.name)
-        ui.say(f"DRY RUN, nothing written (a real build would write {output})")
-        if would_replace:
-            ui.say(f"  NOTE: {output.name} already exists, so a real build would stop here. "
-                   f"Use --tag LABEL or -o ZIP for another name, or --force to replace it.")
-    else:
-        result = run_build(output)
-        builder.write_report(result)
-        ui.say(f"OK: {result.output}")
+    try:
+        if args.dry_run:
+            # Build in a scratch directory, so that an existing package (or its .sha256 and .report.json) stays untouched.
+            builder.check_output_is_no_input(output, official, args.app)
+            with tempfile.TemporaryDirectory(prefix="free-shelly-ota-dryrun-") as dryrun:
+                result = run_build(Path(dryrun) / output.name)
+            ui.say(f"DRY RUN, nothing written (a real build would write {output})")
+            if would_replace:
+                ui.say(f"  NOTE: {output.name} already exists, so a real build would stop here. "
+                       f"Use --tag LABEL or -o ZIP for another name, or --force to replace it.")
+        else:
+            result = run_build(output)
+            builder.write_report(result)
+            ui.say(f"OK: {result.output}")
+    finally:
+        if scratch:
+            scratch.cleanup()
+    if args.standalone:
+        result.warnings.append("Standalone package: it contains no file from Shelly. The filesystem image is an erased one, "
+                               "so fs_0 is wiped; the partition table and bootloader are ESPHome's.")
     ui.say(f"  base firmware {result.official_version} ({result.official_build_id}), "
           f"app {result.app_size} bytes, parts {result.parts}")
     if result.secrets_found == []:
@@ -472,6 +489,9 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--drop", default="", metavar="LIST", help="leave out parts: boot,pt,otadata,nvs,fs")
     g.add_argument("--drop-fs", action="store_true", help="same as --drop fs")
     g = b.add_argument_group("base firmware")
+    g.add_argument("--standalone", action="store_true",
+                   help="build without Shelly's ZIP, from the facts in the profile's 'standalone:' section (needs "
+                        "--esphome-factory). The package then holds no file from Shelly and can be shared")
     g.add_argument("--official", type=Path, metavar="ZIP", help="use this official ZIP")
     g.add_argument("--version", metavar="VER", help="use this cached version (default: the newest stable one)")
     g.add_argument("--download", action="store_true", help="download if nothing is cached")
@@ -530,6 +550,8 @@ def main() -> None:
         args.func(args)
     except (builder.OtaError, profile.ProfileError, FileNotFoundError) as e:
         sys.exit(ui.error(e))
+    except KeyboardInterrupt:
+        sys.exit(ui.error("Interrupted (Ctrl+C)."))
 
 
 if __name__ == "__main__":

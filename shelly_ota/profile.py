@@ -33,6 +33,7 @@ class Profile:
     pt_offset: int = 0x10000  # where the device keeps its partition table (HTG3: 0xf000)
     boot_min_version: str | None = None  # default for --boot-min-version with --esphome-factory (HTG3: 1.0.9)
     revision: int = 1  # counts changes of this profile; bump it when anything else in the file changes
+    standalone: dict | None = None  # facts for building without Shelly's ZIP (see standalone.py); None = not supported
 
 
 def _to_int(value, key: str) -> int:
@@ -64,6 +65,7 @@ def load_profile(name: str, devices_dir: Path = DEVICES_DIR) -> Profile:
         pt_offset=_to_int(raw.get("pt_offset", 0x10000), "pt_offset"),
         boot_min_version=str(raw["boot_min_version"]) if raw.get("boot_min_version") else None,
         revision=_to_int(raw.get("revision", 1), "revision"),
+        standalone=raw.get("standalone") or None,
     )
 
 

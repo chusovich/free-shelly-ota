@@ -5,7 +5,9 @@ import json
 import shutil
 import sys
 import tempfile
+import _thread
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.parse
@@ -23,8 +25,9 @@ class FakeShelly:
     reach: what HTTP.GET does. None: the method does not exist (404). "ok": fetches the url and reports its status.
     "blocked": cannot connect; the reply text is modelled on a device report, its HTTP status is a guess."""
 
-    def __init__(self, app="DuoBulbG3", auth_en=False, reach=None):
+    def __init__(self, app="DuoBulbG3", auth_en=False, reach=None, download=True, update_error=None):
         self.app, self.auth_en, self.reach = app, auth_en, reach
+        self.download, self.update_error = download, update_error
         self.updates = []
         self.fetched = []
         outer = self
@@ -35,10 +38,18 @@ class FakeShelly:
                 if u.path == "/rpc/Shelly.GetDeviceInfo":
                     body = json.dumps({"app": outer.app, "model": "X", "ver": "2.0.1", "id": "fake",
                                        "auth_en": outer.auth_en}).encode()
+                elif u.path == "/rpc/Shelly.Update" and outer.update_error:
+                    body = json.dumps({"code": -109, "message": outer.update_error}).encode()
+                    self.send_response(500)
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
                 elif u.path == "/rpc/Shelly.Update":
                     url = urllib.parse.parse_qs(u.query)["url"][0]
                     outer.updates.append(url)
-                    threading.Thread(target=lambda: urllib.request.urlopen(url).read()).start()
+                    if outer.download:
+                        threading.Thread(target=lambda: urllib.request.urlopen(url).read()).start()
                     body = b"{}"
                 elif u.path == "/rpc/HTTP.GET" and outer.reach == "ok":
                     url = urllib.parse.parse_qs(u.query)["url"][0]
@@ -91,6 +102,23 @@ class SenderTests(unittest.TestCase):
         ok = sender.send(self.profile, self.zip, s.addr, port=0, assume_yes=True, timeout=10, out=log.append)
         self.assertTrue(ok)
         self.assertEqual(len(s.updates), 1)
+
+    def test_ctrl_c_ends_the_wait_for_the_download_quickly(self):
+        # On Windows one long Event.wait() ignores Ctrl+C until it times out: the wait must be sliced.
+        s = self._shelly(download=False)
+        timer = threading.Timer(1.0, _thread.interrupt_main)
+        timer.start()
+        self.addCleanup(timer.cancel)
+        start = time.monotonic()
+        with self.assertRaises(KeyboardInterrupt):
+            sender.send(self.profile, self.zip, s.addr, port=0, assume_yes=True, timeout=300, out=lambda m: None)
+        self.assertLess(time.monotonic() - start, 10)
+
+    def test_not_committed_gets_an_explanation(self):
+        s = self._shelly(update_error="Not committed")
+        with self.assertRaises(builder.OtaError) as cm:
+            sender.send(self.profile, self.zip, s.addr, port=0, assume_yes=True, out=lambda m: None)
+        self.assertIn("two minutes", str(cm.exception))
 
     def test_dry_run_sends_nothing(self):
         s = self._shelly()

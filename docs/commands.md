@@ -69,6 +69,7 @@ file.
 | `--esphome-yaml YAML` | no | none | Also check the partition offset and `partitions:` CSV of this config, and run the [credential check](credential-check.md) |
 | `--esphome-factory FACTORY.bin` | no | none | Also ship ESPHome's bootloader and a clean `otadata` taken from this factory image (same build as `APP.bin`). See [Bootloader and slots](bootloader-and-slots.md) |
 | `--boot-min-version VER` | no | profile value, else one patch above Shelly's | Only with `--esphome-factory`: the bootloader `min_version` in the manifest. The installer writes only a newer bootloader. `keep` leaves it, which probably makes the installer skip the bootloader |
+| `--standalone` | no | off | Build without Shelly's ZIP, from the facts in the profile's `standalone:` section (needs `--esphome-factory`; only H&T Gen3 so far). The package holds no Shelly file: bootloader, `otadata` and partition table are ESPHome's and the filesystem image is an erased one (all 0xFF; the installer aborts with "Missing a part" without an `fs` image), so `fs_0` is wiped. Untested on a device |
 | `--secrets FILE` | no | `secrets.yaml` next to `--esphome-yaml` | Values to look for in the image |
 | `--fail-on-secrets` | no | off | Stop (no output) if the image contains credentials. Use it for packages meant to be shared |
 | `--tag LABEL` | no | none | Own label for file name and report; the manifest stays untouched |

@@ -77,7 +77,7 @@ def udp_log(addr: str, host: str, port: int, out: Callable[[str], None] = ui.say
     finally:
         stop.set()
         try:  # best effort: the device may be rebooting or already reflashed
-            rpc.call(addr, "Sys.SetConfig", {"config": {"debug": {"udp": {"addr": previous}}}}, **auth)
+            rpc.call(addr, "Sys.SetConfig", {"config": {"debug": {"udp": {"addr": previous}}}}, timeout=3, **auth)
         except (OtaError, OSError):
             pass
         sock.close()

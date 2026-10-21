@@ -267,19 +267,22 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
     official_zip = firmware.cached_zip(profile.name)
     boot_replaced: bool | None = None  # None: cannot tell (no cached official ZIP to compare with)
     keeps_loader = False  # an ESPHome app in a package that leaves Shelly's bootloader in place (no --esphome-factory)
-    if official_zip:
-        with zipfile.ZipFile(official_zip) as oz:
-            official_parts = json.loads(oz.read("manifest.json"))["parts"]
-        official_boot = official_parts.get("boot", {}).get("cs_sha256")
-        boot_replaced = manifest["parts"].get("boot", {}).get("cs_sha256") != official_boot
-        # the official package itself (restore, or sent by hand) keeps Shelly's bootloader by definition and is fine
-        app_changed = manifest["parts"].get("app", {}).get("cs_sha256") != official_parts.get("app", {}).get("cs_sha256")
-        keeps_loader = not boot_replaced and app_changed and not restoring
-        if keeps_loader:
-            if not force:
-                server.httpd.server_close()
-                raise OtaError(plain_package_text(profile.name))
-            out("WARNING: " + plain_package_text(profile.name, forced=True))
+    if official_zip or profile.standalone:
+        if official_zip:
+            with zipfile.ZipFile(official_zip) as oz:
+                official_parts = json.loads(oz.read("manifest.json"))["parts"]
+            official_boot = official_parts.get("boot", {}).get("cs_sha256")
+            boot_replaced = manifest["parts"].get("boot", {}).get("cs_sha256") != official_boot
+            # the official package itself (restore, or sent by hand) keeps Shelly's bootloader by definition and is fine
+            app_changed = manifest["parts"].get("app", {}).get("cs_sha256") != official_parts.get("app", {}).get("cs_sha256")
+            keeps_loader = not boot_replaced and app_changed and not restoring
+            if keeps_loader:
+                if not force:
+                    server.httpd.server_close()
+                    raise OtaError(plain_package_text(profile.name))
+                out("WARNING: " + plain_package_text(profile.name, forced=True))
+        else:
+            boot_replaced = True  # standalone-capable device, nothing to compare with: assume the worst (slot check)
         if boot_replaced:
             out("WARNING: this package replaces Shelly's bootloader. If it does not suit the device, only UART can "
                 "bring it back. Do not interrupt the power during the update.")
@@ -349,12 +352,21 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
             if watch > 0:
                 stack.enter_context(logwatch.udp_log(addr, host, log_port, log_out, **auth))
             trigger = f"http://{addr}/rpc/Shelly.Update?url={urllib.parse.quote(url, safe='')}"
-            answer = rpc.request(trigger, timeout=30, **auth).decode(errors="replace").strip()
+            try:
+                answer = rpc.request(trigger, timeout=30, **auth).decode(errors="replace").strip()
+            except OtaError as e:
+                if "Not committed" in str(e):
+                    raise OtaError(f"{e}\n  The device still counts its last update as uncommitted (its log showed a "
+                                   f"commit delay of 90 s after a boot). Keep it powered for two minutes, then send again. If it "
+                                   f"persists, 'python ota.py restore {profile.name}' (needs the official ZIP).") from e
+                raise
             out(f"Device accepted the request: {answer or 'ok'}")
             out("Waiting for the device to download the ZIP ...")
-            if not server.served.wait(timeout):
-                raise OtaError(f"The device did not download the ZIP within {timeout:.0f}s. Check that it can "
-                               f"reach {host}:{server.port} (firewall, network).")
+            deadline = time.monotonic() + timeout
+            while not server.served.wait(0.25):   # short waits: on Windows one long wait cannot be interrupted by Ctrl+C
+                if time.monotonic() >= deadline:
+                    raise OtaError(f"The device did not download the ZIP within {timeout:.0f}s. Check that it can "
+                                   f"reach {host}:{server.port} (firewall, network).")
             time.sleep(1)
             out("Done: the device downloaded the ZIP. It now flashes and reboots; if it stays silent, "
                 "disconnect it from power for at least 30 s.")
