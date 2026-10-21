@@ -1,11 +1,9 @@
 <div align="left">       
-<span>
-<img src="docs/assets/logo.png" width="80" align="left" alt="Free-Shelly OTA logo">
-  <h1 style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">  
-     Free-Shelly OTA    
-  </h1>  
-  <b>Pack your own ESPHome firmware into an official-style Shelly OTA package — and send it to the device.</b> 
-</span>
+<h1 align="left">
+  <img src="docs/assets/logo.png" width="80" align="left" alt="Free-Shelly OTA logo">
+  Free-Shelly OTA<br>
+  <sub><b>Pack your own ESPHome firmware into an official-style Shelly OTA package<br>— and send it to the device.</b></sub>
+</h1>
 
 [![Status][status-shield]][status-url]
 [![Version][version-shield]][version-url]
