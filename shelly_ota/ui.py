@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import Mapping
+import threading
+from typing import Callable, Mapping
 
 RESET = "\033[0m"
 YELLOW = "\033[33m"
@@ -119,9 +120,54 @@ def paint(text: str, enabled: bool | None = None) -> str:
     return "\n".join(out_lines)
 
 
+_lock = threading.RLock()      # the device log is printed from a reader thread, messages from the main thread
+_progress_open = False         # a progress line without its newline is on the screen
+_progress_step: dict[str, int] = {}
+_PROGRESS_WIDTH = 60
+
+
+def _clear_progress() -> None:
+    global _progress_open
+    if _progress_open:
+        sys.stdout.write("\r" + " " * _PROGRESS_WIDTH + "\r")
+        _progress_open = False
+
+
 def say(text: str = "", end: str = "\n") -> None:
-    """print() for messages."""
-    print(paint(text), end=end)
+    """print() for messages. A progress line that is still open is wiped first, so nothing is printed over it."""
+    with _lock:
+        _clear_progress()
+        print(paint(text), end=end)
+
+
+def progress(label: str, percent: int, out: Callable[[str], None] | None = None) -> None:
+    """Show 'label [#####-----]  49 %'.
+
+    On a terminal (out is None) this is one line that is updated in place. Without a terminal, or when out is given,
+    it is one line per 10 % instead, so a log file or a test does not fill up with every step.
+    """
+    global _progress_open
+    percent = max(0, min(100, int(percent)))
+    with _lock:
+        if out is None and sys.stdout.isatty():
+            filled = percent * 20 // 100
+            line = f"{label} [{'#' * filled}{'-' * (20 - filled)}] {percent:3d} %"
+            sys.stdout.write("\r" + line.ljust(_PROGRESS_WIDTH))
+            if percent >= 100:
+                sys.stdout.write("\n")
+                _progress_open = False
+            else:
+                _progress_open = True
+            sys.stdout.flush()
+            return
+        step = percent // 10
+        last = _progress_step.get(label)           # 0..10 = last decile shown, 11 = the 100 % line was shown
+        if last is not None and percent < 100 and step < last:
+            last = None                              # a new run started again from a lower value
+        if last is not None and (last == 11 if percent >= 100 else step <= last):
+            return
+        _progress_step[label] = 11 if percent >= 100 else step
+        (out or say)(f"{label}: {percent} %")
 
 
 def error(message: str) -> str:

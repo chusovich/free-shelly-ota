@@ -46,7 +46,7 @@ effect and `otadata` stayed in Shelly's format (`SH0S`). The H&T and Power Strip
 from it (for example over UART) reports 1.0.3 and would skip a package with 1.0.3. The Plug S Gen3 package carries the same bootloader
 (byte-identical), so its profile sets 1.0.9 as well. Hardware-confirmed for 1.0.9 on a Plug M Gen3 from factory firmware 1.8.99 (installed loader 1.0.2): `Boot: cur 010002ff, ..., min 010009ff, update? 1`, then `Installing BL ... -> boot(0)`.
 
-- **Check it:** the update log (`send --watch`) shows `Boot: cur ... min ... update? 0/1` and, when written,
+- **Check it:** the update log (`send --log-file` keeps it, `--log-level raw` shows it as it arrives) shows `Boot: cur ... min ... update? 0/1` and, when written,
   `Installing BL ... -> boot(0)`. Shelly's loader prints only ROM lines over UART on some models (the Multicolor Bulb prints
   `Shelly OS loader 1.0.2`); ESPHome's prints `ESP-IDF ... 2nd stage bootloader`.
 - **`update? 0`:** `send --watch` (and `restore --watch`) now prints a WARNING when the package carries ESPHome's bootloader and
@@ -63,7 +63,7 @@ from it (for example over UART) reports 1.0.3 and would skip a package with 1.0.
 
 After the update the installer writes its own boot state into `otadata`, which ESPHome's bootloader cannot read
 (`ota data partition invalid and no factory, will try all partitions`). It then starts the first valid app in the table,
-`app_0`. So the app only runs if the installer wrote it to slot 0 (`--watch` log: `Will write to slot 0`).
+`app_0`. So the app only runs if the installer wrote it to slot 0 (shown as `Device: The installer writes to slot 0`; raw log: `Will write to slot 0`).
 
 The installer writes to the slot the stock firmware is **not** running from. Seen on the Power Strip 4 Gen4 on stock 1.7.99:
 the installer wrote to slot 1, the old stock app in `app_0` started again although the update reported success and ESPHome's

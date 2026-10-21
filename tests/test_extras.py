@@ -22,13 +22,23 @@ from shelly_ota import builder, devicegen, firmware, lint, logwatch, profile, rp
 class FakeRpcShelly:
     """Shelly simulator with RPC, optional digest auth (SHA-256) and UDP debug log."""
 
-    def __init__(self, password=None, slot=1, app="DuoBulbG3", target_slot=None, core_dump_target=None):
+    def __init__(self, password=None, slot=1, app="DuoBulbG3", target_slot=None, core_dump_target=None, uptime=None,
+                 update_refusals=(), send_log=True, getconfig_fails=False, restore_fails=False, ota_events=None,
+                 device_id=None):
         self.app = app
+        self.ota_events = ota_events  # None, "success" or "error": the update then reports progress in the log like a real device
+        self.device_id = device_id    # reported by Shelly.GetDeviceInfo; log entries use it (a made-up one if None)
         self.password = password
         self.slot = slot
         self.target_slot = target_slot  # if set, the debug log announces "Storing core dumps to app_<n>" like a real updater
+        self.uptime = uptime  # if set, Sys.GetStatus reports it (seconds since start)
+        self.update_refusals = list(update_refusals)  # one per Shelly.Update call, answered with HTTP 500: dict = JSON body, str = raw
+        self.send_log = send_log  # False: no log datagram ever reaches the PC, like a blocking firewall
+        self.getconfig_fails = getconfig_fails
+        self.restore_fails = restore_fails  # the call that puts the old log setting back is refused
         self.core_dump_target = core_dump_target  # if set instead: "Storing core dumps to <name>", like the Plug M Gen3 on 1.8.99 ("scratch")
         self.udp_addr = None
+        self.setconfig_calls = []  # every debug.udp.addr value written with Sys.SetConfig
         self.updates = []
         outer = self
 
@@ -61,14 +71,29 @@ class FakeRpcShelly:
             def do_GET(self):
                 u = urllib.parse.urlparse(self.path)
                 if u.path == "/rpc/Shelly.GetDeviceInfo":
-                    return self._reply({"app": outer.app, "ver": "2.0.1", "slot": outer.slot,
-                                             "auth_en": bool(outer.password)})
+                    info = {"app": outer.app, "ver": "2.0.1", "slot": outer.slot, "auth_en": bool(outer.password)}
+                    if outer.device_id:
+                        info["id"] = outer.device_id
+                    return self._reply(info)
                 if u.path == "/rpc/Shelly.Update":
                     if not self._authorized("GET"):
                         return
+                    if outer.update_refusals:
+                        refusal = outer.update_refusals.pop(0)
+                        body = (json.dumps(refusal) if isinstance(refusal, dict) else refusal).encode()
+                        self.send_response(500)
+                        self.send_header("Content-Length", str(len(body)))
+                        self.end_headers()
+                        self.wfile.write(body)
+                        return
                     url = urllib.parse.parse_qs(u.query)["url"][0]
                     outer.updates.append(url)
-                    threading.Thread(target=lambda: urllib.request.urlopen(url).read()).start()
+                    if outer.ota_events and outer.udp_addr and outer.send_log:
+                        outer.emit_log([{"event": "ota_begin", "msg": "idle"}, {"event": "ota_progress", "msg": "in_progress",
+                                                                                 "progress_percent": 0}])
+                        threading.Thread(target=outer.finish_update, args=(url,)).start()
+                    else:
+                        threading.Thread(target=lambda: urllib.request.urlopen(url).read()).start()
                     return self._reply({})
                 self.send_error(404)
 
@@ -76,11 +101,19 @@ class FakeRpcShelly:
                 if not self._authorized("POST"):
                     return
                 req = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                if req["method"] == "Sys.GetStatus" and outer.uptime is not None:
+                    return self._reply({"id": 1, "result": {"uptime": outer.uptime}})
                 if req["method"] == "Sys.GetConfig":
+                    if outer.getconfig_fails:
+                        return self._reply({"id": 1, "error": {"code": -105, "message": "cannot read the config"}})
                     return self._reply({"id": 1, "result": {"debug": {"udp": {"addr": outer.udp_addr}}}})
                 if req["method"] == "Sys.SetConfig":
-                    outer.udp_addr = req["params"]["config"]["debug"]["udp"]["addr"]
-                    if outer.udp_addr:
+                    new_addr = req["params"]["config"]["debug"]["udp"]["addr"]
+                    if new_addr is None and outer.restore_fails:
+                        return self._reply({"id": 1, "error": {"code": -103, "message": "busy"}})
+                    outer.setconfig_calls.append(new_addr)
+                    outer.udp_addr = new_addr
+                    if outer.udp_addr and outer.send_log:
                         host, port = outer.udp_addr.rsplit(":", 1)
                         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                         sock.sendto(b"OTA: hello from fake shelly\n", (host, int(port)))
@@ -100,6 +133,31 @@ class FakeRpcShelly:
         self.httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
         self.addr = f"127.0.0.1:{self.httpd.server_address[1]}"
         threading.Thread(target=self.httpd.serve_forever, daemon=True).start()
+
+    def emit_log(self, events):
+        """Send sys events as log entries to the PC, glued into one datagram like the real device does."""
+        host, port = self.udp_addr.rsplit(":", 1)
+        device = self.device_id or "fakeshelly-aabbccddeeff"
+        entries = []
+        for event in events:
+            self._seq = getattr(self, "_seq", 100) + 1
+            entries.append(f"{device} {self._seq} {self._seq / 10:.3f} 2 2|y_notifications.cpp:213 Event from sys: "
+                           f"{json.dumps(event)}")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.sendto("".join(entries).encode(), (host, int(port)))
+        sock.close()
+
+    def finish_update(self, url):
+        """Like the real device: the download takes a moment, progress is reported, then success (or an error)."""
+        time.sleep(0.3)              # the PC has the first events by now and knows an update is running
+        urllib.request.urlopen(url).read()
+        self.emit_log([{"event": "ota_progress", "msg": "in_progress", "progress_percent": 50}])
+        time.sleep(0.1)
+        if self.ota_events == "error":
+            self.emit_log([{"event": "ota_error", "msg": "flash write failed"}])
+        else:
+            self.emit_log([{"event": "ota_progress", "msg": "in_progress", "progress_percent": 100},
+                           {"event": "ota_success", "msg": "success"}])
 
     def close(self):
         self.httpd.shutdown()
@@ -230,7 +288,7 @@ class NetworkTests(unittest.TestCase):
         s = self._shelly()
         lines = []
         sender.send(self.profile, self.zip, s.addr, port=0, assume_yes=True, timeout=10, watch=1,
-                    log_port=free_udp_port(), out=lines.append)
+                    log_port=free_udp_port(), out=lines.append, level=sender.Level.raw)   # raw: the log as it arrives
         self.assertEqual(len(s.updates), 1)
         self.assertTrue(any("log|" in l for l in lines), lines)
 

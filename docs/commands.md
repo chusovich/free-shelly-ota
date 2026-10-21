@@ -115,7 +115,9 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 | --- | --- | --- | --- |
 | `DEVICE`, `ZIP` | yes | | Profile name and the ZIP to send |
 | `--ip IP` | no | `192.168.33.1` | Address of the Shelly |
-| `--watch SEC` | no | off | Show the device's debug log (UDP, switched on over RPC and restored afterwards) and keep listening SEC seconds after the download. Warns if the log says `update? 0` for a package that replaces the bootloader |
+| `--log-level LEVEL`, `-q`, `-v` | no | `normal` | How much is shown, see [Log levels](#log-levels) |
+| `--log-file [PATH]` | no | off | Write the whole run to a file, whatever the level (without a path: `logs/<zip name>.send.log`) |
+| `--watch SEC` | no | 30 s if an update is seen | After the download wait up to SEC seconds for the device to confirm the update |
 | `--user USER` / `--password PW` | no | `admin` / none | Login, if the device has a password (digest auth) |
 | `--yes` | no | off | Do not ask before flashing |
 | `--dry-run` | no | off | Check the device (also whether it can reach this PC), send nothing |
@@ -131,8 +133,34 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 | `--port PORT` | `8000` | Local web server port |
 | `--log-port PORT` | `9514` | UDP port for the debug log |
 | `--timeout SEC` | `300` | How long to wait for the device to download the ZIP |
+| `--wait SEC` | `120` | If the device refuses the update because it has only just started (`Not committed`): wait SEC seconds, then ask again before the next try |
 
 </details>
+
+A device that has been running for less than two minutes refuses `Shelly.Update` with `Not committed`. `send` reads the uptime
+(`Sys.GetStatus`) first, says so and offers to wait. If the device refuses anyway, `send` explains it, offers to wait `--wait`
+seconds and asks for a new confirmation before the next pass (at most three passes). With `--yes` it never waits or retries on its own.
+See [Troubleshooting](troubleshooting.md#send-stops-with-not-committed).
+
+### Log levels
+
+While the update runs, `send` reads the device's debug log (UDP, switched on over RPC and put back afterwards). That gives the
+progress and the device's own confirmation, without `--watch`. `--log-level` (or `-q`, `-v`, `-vv`) chooses how much of the output
+is shown:
+
+| Level | Shown |
+| --- | --- |
+| `quiet` (`-q`) | Errors, questions and the final result. After a failure the last lines of the device log are printed anyway. |
+| `normal` (default) | + warnings, the key lines (target slot, bootloader decision, update started ...) and the progress: one line that updates in place, or one line per 10 % when the output is not a terminal |
+| `verbose` (`-v`) | + notes and explanations, every step of the update, and how many entries were hidden |
+| `debug` (`-vv`) | every entry of the device log on its own line, the RPC requests of other clients included (`RPC Shelly.GetStatus <- 192.168.1.10:47470`) |
+| `raw` | like `debug`, and the device log exactly as it arrives (several entries glued together in one line) |
+
+`--log-file` writes everything to a file, whatever the level on the screen: each message and each device log entry on its own line.
+It is the file for a bug report. Without a path it is `logs/<zip name>.send.log` (`logs/<device>.restore.log` for `restore`) and
+the next run overwrites it; give a path to keep it. Put the option after DEVICE and ZIP, or write `--log-file=PATH`, otherwise it
+takes the next word as its path. Without a log that reaches this PC (a firewall) the progress and the confirmation are missing and
+`send` ends with "Done: the device downloaded the ZIP" ([Troubleshooting](troubleshooting.md#no-progress-no-device-log)).
 
 ## restore
 
@@ -195,8 +223,11 @@ Deletes old ZIPs in `out/`. `--keep N` keeps the newest N (default 5); nothing i
 ## log
 
 Shows the live debug log of a Shelly without sending anything:
-`python ota.py log --ip 192.168.1.50 --seconds 30`. Options: `--ip`, `--user`, `--password`, `--host`, `--log-port` and
-`--seconds` (default: until Ctrl+C).
+`python ota.py log --ip 192.168.1.50 --seconds 30`. Options: `--ip`, `--user`, `--password`, `--host`, `--log-port`,
+`--seconds` (default: until Ctrl+C) and `--log-level` / `-q` / `-v` (default `debug`, see [Log levels](#log-levels)).
+
+`--replay FILE` shows a saved log without a device: a `--log-file` file, or the output of `--log-level raw`, at the level you
+choose: `python ota.py log --replay logs/x.send.log --log-level normal`.
 
 ---
 

@@ -5,16 +5,43 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Fixed
-- `send` could not be stopped with Ctrl+C on Windows while it waited for the device to download the ZIP (one 300 s `Event.wait` is not
-  interruptible there). It waits in 0.25 s slices now, restoring the log setting on the way out uses a 3 s timeout, and Ctrl+C ends with
-  "Interrupted (Ctrl+C)." instead of a traceback.
-
 ### Added
+- Log levels for `send`, `restore` and `log`: `--log-level quiet|normal|verbose|debug|raw`, `-q`, `-v`, `-vv`. They apply to the tool's own
+  messages and to the device log. Default `normal` shows warnings, the key lines of the update (target slot, bootloader decision, update
+  started), a progress line that updates in place (one line per 10 % without a terminal) and the result; `verbose` adds notes and every
+  step, `debug` every entry on its own line, `raw` the log as it arrives (the output before levels). After a failure the last lines of the
+  device log are printed whatever the level.
+- `send` reads the device log while the update runs (without `--watch`): progress in %, and the device's own confirmation (`ota_success`)
+  instead of only "the device downloaded the ZIP". A device error event stops `send` with its text. If the log does not reach this PC, `send`
+  falls back to the old message. `--watch SEC` now waits up to SEC seconds for the confirmation (default 30 s if an update was seen)
+  instead of listening for SEC seconds after the download.
+- `--log-file [PATH]`: the whole run, every message and every device log entry one per line, whatever the level on the screen. Without a
+  path `logs/<zip name>.send.log` (`logs/<device>.restore.log` for `restore`). This is the file for a bug report; the device-report issue
+  form asks for it. `ota.py log --replay FILE` shows a saved log (or the output of `--log-level raw`) at any level, without a device.
+- `shelly_ota/logview.py`: splits the device log into entries (a datagram holds several, glued together), recognises them with a table of
+  rules (progress, slot, bootloader decision, eFuse notes, RPC chatter of other clients) and filters them by level. The refused eFuse writes
+  that every update logs are one note, not five errors. The severity digit of an entry (0 error, 1 warning, 2 information) was read from a
+  few entries and is not documented; the event name `ota_error` is assumed. Anything unknown is shown as it is.
 - `build --standalone` (H&T Gen3 first): builds the package without Shelly's ZIP, from the new `standalone:` section of the profile and the
   partition CSV. The H&T 2.0.1 ZIP looked removed from Shelly's update API on 2026-10-10; it was only the missing `Shelly-Info` header (`fetch --from-version 1.4.4` gets it), so this is a way to build and share a package without a Shelly file, not a replacement for a download that is gone. The package holds
   no Shelly file (ESPHome's bootloader, `otadata` and partition table, erased filesystem image of 0xFF: the installer aborts with "Missing a part" without an `fs` image), so it can be shared. `send` assumes a replaced
   bootloader for profiles with `standalone:` when no official ZIP is cached. Not yet run on a device.
+
+### Changed
+- Device pages, the README and the device-report issue form: the log lines to look for are the ones `send` shows at the default level;
+  reports attach the `--log-file` file instead of the output of `send --watch`.
+- `send`: error handling. A device that has only just started refuses `Shelly.Update` with HTTP 500 `Not committed`; `send` now reads the uptime
+  (`Sys.GetStatus`) before the confirmation, says so and offers to wait. If the device refuses anyway it explains the refusal, offers to wait
+  (`--wait SEC`, default 120) and asks for a new confirmation before every further pass (at most three; `--yes` never retries). Refusals are
+  explained by their message, not by the code: `-109` is also used for the battery limit. Errors no longer repeat the long download URL.
+- `send`: the warning "update target slot could not be read" says whether no UDP datagram arrived (firewall, `--log-port`, `--host`) or the log
+  arrives without the slot line (usually a device that has just started). The probe waits 8 s instead of 4 s.
+- `send`: the log setting of the device is only put back if it could be read first (before, a failed read could overwrite it with an empty
+  value), and a refused restore is reported. Waiting for the download can be interrupted with Ctrl+C on Windows.
+- `ota.py` shows a message instead of a Python traceback for Ctrl+C (exit 130), closed input, a file that is not a ZIP and other file errors.
+  `rpc.RpcError` and `rpc.DeviceUnreachable` replace error-text matching in `restore`.
+- Power Strip example config (`configs/shelly-power-strip-gen4/`): README and YAML name this tool instead of "ShellyOTA", the build command is relative to the
+  repository root, and the slot-0 note links the Power Strip device page and "The app must land in slot 0" instead of a README section that is gone.
 
 ## [0.4.0] - 2026-10-18
 

@@ -20,11 +20,20 @@ import zipfile
 from pathlib import Path
 from typing import Callable, NamedTuple
 
-from . import buildinfo, firmware, logwatch, rpc, secrets_check, ui
+from . import buildinfo, firmware, logview, logwatch, rpc, secrets_check, ui
 from .builder import OtaError, read_official_manifest
+from .logview import Level
 from .profile import Profile
 
 DEFAULT_IP = "192.168.33.1"  # Shelly access-point default
+
+# After a start the stock firmware refuses Shelly.Update ("Not committed") until it has confirmed itself. Observed: the
+# refusal at an uptime of about 60 s (Multicolor Bulb Gen3) and a commit delay of about 90 s in a device log. This is what
+# was seen, not a documented Shelly value, so the margin is generous.
+SETTLE_SECONDS = 120
+DEFAULT_WAIT = 120      # seconds to wait before the next pass after a refusal (--wait)
+MAX_PASSES = 3          # how often send() offers to try again after a "Not committed" refusal
+RESULT_WAIT = 30        # seconds to wait for the device's own "update succeeded" after it has downloaded the ZIP
 
 
 def device_info(addr: str, timeout: float = 10) -> dict:
@@ -34,7 +43,69 @@ def device_info(addr: str, timeout: float = 10) -> dict:
         with urllib.request.urlopen(url, timeout=timeout) as resp:
             return json.loads(resp.read())
     except (OSError, ValueError) as e:
-        raise OtaError(f"No answer from the Shelly at {addr}: {e}") from e
+        raise rpc.DeviceUnreachable(f"No answer from the Shelly at {addr}: {e}") from e
+
+
+def device_uptime(addr: str, **auth) -> int | None:
+    """Seconds since the device started (Sys.GetStatus), or None if it cannot be told.
+
+    Not every device or firmware may report it; a missing answer is not an error, the check is only a hint.
+    """
+    try:
+        uptime = rpc.call(addr, "Sys.GetStatus", timeout=5, **auth).get("uptime")
+    except OtaError:
+        return None
+    return int(uptime) if isinstance(uptime, (int, float)) and not isinstance(uptime, bool) else None
+
+
+class Refusal(NamedTuple):
+    """What the device said when it refused Shelly.Update, in words for the user."""
+    text: str
+    retryable: bool
+
+
+def explain_update_refusal(e: rpc.RpcError) -> Refusal:
+    """Turn the device's refusal of Shelly.Update into advice. Matches on the message: code -109 covers several reasons."""
+    message = e.device_message or str(e)
+    lowered = message.lower()
+    if "not committed" in lowered:
+        return Refusal(
+            f"The device refused the update: \"{message}\". After a start the stock firmware does not accept an update until "
+            f"it has confirmed itself (seen after about 90 s to a few minutes). Keep the device powered and send again "
+            f"after a couple of minutes.", True)
+    if "battery" in lowered:
+        return Refusal(
+            f"The device refused the update: \"{message}\". Charge the battery (the stock updater wants at least 30 %) and "
+            f"make sure the device is awake.", False)
+    return Refusal(f"The device refused the update: \"{message}\"" + (f" (code {e.code})" if e.code is not None else "") + ".",
+                   False)
+
+
+def _wait_with_countdown(seconds: float, out: Callable[[str], None], sleep: Callable[[float], None]) -> None:
+    """Wait in short steps, so Ctrl+C works at once (also on Windows), and say how long is left every 30 s."""
+    steps = int(seconds * 2)
+    for i in range(steps):
+        if i % 60 == 0:
+            out(f"Waiting ... {max(seconds - i / 2, 0):.0f} s left (Ctrl+C to stop)")
+        sleep(0.5)
+
+
+def _settle(addr: str, auth: dict, *, say: Callable[[Level, str], None], ask: Callable[[str], str],
+            sleep: Callable[[float], None], dry_run: bool, assume_yes: bool) -> None:
+    """Right after a start the stock firmware refuses an update. If the device says it has just started, tell the user
+    and offer to wait. Never waits on its own: not with --dry-run and not with --yes (then it only says so)."""
+    uptime = device_uptime(addr, **auth)
+    if uptime is None or uptime >= SETTLE_SECONDS:
+        return
+    pause = SETTLE_SECONDS - uptime + 5
+    say(Level.normal, f"NOTE: the device has been running for only {uptime} s. Right after a start the stock firmware refuses "
+                      f"an update (\"Not committed\"); about {SETTLE_SECONDS} s has been enough so far.")
+    if dry_run or assume_yes:
+        return
+    if ask(f"Wait about {pause} s before sending? Type 'yes' to wait: ").strip().lower() != "yes":
+        say(Level.normal, "Not waiting; the device may refuse the update.")
+        return
+    _wait_with_countdown(pause, lambda text: say(Level.normal, text), sleep)
 
 
 def local_ip_for(addr: str) -> str:
@@ -115,13 +186,14 @@ APP_SLOT_RE = re.compile(r"app_(\d)")
 class SlotProbe(NamedTuple):
     slot: int | None               # the slot the updater will write to; None if the log does not name one
     core_dump_target: str | None   # what the "Storing core dumps to ..." line named ("app_1", "scratch"); None: no such line
+    datagrams: int = 0             # UDP datagrams received meanwhile: 0 means the log does not reach this PC at all
 
 
-def probe_target_slot(addr: str, host: str, log_port: int, *, wait: float = 4.0, **auth) -> SlotProbe:
+def probe_slot(addr: str, host: str, log_port: int, *, wait: float = 8.0, **auth) -> SlotProbe:
     """Ask the device which slot its updater would write to, without updating.
 
     SlotProbe(None, None) if no matching log line arrived (log blocked, or an old firmware); SlotProbe(None, "scratch")
-    if it arrived but names something other than app_N."""
+    if it arrived but names something other than app_N. `datagrams` counts what arrived meanwhile."""
     found: list[SlotProbe] = []
 
     def sink(text: str) -> None:
@@ -130,15 +202,17 @@ def probe_target_slot(addr: str, host: str, log_port: int, *, wait: float = 4.0,
             app = APP_SLOT_RE.fullmatch(m.group(1))
             found.append(SlotProbe(int(app.group(1)) if app else None, m.group(1)))
 
-    with logwatch.udp_log(addr, host, log_port, sink, **auth):
+    with logwatch.udp_log(addr, host, log_port, sink, **auth) as stats:
         deadline = time.monotonic() + wait
         while not found and time.monotonic() < deadline:
             time.sleep(0.1)
-    return found[0] if found else SlotProbe(None, None)
+    return (found[0] if found else SlotProbe(None, None))._replace(datagrams=stats.datagrams)
 
+
+probe_target_slot = probe_slot     # the name main uses; it returns the same SlotProbe
 
 # What a device answers when its RPC HTTP.GET cannot connect (seen in a device report: "Connection error: -13").
-CONNECTION_ERROR_RE = re.compile(r'Connection error[^"}\\]*')
+CONNECTION_ERROR_RE = re.compile(r'Connection error[^"}\\(]*')   # not the "(code -103)" that RpcError appends
 
 
 def check_reach(addr: str, host: str, port: int, *, timeout: float = 30, **auth) -> tuple[bool | None, str]:
@@ -152,7 +226,7 @@ def check_reach(addr: str, host: str, port: int, *, timeout: float = 30, **auth)
                            timeout=timeout, **auth)
     except OtaError as e:
         m = CONNECTION_ERROR_RE.search(str(e))
-        return (False, m.group(0)) if m else (None, str(e))
+        return (False, m.group(0).strip()) if m else (None, str(e))
     try:
         reply = json.loads(body)
     except ValueError:
@@ -163,7 +237,7 @@ def check_reach(addr: str, host: str, port: int, *, timeout: float = 30, **auth)
     if isinstance(code, int) and code > 0:
         return True, f"HTTP {code}"
     m = CONNECTION_ERROR_RE.search(str(reply.get("message", "")))
-    return (False, m.group(0)) if m else (None, f"unexpected answer {body[:80]!r}")
+    return (False, m.group(0).strip()) if m else (None, f"unexpected answer {body[:80]!r}")
 
 
 def reach_text(state: bool | None, detail: str, host: str, port: int) -> str:
@@ -234,16 +308,33 @@ def plain_package_text(name: str, forced: bool = False) -> str:
 def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str | None = None,
          port: int = 8000, timeout: float = 300, assume_yes: bool = False, dry_run: bool = False,
          force: bool = False, user: str | None = None, password: str | None = None,
-         watch: float = 0, log_port: int = 9514, ignore_slot: bool = False, probe_wait: float = 4.0,
-         restoring: bool = False, ask: Callable[[str], str] = input, out: Callable[[str], None] = ui.say) -> bool:
-    """Returns True if the device downloaded the whole ZIP (or on a successful dry run)."""
+         watch: float = 0, log_port: int = 9514, ignore_slot: bool = False, probe_wait: float = 8.0,
+         wait: float = DEFAULT_WAIT, sleep: Callable[[float], None] = time.sleep,
+         ask: Callable[[str], str] = input, out: Callable[[str], None] = ui.say, restoring: bool = False,
+         level: Level = Level.verbose, logfile: logview.LogFile | None = None,
+         session: logview.Session | None = None) -> bool:
+    """Returns True if the device downloaded the whole ZIP (or on a successful dry run).
+
+    A device that has only just started refuses the update ("Not committed"). send() notices that from the uptime and
+    offers to wait; if the device refuses anyway it offers to wait `wait` seconds and try again, and every new pass
+    needs a new confirmation. With assume_yes it never waits or retries by itself.
+
+    `level` decides how much is shown (see logview): the tool's own messages and the device log. The default shows
+    everything except the entries of the device log. The caller owns `logfile` and closes it.
+    While the update runs the device log is read (it is switched on and off again); that gives the progress and the
+    device's own confirmation ("update succeeded"), without --watch. If the log does not reach this PC, send() falls back
+    to reporting that the device downloaded the ZIP.
+    """
+    session = session or logview.Session(level=level, out=out, logfile=logfile)
+    say = session.say
     with zipfile.ZipFile(zip_path) as zf:
         manifest = read_official_manifest(zf, profile.name)
 
     info = device_info(addr)
+    session.device_id = session.device_id or info.get("id")
     app = str(info.get("app", "?"))
-    out(f"Device {addr}: app={app} model={info.get('model') or 'n/a'} fw={info.get('ver')} id={info.get('id')} "
-        f"reported slot={info.get('slot', 'n/a')} (not the update target; that is read separately)")
+    say(Level.normal, f"Device {addr}: app={app} model={info.get('model') or 'n/a'} fw={info.get('ver')} id={info.get('id')} "
+                      f"reported slot={info.get('slot', 'n/a')} (not the update target; that is read separately)")
     auth = {"user": user, "password": password}
     if info.get("auth_en") and not (user and password):
         raise OtaError("The device has a password set: use --user and --password (user is usually 'admin').")
@@ -251,19 +342,21 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
     pattern = manifest.get("compatible")  # e.g. "PlugUSG4*" or "Pro3EM,Pro3EMProAddon": the package says which apps it fits
     by_pattern = matches_compatible(app, pattern)
     if by_pattern and not exact:
-        out(f"NOTE: device app {app!r} is not {profile.name!r} but matches the package's compatible pattern "
-            f"{pattern!r} (a variant of the same model).")
+        say(Level.verbose, f"NOTE: device app {app!r} is not {profile.name!r} but matches the package's compatible pattern "
+                           f"{pattern!r} (a variant of the same model).")
     elif not exact and not force:
         raise OtaError(f"Device reports app {app!r}, but this ZIP/profile is {profile.name!r}"
                        f"{f' (compatible: {pattern})' if pattern else ''}. Use --force only if you are sure.")
 
+    _settle(addr, auth, say=say, ask=ask, sleep=sleep, dry_run=dry_run, assume_yes=assume_yes)
+
     host = host or local_ip_for(addr)
     server = FileServer(zip_path, port)
     url = server.url(host)
-    out(f"ZIP: {zip_path.name} ({manifest['version']}, parts: {', '.join(manifest['parts'])})")
+    say(Level.verbose, f"ZIP: {zip_path.name} ({manifest['version']}, parts: {', '.join(manifest['parts'])})")
     for line in package_info(zip_path, profile):
-        out(line)
-    out(f"Download URL for the device: {url}")
+        say(Level.normal if line.startswith("NOTE") else Level.verbose, line)
+    say(Level.verbose, f"Download URL for the device: {url}")
     official_zip = firmware.cached_zip(profile.name)
     boot_replaced: bool | None = None  # None: cannot tell (no cached official ZIP to compare with)
     keeps_loader = False  # an ESPHome app in a package that leaves Shelly's bootloader in place (no --esphome-factory)
@@ -280,34 +373,45 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
                 if not force:
                     server.httpd.server_close()
                     raise OtaError(plain_package_text(profile.name))
-                out("WARNING: " + plain_package_text(profile.name, forced=True))
+                say(Level.quiet, "WARNING: " + plain_package_text(profile.name, forced=True))
         else:
             boot_replaced = True  # standalone-capable device, nothing to compare with: assume the worst (slot check)
         if boot_replaced:
-            out("WARNING: this package replaces Shelly's bootloader. If it does not suit the device, only UART can "
-                "bring it back. Do not interrupt the power during the update.")
-            out("NOTE: ESPHome's bootloader starts app_0 (the installer overwrites otadata), so the installer must write "
-                "to slot 0; otherwise the old app in app_0 starts instead (seen on the Power Strip Gen4 and the Plus Plug S).")
+            say(Level.normal, "WARNING: this package replaces Shelly's bootloader. If it does not suit the device, only UART "
+                              "can bring it back. Do not interrupt the power during the update.")
+            say(Level.verbose, "NOTE: ESPHome's bootloader starts app_0 (the installer overwrites otadata), so the installer "
+                               "must write to slot 0; otherwise the old app in app_0 starts instead (seen on the Power Strip "
+                               "Gen4 and the Plus Plug S).")
             probe = SlotProbe(None, None)
+            probe_failed = False
             try:
-                probe = probe_target_slot(addr, host, log_port, wait=probe_wait, **auth)
+                probe = probe_slot(addr, host, log_port, wait=probe_wait, **auth)
             except OtaError as e:
-                out(f"NOTE: could not ask the device for its update target slot ({e}).")
+                probe_failed = True
+                say(Level.normal, f"NOTE: could not ask the device for its update target slot ({e}).")
             target = probe.slot
             if target is None and probe.core_dump_target:
                 # The log works, this firmware just does not say: do not send the user to the firewall.
-                out("WARNING: this firmware does not reveal the update target slot before the update (its log says "
-                    f"'Storing core dumps to {probe.core_dump_target}', not app_N), so the slot could not be checked. "
-                    "If the installer writes to slot 1, the old app starts instead.\n"
-                    "         With --watch the log line 'Will write to slot N' shows which slot it uses.")
+                say(Level.normal, "WARNING: this firmware does not reveal the update target slot before the update (its log says "
+                                  f"'Storing core dumps to {probe.core_dump_target}', not app_N), so the slot could not be checked. "
+                                  "If the installer writes to slot 1, the old app starts instead.\n"
+                                  "         With --watch the log line 'Will write to slot N' shows which slot it uses.")
             elif target is None:
-                out("WARNING: the update target slot could not be read (UDP log blocked? allow UDP port "
-                    f"{log_port} in the firewall). If the installer writes to slot 1, the old app starts instead.")
+                if probe_failed:
+                    reason = ""
+                elif probe.datagrams == 0:
+                    reason = (f" No UDP datagram arrived from the device: check that incoming UDP on port {log_port} is "
+                              f"allowed (Windows Firewall: the Python program), and --log-port and --host.")
+                else:
+                    reason = (f" The device log arrives, but the slot line did not show up within {probe_wait:.0f} s; a "
+                              f"device that has just started often needs longer. Wait a minute and send again.")
+                say(Level.normal, f"WARNING: the update target slot could not be read.{reason} "
+                                  f"If the installer writes to slot 1, the old app starts instead.")
             elif target == 0:
-                out("Update target slot: 0 (the slot ESPHome's bootloader starts).")
+                say(Level.normal, "Update target slot: 0 (the slot ESPHome's bootloader starts).")
             elif ignore_slot:
-                out(f"WARNING: the installer will write to slot {target}, but ESPHome's bootloader starts app_0 "
-                    "(sending anyway because of --ignore-slot).")
+                say(Level.normal, f"WARNING: the installer will write to slot {target}, but ESPHome's bootloader starts app_0 "
+                                  "(sending anyway because of --ignore-slot).")
             else:
                 server.httpd.server_close()
                 raise OtaError(
@@ -316,11 +420,11 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
                     f"{profile.name}); that also puts Shelly's bootloader back and moves the stock firmware to the "
                     "other slot. Then send again. Use --ignore-slot to send anyway.")
     else:
-        out(f"NOTE: no official {profile.name} ZIP cached, so it was not checked whether this package replaces "
-            f"Shelly's bootloader (run 'ota.py inspect' on it, or 'ota.py fetch {profile.name}').")
+        say(Level.normal, f"NOTE: no official {profile.name} ZIP cached, so it was not checked whether this package replaces "
+                          f"Shelly's bootloader (run 'ota.py inspect' on it, or 'ota.py fetch {profile.name}').")
     note = secrets_check.report_note(zip_path)
     if note:
-        out(f"{note[0]}: {note[1]}")
+        say(Level.verbose if note[0].startswith("NOTE") else Level.normal, f"{note[0]}: {note[1]}")
     if dry_run:
         server.start()  # the device fetches http://host:port/ from it; the ZIP is not requested
         try:
@@ -330,61 +434,118 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
         text = reach_text(state, detail, host, server.port)
         if state is False:
             raise OtaError(f"Dry run: {text}")
-        out(text if state else f"NOTE: {text}")
-        out("Dry run: nothing sent.")
+        say(Level.verbose if state else Level.normal, text if state else f"NOTE: {text}")
+        say(Level.normal, "Dry run: nothing sent.")
         return True
     if not assume_yes:
         if "nvs" in manifest["parts"]:
-            out("WARNING: this wipes NVS (Wi-Fi credentials and settings) and replaces the firmware.")
+            say(Level.normal, "WARNING: this wipes NVS (Wi-Fi credentials and settings) and replaces the firmware.")
         if ask("Type 'yes' to flash this device: ").strip().lower() != "yes":
             server.httpd.server_close()
             raise OtaError("Cancelled.")
 
-    server.start()
-    try:
-        state, detail = check_reach(addr, host, server.port, **auth)
-        text = reach_text(state, detail, host, server.port)
-        out(text if state else f"{'WARNING' if state is False else 'NOTE'}: {text}")  # never blocks: the download decides
-        with contextlib.ExitStack() as stack:
-            boot_watch = BootWatch(out, expect_new_loader=bool(boot_replaced))
-            log_out = boot_watch.feed
-
-            if watch > 0:
-                stack.enter_context(logwatch.udp_log(addr, host, log_port, log_out, **auth))
-            trigger = f"http://{addr}/rpc/Shelly.Update?url={urllib.parse.quote(url, safe='')}"
-            try:
+    def run_update(srv: FileServer) -> bool:
+        """One pass: serve the ZIP, tell the device to fetch it, wait for the download and for the device's own
+        confirmation. Stops the server at the end."""
+        session.reset_result()
+        srv.start()
+        try:
+            state, detail = check_reach(addr, host, srv.port, **auth)
+            text = reach_text(state, detail, host, srv.port)
+            say(Level.verbose if state else Level.normal,   # never blocks: the download decides
+                text if state else f"{'WARNING' if state is False else 'NOTE'}: {text}")
+            with contextlib.ExitStack() as stack:
+                stats = None
+                try:
+                    stats = stack.enter_context(logwatch.udp_log(
+                        addr, host, log_port, lambda text: say(Level.normal, text), sink=session.device, **auth))
+                except OtaError as e:   # the log is a bonus here: without it only the progress and the confirmation are lost
+                    say(Level.normal, f"NOTE: the device log is not available ({e}); there is no progress and no "
+                                      f"confirmation from the device.")
+                trigger = f"http://{addr}/rpc/Shelly.Update?url={urllib.parse.quote(srv.url(host), safe='')}"
                 answer = rpc.request(trigger, timeout=30, **auth).decode(errors="replace").strip()
-            except OtaError as e:
-                if "Not committed" in str(e):
-                    raise OtaError(f"{e}\n  The device still counts its last update as uncommitted (its log showed a "
-                                   f"commit delay of 90 s after a boot). Keep it powered for two minutes, then send again. If it "
-                                   f"persists, 'python ota.py restore {profile.name}' (needs the official ZIP).") from e
+                say(Level.verbose, f"Device accepted the request: {answer or 'ok'}")
+                say(Level.verbose, "Waiting for the device to download the ZIP ...")
+                deadline = time.monotonic() + timeout
+                while not srv.served.wait(0.5):   # short steps, so Ctrl+C works at once (also on Windows)
+                    if session.result == "error":
+                        break
+                    if time.monotonic() >= deadline:
+                        raise OtaError(f"The device did not download the ZIP within {timeout:.0f}s. Check that it can "
+                                       f"reach {host}:{srv.port} (firewall, network).")
+                sleep(1)
+                # The device confirms with its own "update succeeded" a few seconds after the download. That is only known if
+                # its log shows an update at all; --watch SEC waits for it up to SEC seconds even without.
+                limit = watch if watch > 0 else (RESULT_WAIT if session.update_seen else 0)
+                if stats is not None and limit > 0 and not session.finished.is_set():
+                    say(Level.verbose, f"Waiting up to {limit:.0f} s for the device to confirm the update ...")
+                    give_up = time.monotonic() + limit
+                    while not session.finished.wait(0.5):
+                        if time.monotonic() >= give_up:
+                            break
+                if session.finished.is_set():
+                    sleep(1)    # the last lines: the restart
+                if session.result == "error":
+                    raise OtaError(session.error_text or "The device reported an update error.")
+                if session.result == "ok":
+                    say(Level.quiet, "Done: update installed, the device confirmed it. It now reboots; if it stays silent, "
+                                     "disconnect it from power for at least 30 s.")
+                else:
+                    if session.update_seen:
+                        say(Level.normal, f"NOTE: the device did not confirm the update within {limit:.0f} s; its log may "
+                                          f"have stopped because it is restarting.")
+                    say(Level.quiet, "Done: the device downloaded the ZIP. It now flashes and reboots; if it stays silent, "
+                                     "disconnect it from power for at least 30 s.")
+                if boot_replaced:
+                    say(Level.verbose, "After the first ESPHome boot: the log line 'ota data invalid, no current app. Assuming "
+                                       "factory' is expected. The package carried ESPHome's bootloader, so no separate "
+                                       "bootloader update is needed.")
+                elif keeps_loader:
+                    say(Level.quiet, "WARNING: this package keeps Shelly's bootloader: ESPHome gets three starts, then Shelly's "
+                                     "loader goes back to the other slot (the old firmware) and keeps it. Only an ESPHome OTA "
+                                     f"during those starts changes that, once; see {PLAIN_PACKAGE_DOC}. For a lasting install "
+                                     "build with --esphome-factory. The log line 'ota data invalid, no current app. Assuming "
+                                     "factory' is expected.")
+                else:
+                    say(Level.verbose, "After the first ESPHome boot: the log line 'ota data invalid, no current app. Assuming "
+                                       "factory' is expected. This package keeps Shelly's bootloader, which counts uncommitted "
+                                       "boots and may switch back to the old firmware after a few restarts. For a lasting "
+                                       "install build with --esphome-factory (README, 'After the first boot').")
+                session.summary()
+            return True
+        finally:
+            srv.stop()
+
+    def run_and_report(srv: FileServer) -> bool:
+        """run_update, and after a failure the last lines of the device log (whatever the level). The refusal of the update
+        itself explains itself and has nothing in the log worth showing."""
+        try:
+            return run_update(srv)
+        except rpc.RpcError as e:
+            if e.method != "Shelly.Update":
+                session.dump_tail()
+            raise
+        except (OtaError, KeyboardInterrupt):
+            session.dump_tail()
+            raise
+
+    passes = 1
+    while True:
+        try:
+            return run_and_report(server)
+        except rpc.RpcError as e:
+            if e.method != "Shelly.Update":   # e.g. the log setup failed: not a refusal of the update
                 raise
-            out(f"Device accepted the request: {answer or 'ok'}")
-            out("Waiting for the device to download the ZIP ...")
-            deadline = time.monotonic() + timeout
-            while not server.served.wait(0.25):   # short waits: on Windows one long wait cannot be interrupted by Ctrl+C
-                if time.monotonic() >= deadline:
-                    raise OtaError(f"The device did not download the ZIP within {timeout:.0f}s. Check that it can "
-                                   f"reach {host}:{server.port} (firewall, network).")
-            time.sleep(1)
-            out("Done: the device downloaded the ZIP. It now flashes and reboots; if it stays silent, "
-                "disconnect it from power for at least 30 s.")
-            if boot_replaced and watch > 0:
-                # the Boot line may arrive after the download: listen first, then decide on the closing note
-                out(f"Still listening to the device log for {watch:.0f}s ...")
-                time.sleep(watch)
-            if boot_replaced and not boot_watch.skipped:
-                out("After the first ESPHome boot: the log line 'ota data invalid, no current app. Assuming factory' is "
-                    "expected. The package carried ESPHome's bootloader, so no separate bootloader update is needed.")
-            elif keeps_loader:
-                out("WARNING: this package keeps Shelly's bootloader: ESPHome gets three starts, then Shelly's loader goes back "
-                    "to the other slot (the old firmware) and keeps it. Only an ESPHome OTA during those starts changes that, "
-                    f"once; see {PLAIN_PACKAGE_DOC}. For a lasting install build with --esphome-factory. The log line "
-                    "'ota data invalid, no current app. Assuming factory' is expected.")
-            if watch > 0 and not boot_replaced:
-                out(f"Still listening to the device log for {watch:.0f}s ...")
-                time.sleep(watch)
-        return True
-    finally:
-        server.stop()
+            refusal = explain_update_refusal(e)
+            if not (refusal.retryable and not assume_yes and passes < MAX_PASSES):
+                stopped = f" Stopped after {passes} attempts." if refusal.retryable and passes >= MAX_PASSES else ""
+                raise OtaError(refusal.text + stopped) from e
+            say(Level.quiet, f"WARNING: {refusal.text}")
+            if ask(f"Wait about {wait:.0f} s and try again? Type 'yes' to wait: ").strip().lower() != "yes":
+                raise OtaError(refusal.text) from e
+            _wait_with_countdown(wait, lambda text: say(Level.normal, text), sleep)
+            # a new pass is a new decision: the first 'yes' does not cover it
+            if ask("Type 'yes' to flash this device again: ").strip().lower() != "yes":
+                raise OtaError("Cancelled.") from e
+            passes += 1
+            server = FileServer(zip_path, port)   # the old one is closed; a server cannot be reused

@@ -112,7 +112,7 @@ python ota.py fetch PlugMG3 --insecure
 python ota.py build PlugMG3 app.ota.bin --esphome-factory app.factory.bin --esphome-yaml my-plug.yaml
 
 # send it to the device and show its log for 60 s
-python ota.py send PlugMG3 out/PlugMG3-app-<date>.zip --ip <device IP> --watch 60
+python ota.py send PlugMG3 out/PlugMG3-app-<date>.zip --ip <device IP>
 ```
 
 - `PlugMG3` is the example; use your device's profile from the table above.

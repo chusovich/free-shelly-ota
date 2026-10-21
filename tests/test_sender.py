@@ -118,7 +118,7 @@ class SenderTests(unittest.TestCase):
         s = self._shelly(update_error="Not committed")
         with self.assertRaises(builder.OtaError) as cm:
             sender.send(self.profile, self.zip, s.addr, port=0, assume_yes=True, out=lambda m: None)
-        self.assertIn("two minutes", str(cm.exception))
+        self.assertIn("couple of minutes", str(cm.exception))      # the wording of explain_update_refusal
 
     def test_dry_run_sends_nothing(self):
         s = self._shelly()

@@ -42,9 +42,23 @@ def boot_skipped_warning(boot: dict) -> str:
             f"a higher --boot-min-version (for example 1.0.9) or set boot_min_version: in the profile.")
 
 
+class LogStats:
+    """What udp_log has received so far. Lets a caller tell 'no datagram at all' (firewall, wrong port or address)
+    from 'datagrams arrive, but not the line I wait for'."""
+
+    def __init__(self) -> None:
+        self.datagrams = 0
+
+
 @contextmanager
-def udp_log(addr: str, host: str, port: int, out: Callable[[str], None] = ui.say, **auth):
-    """Context manager: forward the device's debug log to out() while the block runs."""
+def udp_log(addr: str, host: str, port: int, out: Callable[[str], None] = ui.say, *,
+            sink: Callable[[str], None] | None = None, **auth):
+    """Context manager: forward the device's debug log while the block runs. Yields a LogStats.
+
+    Without a sink every line goes to out() with a 'log| ' prefix. With a sink it gets each datagram as received (several
+    entries can be glued together in one, see logview) and out() is only used for notes about the log setting itself.
+    """
+    stats = LogStats()
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         sock.bind(("0.0.0.0", port))
@@ -62,31 +76,44 @@ def udp_log(addr: str, host: str, port: int, out: Callable[[str], None] = ui.say
                 continue
             except OSError:
                 return
-            for line in data.decode(errors="replace").splitlines():
+            stats.datagrams += 1
+            text = data.decode(errors="replace")
+            if sink is not None:
+                try:
+                    sink(text)
+                    continue
+                except Exception:   # a bug in the display must not stop the log: fall back to the plain lines
+                    pass
+            for line in text.splitlines():
                 out(f"  log| {line}")
 
     previous = None
+    read_previous = False   # only put the old setting back if it was read; otherwise we would write None over it
     try:
         previous = (rpc.call(addr, "Sys.GetConfig", **auth).get("debug", {}).get("udp") or {}).get("addr")
+        read_previous = True
         result = rpc.call(addr, "Sys.SetConfig", {"config": {"debug": {"udp": {"addr": f"{host}:{port}"}}}}, **auth)
         if result.get("restart_required"):
             out("NOTE: the device wants a restart for the log setting to apply.")
         thread = threading.Thread(target=reader, daemon=True)
         thread.start()
-        yield
+        yield stats
     finally:
         stop.set()
-        try:  # best effort: the device may be rebooting or already reflashed
-            rpc.call(addr, "Sys.SetConfig", {"config": {"debug": {"udp": {"addr": previous}}}}, timeout=3, **auth)
-        except (OtaError, OSError):
-            pass
+        if read_previous:
+            try:
+                rpc.call(addr, "Sys.SetConfig", {"config": {"debug": {"udp": {"addr": previous}}}}, timeout=5, **auth)
+            except rpc.DeviceUnreachable:
+                pass   # expected after a successful update: the device is rebooting or already runs the new firmware
+            except OtaError as e:
+                out(f"NOTE: could not put the device's log setting back ({e}); it may keep sending its log to {host}:{port}.")
         sock.close()
 
 
-def watch(addr: str, host: str, port: int, seconds: float | None, out: Callable[[str], None] = ui.say,
-          **auth) -> None:
+def watch(addr: str, host: str, port: int, seconds: float | None, out: Callable[[str], None] = ui.say, *,
+          sink: Callable[[str], None] | None = None, **auth) -> None:
     """Print the device log for `seconds` (until Ctrl+C if None)."""
-    with udp_log(addr, host, port, out, **auth):
+    with udp_log(addr, host, port, out, sink=sink, **auth):
         out(f"Listening for the log of {addr} on {host}:{port} (Ctrl+C to stop) ...")
         try:
             if seconds is None:
