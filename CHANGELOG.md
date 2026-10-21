@@ -5,6 +5,22 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- 25 profiles for Shelly Gen3 and Gen4 devices, made from the official packages, each with its partition CSV, a device page and a row in the
+  README: Gen3 (ESP32-C3) `S1G3` (1), `S1PMG3` (1PM), `S2PMG3` (2PM), `S1LG3` (1L), `S2LG3` (2L), `I4G3` (i4), `DimmerG3`,
+  `Dimmer0110VPMG3` (Dimmer 0/1-10V PM), `EMG3`, `S3EMG3` (3EM-63), `OutdoorPlugSG3`, `BluGwG3` (BLU Gateway); Gen4 (ESP32-C6) `S1G4`, `S1PMG4`,
+  `S2PMG4`, `S1LG4`, `S2LG4`, `I4G4`, `DimmerG4`, `Dimmer0110VPMG4`, `EMG4`, `Mini1G4` (1 Mini), `MiniEMG4` (EM Mini), `PlugUSG4`, `PresenceG4`.
+  Every profile sets `boot_min_version: 1.0.9`. The packages build and verify; **none was flashed on a real device yet**. The EM Gen4 has a 16 MB
+  flash layout (its DevKit image needs a 16 MB board), the i4 Gen4 is only listed with the beta 2.2.0-beta1 in the update API.
+- State 🔬 "DevKit-tested" (README, device pages, `docs/devkit.md`): the update ran through on a dev board with the DevKit image, not on the real
+  device. `Mini1G4`, `MiniEMG4`, `DimmerG4`, `Dimmer0110VPMG4` and `I4G4` have it, from runs on an ESP32-C6 dev board with 8 MB
+  ("Seen on a board" in `docs/devkit.md`). A real device moves a profile to 🟡 or ✅.
+
+### Changed
+- H&T Gen3 page: Shelly's update API answers per installed version, so a request without the `Shelly-Info` header showed no stable release (it
+  looked like a removed one on 2026-10-10); `fetch HTG3 --from-version 1.4.4` gets the stable 2.0.1. The H&T Gen3 with display is reported to run with ESPHome.
+- README header: logo on the left, the tagline in the header.
+
 ## [0.4.0] - 2026-10-18
 
 ### Added
