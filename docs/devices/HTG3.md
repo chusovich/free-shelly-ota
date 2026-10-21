@@ -128,10 +128,12 @@ In the `--watch` log look for these lines, in this order:
 
 ## Notes for this device
 
-- **Official package:** Shelly's server stopped serving the 2.0.1 package for this device (checked 2026-10-10), and the update API lists no
-  stable release. By 2026-10-15 at the latest it lists the beta `2.2.0-beta1`. Compared with 2.0.1, it has the same partition table and the same bootloader
-  header, and the app is 90 % of the slot. It was **not flashed with this tool**; the hardware runs above used 2.0.1. If you still have the 2.0.1
-  ZIP, give it to `build` with `--official`.
+- **Official package:** the update API answers per installed version: the device sends its app and version in the `Shelly-Info`
+  header, and a request without it, or from a device that already runs 2.0.1, shows no stable release (this looked like a removed
+  release on 2026-10-10; it was not). `python ota.py fetch HTG3 --from-version 1.4.4` gets the stable 2.0.1 (checked 2026-10-21, the
+  same package as the cached one). The beta channel lists `2.2.0-beta1`: same partition table and bootloader header as 2.0.1, the app
+  is 90 % of the slot. It was **not flashed with this tool**; the hardware runs above used 2.0.1.
+- **H&T Gen3 with display:** runs with ESPHome too (reported, no details).
 - **Battery:** the stock updater refuses to start below 30 %: HTTP 500, `OTA not allowed (Battery below 30 percent. )`. Charge
   first and keep the device awake ([Troubleshooting](../troubleshooting.md#battery-devices-ht-gen3)).
 - **`min_version`:** this device reports an installed loader 1.0.3, so the default (1.0.3) was skipped; with 1.0.9 the installer

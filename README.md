@@ -1,6 +1,8 @@
-<h1 align="left"><img src="docs/assets/logo.png" width="80" align="middle" alt="Free-Shelly OTA logo"> Free-Shelly OTA</h1>
-
-**Pack your own ESPHome firmware into an official-style Shelly OTA package — and send it to the device.**
+<h1 align="left">
+  <img src="docs/assets/logo.png" width="80" align="left" alt="Free-Shelly OTA logo">
+  Free-Shelly OTA<br>
+  <sup><sub><b>Pack your own ESPHome firmware into an official-style Shelly OTA package — and send it to the device.</b></sub></sup>
+</h1>
 
 [![Status][status-shield]][status-url]
 [![Version][version-shield]][version-url]
@@ -42,7 +44,7 @@ flowchart LR
 
 ## Supported devices
 
-**17 profiles:** ✅ 6 confirmed · 🟡 4 partly checked · 🧪 7 untested
+**17 profiles:** ✅ 7 confirmed · 🟡 4 partly checked · 🧪 6 untested
 
 Click the profile for the device page: ESPHome config, the exact commands and what to expect.
 
@@ -54,12 +56,12 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | H&T Gen3 | [`HTG3`](docs/devices/HTG3.md) | ESP32&#8209;C3 | ✅ | |
 | PM Mini Gen3 | [`MiniPMG3`](docs/devices/MiniPMG3.md) | ESP32&#8209;C3 | ✅ | Measures only, no relay |
 | Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](docs/devices/RGBCCTBulbG3.md) | ESP32&#8209;C3 | ✅ | |
-| Duo Bulb Gen3 | [`DuoBulbG3`](docs/devices/DuoBulbG3.md) | ESP32&#8209;C3 | 🟡 | OTA not run; the ESPHome config runs (flashed over UART) |
+| Duo Bulb Gen3 | [`DuoBulbG3`](docs/devices/DuoBulbG3.md) | ESP32&#8209;C3 | 🟡 | OTA not run; config flashed over UART runs, GPIOs from the stock dump, not confirmed on the hardware |
 | Power Strip 4 Gen4 | [`PowerStrip`](docs/devices/PowerStrip.md) | ESP32&#8209;C6 | 🟡 | Boots, outlets not checked |
 | Power Strip 4 Gen4 (Zigbee) | [`PowerStripZB`](docs/devices/PowerStripZB.md) | ESP32&#8209;C6 | 🧪 | |
 | Plus Plug S (V2 hardware, Gen2) | [`PlusPlugS`](docs/devices/PlusPlugS.md) | ESP32 | ✅ | Flashed without UART |
 | The Pill | [`Pill`](docs/devices/Pill.md) | ESP32&#8209;C3 | 🧪 | |
-| Mini 1 Gen3 | [`Mini1G3`](docs/devices/Mini1G3.md) | ESP32&#8209;C3 | 🧪 | |
+| Mini 1 Gen3 | [`Mini1G3`](docs/devices/Mini1G3.md) | ESP32&#8209;C3 | ✅ | |
 | Mini 1PM Gen3 | [`Mini1PMG3`](docs/devices/Mini1PMG3.md) | ESP32&#8209;C3 | 🧪 | |
 | Mini 1PM Gen4 | [`Mini1PMG4`](docs/devices/Mini1PMG4.md) | ESP32&#8209;C6 | 🧪 | |
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](docs/devices/Mini1PMG4.md#zigbee-variant) | ESP32&#8209;C6 | 🧪 | |
@@ -112,7 +114,7 @@ python ota.py fetch PlugMG3 --insecure
 python ota.py build PlugMG3 app.ota.bin --esphome-factory app.factory.bin --esphome-yaml my-plug.yaml
 
 # send it to the device and show its log for 60 s
-python ota.py send PlugMG3 out/PlugMG3-app-<date>.zip --ip <device IP> --watch 60
+python ota.py send PlugMG3 out/PlugMG3-app-<date>.zip --ip <device IP>
 ```
 
 - `PlugMG3` is the example; use your device's profile from the table above.
