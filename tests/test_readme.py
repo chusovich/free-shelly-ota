@@ -17,7 +17,7 @@ from shelly_ota import profile  # noqa: E402
 ROOT = profile.MODULE_DIR
 README = ROOT / "README.md"
 DEVICE_OVERVIEW = ROOT / "docs" / "devices" / "README.md"
-STATES = ("✅", "🟡", "🧪")
+STATES = ("✅", "🟡", "🔬", "🧪")
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"}
 
 
@@ -61,10 +61,10 @@ class ReadmeTests(unittest.TestCase):
             self.assertIn(symbol, STATES, name)
 
     def test_summary_line_matches_the_table(self):
-        m = re.search(r"\*\*(\d+) profiles:\*\* ✅ (\d+) confirmed · 🟡 (\d+) partly checked · 🧪 (\d+) untested", self.text)
+        m = re.search(r"\*\*(\d+) profiles:\*\* ✅ (\d+) confirmed · 🟡 (\d+) partly checked · 🔬 (\d+) DevKit-tested · 🧪 (\d+) untested", self.text)
         self.assertIsNotNone(m, "summary line above the device table is missing or changed its form")
         symbols = list(self.states.values())
-        expected = (len(symbols), symbols.count("✅"), symbols.count("🟡"), symbols.count("🧪"))
+        expected = (len(symbols), symbols.count("✅"), symbols.count("🟡"), symbols.count("🔬"), symbols.count("🧪"))
         self.assertEqual(tuple(int(g) for g in m.groups()), expected)
 
     def test_device_overview_has_the_same_states(self):
@@ -87,7 +87,7 @@ class ReadmeTests(unittest.TestCase):
 
 
 SECTIONS = ("Before you start", "ESPHome config", "Pins", "Flash it", "What to expect", "Notes for this device", "Way back")
-BADGE = {"✅": "state-confirmed-", "🟡": "state-partly%20checked-", "🧪": "state-untested-"}
+BADGE = {"✅": "state-confirmed-", "🟡": "state-partly%20checked-", "🔬": "state-devkit%20tested-", "🧪": "state-untested-"}
 
 
 class DevicePageTests(unittest.TestCase):

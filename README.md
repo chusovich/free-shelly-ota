@@ -42,7 +42,7 @@ flowchart LR
 
 ## Supported devices
 
-**17 profiles:** ✅ 6 confirmed · 🟡 4 partly checked · 🧪 7 untested
+**42 profiles:** ✅ 6 confirmed · 🟡 4 partly checked · 🔬 5 DevKit-tested · 🧪 27 untested
 
 Click the profile for the device page: ESPHome config, the exact commands and what to expect.
 
@@ -65,9 +65,35 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](docs/devices/Mini1PMG4.md#zigbee-variant) | ESP32&#8209;C6 | 🧪 | |
 | Plus Uni (Gen2) | [`PlusUni`](docs/devices/PlusUni.md) | ESP32 | 🟡 | Flashed over OTA, ESPHome's bootloader step not checked |
 | Pro 3EM (Gen2) | [`Pro3EM`](docs/devices/Pro3EM.md) | ESP32 | 🧪 | |
+| 1 Gen3 | [`S1G3`](docs/devices/S1G3.md) | ESP32&#8209;C3 | 🧪 | |
+| 1PM Gen3 | [`S1PMG3`](docs/devices/S1PMG3.md) | ESP32&#8209;C3 | 🧪 | |
+| 2PM Gen3 | [`S2PMG3`](docs/devices/S2PMG3.md) | ESP32&#8209;C3 | 🧪 | |
+| 1L Gen3 | [`S1LG3`](docs/devices/S1LG3.md) | ESP32&#8209;C3 | 🧪 | |
+| 2L Gen3 | [`S2LG3`](docs/devices/S2LG3.md) | ESP32&#8209;C3 | 🧪 | |
+| i4 Gen3 | [`I4G3`](docs/devices/I4G3.md) | ESP32&#8209;C3 | 🧪 | |
+| Dimmer Gen3 | [`DimmerG3`](docs/devices/DimmerG3.md) | ESP32&#8209;C3 | 🧪 | |
+| Dimmer 0/1-10V PM Gen3 | [`Dimmer0110VPMG3`](docs/devices/Dimmer0110VPMG3.md) | ESP32&#8209;C3 | 🧪 | |
+| EM Gen3 | [`EMG3`](docs/devices/EMG3.md) | ESP32&#8209;C3 | 🧪 | |
+| 3EM-63 Gen3 | [`S3EMG3`](docs/devices/S3EMG3.md) | ESP32&#8209;C3 | 🧪 | |
+| Outdoor Plug S Gen3 | [`OutdoorPlugSG3`](docs/devices/OutdoorPlugSG3.md) | ESP32&#8209;C3 | 🧪 | |
+| BLU Gateway Gen3 | [`BluGwG3`](docs/devices/BluGwG3.md) | ESP32&#8209;C3 | 🧪 | |
+| 1 Gen4 | [`S1G4`](docs/devices/S1G4.md) | ESP32&#8209;C6 | 🧪 | |
+| 1PM Gen4 | [`S1PMG4`](docs/devices/S1PMG4.md) | ESP32&#8209;C6 | 🧪 | |
+| 2PM Gen4 | [`S2PMG4`](docs/devices/S2PMG4.md) | ESP32&#8209;C6 | 🧪 | |
+| 1L Gen4 | [`S1LG4`](docs/devices/S1LG4.md) | ESP32&#8209;C6 | 🧪 | |
+| 2L Gen4 | [`S2LG4`](docs/devices/S2LG4.md) | ESP32&#8209;C6 | 🧪 | |
+| i4 Gen4 | [`I4G4`](docs/devices/I4G4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
+| Dimmer Gen4 | [`DimmerG4`](docs/devices/DimmerG4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
+| Dimmer 0/1-10V PM Gen4 | [`Dimmer0110VPMG4`](docs/devices/Dimmer0110VPMG4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
+| EM Gen4 | [`EMG4`](docs/devices/EMG4.md) | ESP32&#8209;C6 | 🧪 | |
+| 1 Mini Gen4 | [`Mini1G4`](docs/devices/Mini1G4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
+| EM Mini Gen4 | [`MiniEMG4`](docs/devices/MiniEMG4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
+| Plug US Gen4 | [`PlugUSG4`](docs/devices/PlugUSG4.md) | ESP32&#8209;C6 | 🧪 | |
+| Presence Gen4 | [`PresenceG4`](docs/devices/PresenceG4.md) | ESP32&#8209;C6 | 🧪 | |
 
 > - ✅ The whole chain ran on a real device.
 > - 🟡 Flashed on a real device, but part of the chain or of the function is not checked yet (see the Note column).
+> - 🔬 The OTA ran through on a dev board with the [DevKit image](docs/devkit.md), but not on the real device yet.
 > - 🧪 The package builds and verifies, but nobody has flashed it yet.
 
 
