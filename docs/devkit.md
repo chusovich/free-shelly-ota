@@ -42,6 +42,31 @@ The chip family must match and the flash must hold the whole partition table of 
 | `PowerStripZB` | Power Strip 4 Gen4 (Zigbee) | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
 | `Mini1PMG4` | Mini 1PM Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
 | `Mini1PMG4ZB` | Mini 1PM Gen4 (Zigbee) | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `S1G3` | 1 Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `S1PMG3` | 1PM Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `S2PMG3` | 2PM Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `S1LG3` | 1L Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `S2LG3` | 2L Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `I4G3` | i4 Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `DimmerG3` | Dimmer Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `Dimmer0110VPMG3` | Dimmer 0/1-10V PM Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `EMG3` | EM Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `S3EMG3` | 3EM-63 Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `OutdoorPlugSG3` | Outdoor Plug S Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `BluGwG3` | BLU Gateway Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
+| `S1G4` | 1 Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `S1PMG4` | 1PM Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `S2PMG4` | 2PM Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `S1LG4` | 1L Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `S2LG4` | 2L Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `I4G4` | i4 Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `DimmerG4` | Dimmer Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `Dimmer0110VPMG4` | Dimmer 0/1-10V PM Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `EMG4` | EM Gen4 | ESP32-C6 | 16 MiB | ESP32-C6 board with 16 MB |
+| `Mini1G4` | 1 Mini Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `MiniEMG4` | EM Mini Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `PlugUSG4` | Plug US Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
+| `PresenceG4` | Presence Gen4 | ESP32-C6 | 8 MiB | ESP32-C6 board with 8 MB |
 
 `python -m esptool --port COMx flash-id` shows the flash size of a board. `--flash-size 4MB|8MB|16MB` makes `devkit` stop if the layout needs more.
 
@@ -103,7 +128,15 @@ The chip family must match and the flash must hold the whole partition table of 
 
 ## Seen on a board
 
-Nothing yet. Add the date, the board, the profile and what the serial monitor and `send --watch` showed, separately from what was only read from the packages.
+A profile gets 🔬 once a row here shows the OTA ran through on a board with its DevKit image (stage 4); it goes to 🟡/✅ as soon as the real device was flashed. Add the date, the board, the profile and what the serial monitor and `send --watch` showed, separately from what was only read from the packages.
+
+| Date | Board | Profile | What happened |
+| --- | --- | --- | --- |
+| 2026-10-21 | ESP32-C6 dev board, 8 MB | `Dimmer0110VPMG4` | DevKit image flashed, then `send` of the ESPHome SoftAP package (ESPHome's bootloader, `min_version` 1.0.9) with `--watch`: ESPHome's access point appeared (`shelly-dimmer0110vpmg4`). No relay, meter or button on the board. |
+| 2026-10-21 | ESP32-C6 dev board, 8 MB | `DimmerG4` | DevKit image flashed, then `send` of the ESPHome SoftAP package (ESPHome's bootloader, `min_version` 1.0.9) with `--watch`: the log showed `ota_success`, then ESPHome's access point appeared (`shelly-dimmerg4`). No relay, meter or button on the board. |
+| 2026-10-21 | ESP32-C6 dev board, 8 MB | `I4G4` | DevKit image flashed, then `send` of the ESPHome SoftAP package (ESPHome's bootloader, `min_version` 1.0.9) with `--watch`: the log showed `ota_success` (progress 100 %), then ESPHome's access point appeared (`shelly-i4g4`). No relay, meter or button on the board. |
+| 2026-10-21 | ESP32-C6 dev board, 8 MB | `Mini1G4` | DevKit image flashed, then `send` of the ESPHome SoftAP package (ESPHome's bootloader, `min_version` 1.0.9) with `--watch`: the installer wrote to slot 0, the bootloader was replaced (current 1.0.3, minimum 1.0.9), the log showed `ota_success`, then ESPHome's access point appeared (`shelly-mini1g4`). No relay, meter or button on the board. |
+| 2026-10-21 | ESP32-C6 dev board, 8 MB | `MiniEMG4` | DevKit image flashed, then `send` of the ESPHome SoftAP package (ESPHome's bootloader, `min_version` 1.0.9): ESPHome's access point appeared (`shelly-miniemg4`); the log of the run was not reported. No relay, meter or button on the board. |
 
 ---
 

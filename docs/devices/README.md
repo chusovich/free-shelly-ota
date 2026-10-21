@@ -7,7 +7,7 @@ commands, the log lines to look for and the way back to Shelly OS. Pick your dev
 [Commands](../commands.md) for what the options do.
 
 ✅ = the whole chain ran on a real device, 🟡 = flashed on a real device, but part of the chain or of the function is not
-checked yet, 🧪 = the package builds and verifies, but nobody has flashed it yet.
+checked yet, 🔬 = the OTA ran through on a dev board with the [DevKit image](../devkit.md), but not on the real device, 🧪 = the package builds and verifies, but nobody has flashed it yet.
 
 ## Devices
 
@@ -30,6 +30,31 @@ checked yet, 🧪 = the package builds and verifies, but nobody has flashed it y
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](Mini1PMG4.md#zigbee-variant) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
 | Plus Uni (Gen2) | [`PlusUni`](PlusUni.md) | **ESP32** | **`0x8000`** | `0x190000` | 🟡 flashed over OTA, bootloader step not checked |
 | Pro 3EM (Gen2) | [`Pro3EM`](Pro3EM.md) | **ESP32** | **`0x8000`** | `0x200000` | 🧪 |
+| 1 Gen3 | [`S1G3`](S1G3.md) | ESP32-C3 | **`0xf000`** | `0x2b0000` | 🧪 |
+| 1PM Gen3 | [`S1PMG3`](S1PMG3.md) | ESP32-C3 | **`0xf000`** | `0x2c0000` | 🧪 |
+| 2PM Gen3 | [`S2PMG3`](S2PMG3.md) | ESP32-C3 | `0x10000` | `0x2c0000` | 🧪 |
+| 1L Gen3 | [`S1LG3`](S1LG3.md) | ESP32-C3 | `0x10000` | `0x2b0000` | 🧪 |
+| 2L Gen3 | [`S2LG3`](S2LG3.md) | ESP32-C3 | `0x10000` | `0x2b0000` | 🧪 |
+| i4 Gen3 | [`I4G3`](I4G3.md) | ESP32-C3 | **`0xf000`** | `0x280000` | 🧪 |
+| Dimmer Gen3 | [`DimmerG3`](DimmerG3.md) | ESP32-C3 | `0x10000` | `0x300000` | 🧪 |
+| Dimmer 0/1-10V PM Gen3 | [`Dimmer0110VPMG3`](Dimmer0110VPMG3.md) | ESP32-C3 | **`0xf000`** | `0x280000` | 🧪 |
+| EM Gen3 | [`EMG3`](EMG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🧪 |
+| 3EM-63 Gen3 | [`S3EMG3`](S3EMG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🧪 |
+| Outdoor Plug S Gen3 | [`OutdoorPlugSG3`](OutdoorPlugSG3.md) | ESP32-C3 | `0x10000` | `0x2a0000` | 🧪 |
+| BLU Gateway Gen3 | [`BluGwG3`](BluGwG3.md) | ESP32-C3 | `0x10000` | `0x240000` | 🧪 |
+| 1 Gen4 | [`S1G4`](S1G4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
+| 1PM Gen4 | [`S1PMG4`](S1PMG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
+| 2PM Gen4 | [`S2PMG4`](S2PMG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
+| 1L Gen4 | [`S1LG4`](S1LG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
+| 2L Gen4 | [`S2LG4`](S2LG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
+| i4 Gen4 | [`I4G4`](I4G4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🔬 |
+| Dimmer Gen4 | [`DimmerG4`](DimmerG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🔬 |
+| Dimmer 0/1-10V PM Gen4 | [`Dimmer0110VPMG4`](Dimmer0110VPMG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🔬 |
+| EM Gen4 | [`EMG4`](EMG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
+| 1 Mini Gen4 | [`Mini1G4`](Mini1G4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🔬 |
+| EM Mini Gen4 | [`MiniEMG4`](MiniEMG4.md) | ESP32-C6 | `0x10000` | `0x2f0000` | 🔬 |
+| Plug US Gen4 | [`PlugUSG4`](PlugUSG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
+| Presence Gen4 | [`PresenceG4`](PresenceG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
 
 The partition table offset goes into your ESPHome config as `CONFIG_PARTITION_TABLE_OFFSET`; `build` refuses a config that
 does not match the profile. Details per device are on its page.
