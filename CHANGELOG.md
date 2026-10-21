@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- `Mini1G3` is confirmed on hardware (first report, #69): flash from Shelly 1.4.4 over OTA, ESPHome OTA afterwards. Relay, button, switch input and LED pins checked; the NTC calibration of the ESPHome device page reads high on that unit.
+
 ## [0.4.0] - 2026-10-18
 
 ### Added

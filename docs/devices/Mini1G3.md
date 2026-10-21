@@ -2,7 +2,7 @@
 
 [← README](../../README.md) · [All devices](README.md) · [Commands](../commands.md)
 
-![State: untested](https://img.shields.io/badge/state-untested-lightgrey.svg?style=flat-square)
+![State: confirmed](https://img.shields.io/badge/state-confirmed-brightgreen.svg?style=flat-square)
 ![Chip: ESP32-C3](https://img.shields.io/badge/chip-ESP32--C3-blue.svg?style=flat-square)
 
 [🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
@@ -106,9 +106,10 @@ In the `--watch` log look for these lines, in this order:
 
 ## Notes for this device
 
-No device-specific findings yet. The profile sets `boot_min_version: 1.0.9` like the other Gen3 devices that needed it: the official package carries loader 1.0.2 and a device that came back from ESPHome runs 1.0.3, and the installer only writes a bootloader that is newer than the installed one. Please report the `--watch` log, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
-
-The pins of the ESPHome device database page for this device (LED GPIO0, button GPIO1, NTC GPIO3, relay GPIO7, switch GPIO10) were not checked against the firmware.
+- **Result:** first report ([#69](https://github.com/oxynatOr/free-shelly-ota/issues/69)): from Shelly firmware 1.4.4 with the package built from this profile (revision 1, package 2.0.1, `--esphome-factory`). `send --dry-run` reported `Update target slot: 0`, the device reached the PC, the flash ran to 99 % and ESPHome came up on Wi-Fi without a power cycle. A later ESPHome OTA from the dashboard took effect, so ESPHome's bootloader is in place. The `Boot: cur ... update?` line was not captured.
+- The profile sets `boot_min_version: 1.0.9` like the other Gen3 devices that needed it: the official package carries loader 1.0.2 and a device that came back from ESPHome runs 1.0.3, and the installer only writes a bootloader that is newer than the installed one.
+- **Pins checked on the hardware** (lamp as load): relay GPIO7, button GPIO1 (inverted, pull-up), switch input GPIO10, LED GPIO0 (inverted). Without a load the relay is almost silent, so a quiet click is not a sign that it does not switch.
+- **NTC (GPIO3):** the calibration of the ESPHome device page (B 3350, 10 kOhm, `DOWNSTREAM`) read about 57 °C on an idle desk unit, while two Mini 1 Gen3 on stock firmware showed 36 to 46 °C. Treat the absolute value as uncalibrated until it is compared with a reference thermometer.
 
 ## Way back
 

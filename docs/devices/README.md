@@ -19,12 +19,12 @@ checked yet, 🧪 = the package builds and verifies, but nobody has flashed it y
 | H&T Gen3 | [`HTG3`](HTG3.md) | ESP32-C3 | **`0xf000`** | `0x280000` | ✅ |
 | PM Mini Gen3 (no relay) | [`MiniPMG3`](MiniPMG3.md) | ESP32-C3 | **`0xf000`** | `0x280000` | ✅ |
 | Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](RGBCCTBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | ✅ |
-| Duo Bulb Gen3 | [`DuoBulbG3`](DuoBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🟡 OTA not run; ESPHome config runs (UART) |
+| Duo Bulb Gen3 | [`DuoBulbG3`](DuoBulbG3.md) | ESP32-C3 | `0x10000` | `0x280000` | 🟡 OTA not run; UART flash runs, GPIOs not confirmed on the hardware |
 | Power Strip 4 Gen4 | [`PowerStrip`](PowerStrip.md) | ESP32-C6 | `0x10000` | `0x300000` | 🟡 boots, outlets not checked |
 | Power Strip 4 Gen4 (Zigbee) | [`PowerStripZB`](PowerStripZB.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
 | Plus Plug S (V2 hardware, Gen2) | [`PlusPlugS`](PlusPlugS.md) | **ESP32** | **`0x8000`** | `0x190000` | ✅ without UART |
 | The Pill | [`Pill`](Pill.md) | ESP32-C3 | `0x10000` | `0x280000` | 🧪 |
-| Mini 1 Gen3 | [`Mini1G3`](Mini1G3.md) | ESP32-C3 | **`0xf000`** | `0x2a0000` | 🧪 |
+| Mini 1 Gen3 | [`Mini1G3`](Mini1G3.md) | ESP32-C3 | **`0xf000`** | `0x2a0000` | ✅ |
 | Mini 1PM Gen3 | [`Mini1PMG3`](Mini1PMG3.md) | ESP32-C3 | **`0xf000`** | `0x2a0000` | 🧪 |
 | Mini 1PM Gen4 | [`Mini1PMG4`](Mini1PMG4.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](Mini1PMG4.md#zigbee-variant) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
