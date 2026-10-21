@@ -1,7 +1,7 @@
 <h1 align="left">
   <img src="docs/assets/logo.png" width="80" align="left" alt="Free-Shelly OTA logo">
   Free-Shelly OTA<br>
-  <sup><sub>Pack your own ESPHome firmware into an official-style Shelly OTA package — and send it to the device.</sub></sup>
+  <sup><sup><sub>Pack your own ESPHome firmware into an official-style Shelly OTA package — and send it to the device.</sub></sup></sup>
 </h1>
 
 [![Status][status-shield]][status-url]
