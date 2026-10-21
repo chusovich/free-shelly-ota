@@ -365,22 +365,19 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
     official_zip = firmware.cached_zip(profile.name)
     boot_replaced: bool | None = None  # None: cannot tell (no cached official ZIP to compare with)
     keeps_loader = False  # an ESPHome app in a package that leaves Shelly's bootloader in place (no --esphome-factory)
-    if official_zip or profile.standalone:
-        if official_zip:
-            with zipfile.ZipFile(official_zip) as oz:
-                official_parts = json.loads(oz.read("manifest.json"))["parts"]
-            official_boot = official_parts.get("boot", {}).get("cs_sha256")
-            boot_replaced = manifest["parts"].get("boot", {}).get("cs_sha256") != official_boot
-            # the official package itself (restore, or sent by hand) keeps Shelly's bootloader by definition and is fine
-            app_changed = manifest["parts"].get("app", {}).get("cs_sha256") != official_parts.get("app", {}).get("cs_sha256")
-            keeps_loader = not boot_replaced and app_changed and not restoring
-            if keeps_loader:
-                if not force:
-                    server.httpd.server_close()
-                    raise OtaError(plain_package_text(profile.name))
-                say(Level.quiet, "WARNING: " + plain_package_text(profile.name, forced=True))
-        else:
-            boot_replaced = True  # standalone-capable device, nothing to compare with: assume the worst (slot check)
+    if official_zip:
+        with zipfile.ZipFile(official_zip) as oz:
+            official_parts = json.loads(oz.read("manifest.json"))["parts"]
+        official_boot = official_parts.get("boot", {}).get("cs_sha256")
+        boot_replaced = manifest["parts"].get("boot", {}).get("cs_sha256") != official_boot
+        # the official package itself (restore, or sent by hand) keeps Shelly's bootloader by definition and is fine
+        app_changed = manifest["parts"].get("app", {}).get("cs_sha256") != official_parts.get("app", {}).get("cs_sha256")
+        keeps_loader = not boot_replaced and app_changed and not restoring
+        if keeps_loader:
+            if not force:
+                server.httpd.server_close()
+                raise OtaError(plain_package_text(profile.name))
+            say(Level.quiet, "WARNING: " + plain_package_text(profile.name, forced=True))
         if boot_replaced:
             say(Level.quiet, "WARNING: this package replaces Shelly's bootloader. If it does not suit the device, only UART "
                               "can bring it back. Do not interrupt the power during the update.")

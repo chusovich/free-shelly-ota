@@ -22,10 +22,6 @@ All notable changes to this project are documented here. The format follows
   rules (progress, slot, bootloader decision, eFuse notes, RPC chatter of other clients) and filters them by level. The refused eFuse writes
   that every update logs are one note, not five errors. The severity digit of an entry (0 error, 1 warning, 2 information) was read from a
   few entries and is not documented; the event name `ota_error` is assumed. Anything unknown is shown as it is.
-- `build --standalone` (H&T Gen3 first): builds the package without Shelly's ZIP, from the new `standalone:` section of the profile and the
-  partition CSV. The H&T 2.0.1 ZIP looked removed from Shelly's update API on 2026-10-10; it was only the missing `Shelly-Info` header (`fetch --from-version 1.4.4` gets it), so this is a way to build and share a package without a Shelly file, not a replacement for a download that is gone. The package holds
-  no Shelly file (ESPHome's bootloader, `otadata` and partition table, erased filesystem image of 0xFF: the installer aborts with "Missing a part" without an `fs` image), so it can be shared. `send` assumes a replaced
-  bootloader for profiles with `standalone:` when no official ZIP is cached. Not yet run on a device.
 - `send` and `restore`: the wait after a fresh start is one line that counts down in place, and the progress of the update is one line at the bottom of the screen that stays there while the log lines above it go on. Without a terminal both fall back to lines (every 30 s, every 10 %). A finished progress line is printed once (the device logs 100 % twice).
 - Messages: `NOTE:`, `WARNING:` and `Error:` are wrapped to the terminal (at most 140 columns) after a punctuation mark where possible, a long message has its label alone on a line and the text indented below it, only the label is colored, and a command to copy (`python ota.py ...`) stands on a line of its own, bold. Hand-broken lines in the sources are joined first.
 - `ota.py list` shows one line per device (`--details` for the revision and build ids).

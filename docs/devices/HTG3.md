@@ -103,10 +103,10 @@ on the board are bare test points: pogo pins or test clips work, or solder tempo
    python ota.py send HTG3 out/HTG3-app-<date>.zip --ip <device IP> --dry-run
    ```
 
-5. **Flash it** (the log goes to a file with `--log-file`):
+5. **Flash it** and watch the log:
 
    ```
-   python ota.py send HTG3 out/HTG3-app-<date>.zip --ip <device IP> --log-file
+   python ota.py send HTG3 out/HTG3-app-<date>.zip --ip <device IP> --watch 120
    ```
 
 `app.ota.bin` and `app.factory.bin` are the two files ESPHome compiles. `--dry-run` only checks the device and, for this
@@ -114,13 +114,13 @@ package, reads the update target slot. Command reference: [Commands](../commands
 
 ## What to expect
 
-`send` shows these lines at the default log level, in this order:
+In the `--watch` log look for these lines, in this order:
 
 | # | Log line | Meaning |
 | --- | --- | --- |
 | 1 | `Update target slot: 0 ...` | The slot check of `send`. Anything else: run `python ota.py restore HTG3` first |
-| 2 | `Device: The bootloader will be replaced ...` (raw log: `Boot: cur ... min ... update? 1`) | The installer will write ESPHome's bootloader. `WARNING: ESPHome's bootloader was NOT written` (`update? 0`) means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
-| 3 | The progress (`Update: ... %`, one line that updates in place) up to 100 %, then `Done: update installed, the device confirmed it` | The device restarts into ESPHome |
+| 2 | `Boot: cur ... min ... update? 1` | The installer will write ESPHome's bootloader. `update? 0` means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
+| 3 | `ota_progress` up to 95 %, then `ota_success` | The device restarts into ESPHome |
 
 > [!NOTE]
 > The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.
@@ -128,10 +128,12 @@ package, reads the update target slot. Command reference: [Commands](../commands
 
 ## Notes for this device
 
-- **Official package:** Shelly's server stopped serving the 2.0.1 package for this device (checked 2026-10-10), and the update API lists no
-  stable release. By 2026-10-15 at the latest it lists the beta `2.2.0-beta1`. Compared with 2.0.1, it has the same partition table and the same bootloader
-  header, and the app is 90 % of the slot. It was **not flashed with this tool**; the hardware runs above used 2.0.1. If you still have the 2.0.1
-  ZIP, give it to `build` with `--official`.
+- **Official package:** the update API answers per installed version: the device sends its app and version in the `Shelly-Info`
+  header, and a request without it, or from a device that already runs 2.0.1, shows no stable release (this looked like a removed
+  release on 2026-10-10; it was not). `python ota.py fetch HTG3 --from-version 1.4.4` gets the stable 2.0.1 (checked 2026-10-21, the
+  same package as the cached one). The beta channel lists `2.2.0-beta1`: same partition table and bootloader header as 2.0.1, the app
+  is 90 % of the slot. It was **not flashed with this tool**; the hardware runs above used 2.0.1.
+- **H&T Gen3 with display:** runs with ESPHome too (reported, no details).
 - **Battery:** the stock updater refuses to start below 30 %: HTTP 500, `OTA not allowed (Battery below 30 percent. )`. Charge
   first and keep the device awake ([Troubleshooting](../troubleshooting.md#battery-devices-ht-gen3)).
 - **`min_version`:** this device reports an installed loader 1.0.3, so the default (1.0.3) was skipped; with 1.0.9 the installer

@@ -36,6 +36,7 @@ Where the project stands and where it goes next.
 
 ## Later (ideas, not planned)
 
+- **A package without Shelly's ZIP** (`build --standalone`, H&T Gen3 first). The package is built from the facts of the official one that the profile keeps (version, build id, bootloader header) and the partition CSV, with ESPHome's bootloader, `otadata` and partition table and an erased filesystem image, so it holds no file from Shelly and can be shared. Not run on a device yet, and no longer needed for the H&T Gen3: the 2.0.1 package is still served when the request carries the `Shelly-Info` header (`fetch --from-version`).
 - **Tasmota support.** Pack a Tasmota image into the official package instead of an ESPHome one, the way
   [tasmota/mgos32-to-tasmota32](https://github.com/tasmota/mgos32-to-tasmota32) converts Shelly packages. Open questions: which of the
   profiles it fits (ESP32, ESP32-C3, ESP32-C6), the partition table and bootloader Tasmota needs, and the way back. Needs a device and a
