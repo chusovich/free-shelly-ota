@@ -9,7 +9,7 @@ The usual workflow is three steps:
 ```
 python ota.py fetch PlugMG3 --insecure                  # 1. get the official package
 python ota.py build PlugMG3 app.bin                     # 2. put your app into it
-python ota.py send  PlugMG3 out/<file>.zip --watch 60   # 3. send it to the device
+python ota.py send  PlugMG3 out/<file>.zip              # 3. send it to the device
 ```
 
 | Group | Command | What it does |
