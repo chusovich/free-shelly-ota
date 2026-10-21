@@ -54,6 +54,8 @@ URL.
 | `DEVICE` | yes | | Profile name, e.g. `PlugMG3` |
 | `--refresh` | no | off | Check for a newer version even if one is cached |
 | `--version VER` | no | newest stable cached | Use this cached version (a pre-release such as `2.2.0-beta1` only with this option) |
+| `--channel stable\|beta` | no | `stable` | Release channel of the update API |
+| `--from-version VER` | no | none | Ask the update API as a device running VER would. The server answers per installed version, which the device sends in the `Shelly-Info` header; a request without it, or from a device that already runs the newest package, may list no stable release (the H&T Gen3 looked removed that way). `fetch HTG3 --from-version 1.4.4` gets the stable 2.0.1 |
 | `--insecure` | no | off | Skip the TLS check (the URL hash only guards against transfer errors) |
 
 ## build
@@ -87,6 +89,8 @@ file.
 | `--version VER` | Use this cached version (default: the newest stable one; a pre-release only with this option) |
 | `--download` | Download the official ZIP if none is cached (off by default) |
 | `--insecure` | With `--download`: skip the TLS check |
+| `--channel stable\|beta` | With `--download`: release channel of the update API |
+| `--from-version VER` | With `--download`: ask the update API as a device running VER would (see [`fetch`](#fetch)) |
 
 </details>
 
@@ -163,7 +167,7 @@ takes the next word as its path. Without a log that reaches this PC (a firewall)
 
 ## restore
 
-Takes the same options as `send`, but sends the cached official firmware instead of a ZIP you choose.
+Takes the same options as `send`, but sends the cached official firmware instead of a ZIP you choose. `--version VER` picks a cached version (default: the newest stable one).
 
 > [!WARNING]
 > It works only while Shelly firmware is still running: a device that already runs ESPHome with ESPHome's bootloader does not
