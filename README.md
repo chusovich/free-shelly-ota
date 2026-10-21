@@ -9,7 +9,7 @@
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
 
-[Supported devices](#supported-devices) · [Download](https://github.com/oxynatOr/free-shelly-ota/releases/latest) · [Quick start](#quick-start) · [Documentation](#documentation) · [Request a device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml)
+[Supported devices](#supported-devices) · [Download](https://github.com/oxynatOr/free-shelly-ota/releases) · [Quick start](#quick-start) · [Documentation](#documentation) · [Request a device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml)
 
 `free-shelly-ota` is a command-line tool for **Shelly Gen2 (ESP32)**, **Gen3 (ESP32-C3)** and **Gen4 (ESP32-C6)** devices.
 It turns your ESPHome firmware into an update the Shelly accepts, and sends it over the network:
@@ -75,7 +75,7 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 
 ## Quick start
 
-**Download.** Get the [latest release](https://github.com/oxynatOr/free-shelly-ota/releases/latest) (*Source code (zip)*) and unpack it, or
+**Download.** Get the [latest release](https://github.com/oxynatOr/free-shelly-ota/releases) (*Source code (zip)*) and unpack it, or
 run `git clone https://github.com/oxynatOr/free-shelly-ota`. It is a Python tool, nothing to install besides `pip install -r requirements.txt` (step 3).
 
 **1. Write your ESPHome config.** It must use Shelly's partition table and offset. Copy `partitions/<Profile>-stock.csv` from
