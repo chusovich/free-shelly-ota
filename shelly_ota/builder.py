@@ -160,7 +160,7 @@ def build(profile: Profile, app_path: Path, official_zip: Path, output: Path, *,
         warnings.append("Credentials were not checked (give --esphome-yaml with a secrets.yaml next to it, or --secrets FILE). "
                         "ESPHome images contain Wi-Fi data in plain text if the config has it: do not share this package.")
 
-    with zipfile.ZipFile(official_zip) as original:
+    with zipfile.ZipFile(require_zip(official_zip, "official ZIP")) as original:
         manifest = read_official_manifest(original, profile.name)
         if manifest.get("platform") and manifest["platform"] != profile.platform:
             raise OtaError(f"Package platform {manifest['platform']!r} != profile {profile.platform!r}.")
@@ -264,8 +264,30 @@ def write_report(result: BuildResult) -> None:
     Path(str(out) + ".report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 
 
+def require_zip(path, what: str = "OTA package") -> Path:
+    """The path as a Path, if it is a ZIP; otherwise an OtaError that says what the file probably is.
+
+    A DevKit image (`ota.py devkit`, a flash image for esptool) is the usual mix-up: it is a .bin, not a package.
+    """
+    path = Path(path)
+    if not path.is_file():
+        raise OtaError(f"The {what} {path} does not exist.")
+    if zipfile.is_zipfile(path):
+        return path
+    device = path.name.split("-devkit", 1)[0] if "-devkit" in path.name else "<profile>"
+    if "-devkit" in path.name or path.suffix.lower() == ".bin":
+        raise OtaError(
+            f"{path.name} is not a ZIP, so it is not an {what}."
+            + (" It is the flash image for a dev board" if "-devkit" in path.name else " It looks like a flash image")
+            + " (for esptool, not for the Shelly's updater). Put it on the board with the esptool commands that this prints:\n\n"
+            f"  python ota.py devkit {device}\n\n"
+            "  Then send an OTA ZIP to the board. The ZIP is the file that `build` writes to out/.")
+    raise OtaError(f"{path.name} is not a ZIP file, so it is not an {what}.")
+
+
 def inspect_zip(path: Path, profile: Profile | None = None) -> str:
     """Human-readable summary of an OTA ZIP; hashes are verified."""
+    require_zip(path)
     lines = []
     with zipfile.ZipFile(path) as zf:
         manifest = read_official_manifest(zf)

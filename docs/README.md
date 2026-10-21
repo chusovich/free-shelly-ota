@@ -38,7 +38,7 @@ not work. The README has the short version; these pages have the details.
 | `send` refuses: update target slot is not 0 | [Troubleshooting](troubleshooting.md#send-refuses-update-target-slot-is-not-0), [The app must land in slot 0](bootloader-and-slots.md#the-app-must-land-in-slot-0) |
 | `send` warns: "this firmware does not reveal the update target slot" | [Troubleshooting](troubleshooting.md#send-warns-this-firmware-does-not-reveal-the-update-target-slot) |
 | `build` stops with "differs from Shelly's in ..." | [Build refuses to replace the bootloader](troubleshooting.md#build-refuses-to-replace-the-bootloader) |
-| The `--watch` log stays empty | [Empty `--watch` log](troubleshooting.md#empty---watch-log) |
+| No progress or confirmation from the device log | [No progress, no device log](troubleshooting.md#no-progress-no-device-log) |
 | H&T Gen3: HTTP 500, "Battery below 30 percent" | [Battery devices](troubleshooting.md#battery-devices-ht-gen3) |
 | ESPHome does not start after the update | [ESPHome does not start after the update](troubleshooting.md#esphome-does-not-start-after-the-update) |
 | ESPHome OTAs "work", but the version does not change | [Troubleshooting](troubleshooting.md#esphome-otas-work-but-the-version-does-not-change), [`min_version`](bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version) |

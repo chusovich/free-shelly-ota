@@ -20,12 +20,48 @@ All notable changes to this project are documented here. The format follows
 - State 🔬 "DevKit-tested" (README, device pages, `docs/devkit.md`): the update ran through on a dev board with the DevKit image, not on the real
   device. `Mini1G4`, `MiniEMG4`, `DimmerG4`, `Dimmer0110VPMG4` and `I4G4` have it, from runs on an ESP32-C6 dev board with 8 MB
   ("Seen on a board" in `docs/devkit.md`). A real device moves a profile to 🟡 or ✅.
+- Log levels for `send`, `restore` and `log`: `--log-level quiet|normal|verbose|debug|raw`, `-q`, `-v`, `-vv`. They apply to the tool's own
+  messages and to the device log. Default `normal` shows warnings, the key lines of the update (target slot, bootloader decision, update
+  started), a progress line that updates in place (one line per 10 % without a terminal) and the result; `verbose` adds notes and every
+  step, `debug` every entry on its own line, `raw` the log as it arrives (the output before levels). After a failure the last lines of the
+  device log are printed whatever the level.
+- `send` reads the device log while the update runs (without `--watch`): progress in %, and the device's own confirmation (`ota_success`)
+  instead of only "the device downloaded the ZIP". A device error event stops `send` with its text. If the log does not reach this PC, `send`
+  falls back to the old message. `--watch SEC` now waits up to SEC seconds for the confirmation (default 30 s if an update was seen)
+  instead of listening for SEC seconds after the download.
+- `--log-file [PATH]`: the whole run, every message and every device log entry one per line, whatever the level on the screen. Without a
+  path `logs/<zip name>.send.log` (`logs/<device>.restore.log` for `restore`). This is the file for a bug report; the device-report issue
+  form asks for it. `ota.py log --replay FILE` shows a saved log (or the output of `--log-level raw`) at any level, without a device.
+- `shelly_ota/logview.py`: splits the device log into entries (a datagram holds several, glued together), recognises them with a table of
+  rules (progress, slot, bootloader decision, eFuse notes, RPC chatter of other clients) and filters them by level. The refused eFuse writes
+  that every update logs are one note, not five errors. The severity digit of an entry (0 error, 1 warning, 2 information) was read from a
+  few entries and is not documented; the event name `ota_error` is assumed. Anything unknown is shown as it is.
+- `send` and `restore`: the wait after a fresh start is one line that counts down in place, and the progress of the update is one line at the bottom of the screen that stays there while the log lines above it go on. Without a terminal both fall back to lines (every 30 s, every 10 %). A finished progress line is printed once (the device logs 100 % twice).
+- Messages: `NOTE:`, `WARNING:` and `Error:` are wrapped to the terminal (at most 140 columns) after a punctuation mark where possible, a long message has its label alone on a line and the text indented below it, only the label is colored, and a command to copy (`python ota.py ...`) stands on a line of its own, bold. Hand-broken lines in the sources are joined first.
+- `ota.py list` shows one line per device (`--details` for the revision and build ids).
+- `send`, `inspect`, `devkit --zip`, `add-device` and `build --official`: a file that is not a ZIP, usually a DevKit image (`.bin`), gets a message that says what it is and which command writes it to a board, instead of a traceback.
+- `send` asks for the uptime after the slot check, so a wrong slot or device no longer costs the wait first; the countdown shows in half-second steps; it says at once when the device has downloaded the ZIP.
 
 ### Changed
+- Device pages, the README and the device-report issue form: the log lines to look for are the ones `send` shows at the default level;
+  reports attach the `--log-file` file instead of the output of `send --watch`.
+- `send`: error handling. A device that has only just started refuses `Shelly.Update` with HTTP 500 `Not committed`; `send` now reads the uptime
+  (`Sys.GetStatus`) before the confirmation, says so and offers to wait. If the device refuses anyway it explains the refusal, offers to wait
+  (`--wait SEC`, default 120) and asks for a new confirmation before every further pass (at most three; `--yes` never retries). Refusals are
+  explained by their message, not by the code: `-109` is also used for the battery limit. Errors no longer repeat the long download URL.
+- `send`: the warning "update target slot could not be read" says whether no UDP datagram arrived (firewall, `--log-port`, `--host`) or the log
+  arrives without the slot line (usually a device that has just started). The probe waits 8 s instead of 4 s.
+- `send`: the log setting of the device is only put back if it could be read first (before, a failed read could overwrite it with an empty
+  value), and a refused restore is reported. Waiting for the download can be interrupted with Ctrl+C on Windows.
+- `ota.py` shows a message instead of a Python traceback for Ctrl+C (exit 130), closed input, a file that is not a ZIP and other file errors.
+  `rpc.RpcError` and `rpc.DeviceUnreachable` replace error-text matching in `restore`.
+- Power Strip example config (`configs/shelly-power-strip-gen4/`): README and YAML name this tool instead of "ShellyOTA", the build command is relative to the
+  repository root, and the slot-0 note links the Power Strip device page and "The app must land in slot 0" instead of a README section that is gone.
 - `Mini1G3` is confirmed on hardware (first report, #69): flash from Shelly 1.4.4 over OTA, ESPHome OTA afterwards. Relay, button, switch input and LED pins checked; the NTC calibration of the ESPHome device page reads high on that unit.
 - H&T Gen3 page: Shelly's update API answers per installed version, so a request without the `Shelly-Info` header showed no stable release (it
   looked like a removed one on 2026-10-10); `fetch HTG3 --from-version 1.4.4` gets the stable 2.0.1. The H&T Gen3 with display is reported to run with ESPHome.
 - README header: logo on the left, the tagline in the header.
+
 
 ## [0.4.0] - 2026-10-18
 

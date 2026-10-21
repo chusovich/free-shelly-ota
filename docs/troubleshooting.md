@@ -8,7 +8,7 @@ Device-specific problems are on the [device pages](devices/README.md); the slot 
 [Bootloader and slots](bootloader-and-slots.md).
 
 > [!TIP]
-> Always run `send` with `--watch`: the log answers most questions.
+> When something goes wrong, run `send` with `--log-file`: the file holds the whole device log and is what a bug report needs ([Log levels](commands.md#log-levels)).
 
 ## Sending and building
 
@@ -17,13 +17,42 @@ Device-specific problems are on the [device pages](devices/README.md); the slot 
 See [The app must land in slot 0](bootloader-and-slots.md#the-app-must-land-in-slot-0). Run `python ota.py restore <Device>`
 first, then `send` again.
 
+### `send` stops with `Not committed`
+
+```
+The device refused the update: "Not committed". ...
+```
+
+The stock firmware does not accept `Shelly.Update` for a while after a start (HTTP 500, `{"code":-109,"message":"Not committed"}`).
+Seen on the Multicolor Bulb Gen3 at an uptime of about 60 s; a device log showed a commit delay of about 90 s. These numbers are
+observations, not a documented Shelly value.
+
+`send` reads the uptime (`Sys.GetStatus`) before it asks you to confirm. If the device has been running for less than two minutes it
+says so and offers to wait. If the device refuses anyway, `send` explains it, offers to wait `--wait` seconds (default 120) and asks
+for a new confirmation before the next pass, at most three passes. With `--yes` it never waits or retries on its own: then keep the
+device powered for a few minutes and run `send` again. A restart resets the uptime, so avoid power-cycling the device in between.
+
+The same cause can be behind the warning "the update target slot could not be read": a device that has just started may not have
+written the slot line to its log yet.
+
+### Warning: the update target slot could not be read
+
+The warning has two forms, and they point to different causes:
+
+- **No UDP datagram arrived from the device:** the debug log does not reach this PC. Allow incoming UDP on port 9514 (on Windows
+  the Python program in Windows Defender Firewall), or check `--log-port` and `--host`.
+- **The device log arrives, but the slot line did not show up:** not a firewall problem. The device has probably just started;
+  wait a minute and send again.
+
+Without the slot the tool cannot tell whether the installer writes to slot 0. If it writes to slot 1 the old app starts again.
+
 ### `send` warns: this firmware does not reveal the update target slot
 
 The debug log works, but the line `Storing core dumps to ...` names something other than `app_N` (the Plug M Gen3 on stock
 1.8.99 logs `scratch`), so the slot check has nothing to read and cannot refuse in advance. This is not a firewall problem.
 Send with `--watch` and look for `Will write to slot N`: 0 is right; 1 means the old app starts again, see
 [The app must land in slot 0](bootloader-and-slots.md#the-app-must-land-in-slot-0). The other warning, `the update target slot
-could not be read (UDP log blocked? ...)`, means no such line arrived at all: see [Empty `--watch` log](#empty---watch-log).
+could not be read (UDP log blocked? ...)`, means no such line arrived at all: see [No progress, no device log](#no-progress-no-device-log).
 
 ### Build refuses to replace the bootloader
 
@@ -38,12 +67,20 @@ values and a `Fix:` line. Seen so far:
 | Partition table differs | Use the device's `partitions/<Profile>-stock.csv` and its `CONFIG_PARTITION_TABLE_OFFSET`. |
 | `.factory.bin` from another build | Build `APP.bin` and the factory image from the same compile. |
 
-### Empty `--watch` log
+### No progress, no device log
 
-The log arrives as UDP datagrams on port 9514 (`--log-port`). A firewall that blocks incoming UDP on that port (on Windows,
-the Python program in Windows Defender Firewall) leaves the log empty; the update itself still works. With the log you see
-the installer's `ota_progress` events (0 to 95 %, then `ota_success`) and, for a package with ESPHome's bootloader, the line
-`Boot: cur ... min ... update? 0/1`.
+`send` reads the device log (UDP datagrams on port 9514, `--log-port`) to show the progress and the device's own confirmation.
+A firewall that blocks incoming UDP on that port (on Windows, the Python program in Windows Defender Firewall) leaves the log
+empty; the update itself still works, and `send` then ends with "Done: the device downloaded the ZIP" instead of "Done: update
+installed, the device confirmed it". With the log you see the progress (0 to 100 %), the confirmation (`ota_success`) and, for a
+package with ESPHome's bootloader, the line `Boot: cur ... min ... update? 0/1`, shown as "The bootloader will be replaced" or
+"will NOT be replaced". To see the raw log use `--log-level raw`, to keep all of it `--log-file`.
+
+### `send` stops with an update error of the device
+
+If the device's log reports an update error (an `ota_error` event or any event with "error" in its message), `send` stops with
+the device's text and prints the last lines of the device log, whatever the log level. The event name `ota_error` is assumed, not
+seen yet: if a device fails differently, the `--log-file` file shows how. Please report it.
 
 ### The device does not download the ZIP
 
@@ -62,7 +99,9 @@ network to this PC, or put the PC in the same network for the update. If `send` 
 ### Battery devices (H&T Gen3)
 
 The stock updater refuses to start below 30 % battery: `Shelly.Update` answers HTTP 500 with
-`{"code":-109,"message":"OTA not allowed (Battery below 30 percent. )"}`. `send` shows the device's answer after "HTTP 500".
+`{"code":-109,"message":"OTA not allowed (Battery below 30 percent. )"}`. `send` shows the device's message and tells you to
+charge the battery; it does not retry. Charge or replace the battery first. The device must also be awake. The code `-109` is
+shared with `Not committed` (above), so `send` tells them apart by the message text.
 
 > [!NOTE]
 > Charge or replace the battery first. The device must also be awake.
@@ -71,7 +110,8 @@ The stock updater refuses to start below 30 % battery: `Shelly.Update` answers H
 
 ### ESPHome does not start after the update
 
-- Read the log of `send --watch`: did it say `Will write to slot 0`? If not, see [slot 0](bootloader-and-slots.md#the-app-must-land-in-slot-0).
+- Read the output of `send` (or the `--log-file` file): did it say `The installer writes to slot 0` (raw log: `Will write to slot 0`)? If not,
+  see [slot 0](bootloader-and-slots.md#the-app-must-land-in-slot-0).
 - A real **power cycle** may be needed after the first boot (the cause is not understood; some state of the stock firmware
   seems to survive a soft reset). Disconnect the device from mains, wait at least 30 seconds so the capacitors can discharge
   (a rule of thumb, not measured), then reconnect. Do not open a device that is connected to mains. On the Plug M Gen3,
@@ -138,6 +178,10 @@ plug's eFuses were not read back with `espefuse summary`).
 A Plus Uni (classic ESP32, stock 2.0.1) logged `FW signatures: want 07 got 00` and then, twice, `BURN BLOCK3` followed by
 `BURN BLOCK3 - OK (all write block bits are set)`: no error this time. Whether the eFuse changed was not checked (no
 `espefuse summary` before and after). On the Plus Plug S unit that was brought back over UART, `BLOCK3` had a byte `0x07` set.
+
+The Multicolor Bulb Gen3 logged the same (`EFUSE write error bit[0]` and `bit[1]`, `Bits are not empty`) in an update on 2026-10-15
+and the device confirmed the update. At the default log level `send` shows these lines as one note ("The installer logs refused
+eFuse writes"); the full lines are in `--log-level raw` and in the `--log-file` file.
 
 ## Safety
 

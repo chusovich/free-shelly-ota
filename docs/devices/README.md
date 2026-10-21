@@ -84,7 +84,7 @@ The pages follow the same layout, so you can jump to the part you need:
 3. **ESPHome config:** the `esp32:` and `ota:` block to copy, with the partition CSV from `partitions/`.
 4. **Pins:** what was read from the stock firmware or taken from a working config (not on every page).
 5. **Flash it:** the `fetch`, `build`, `send` commands for this profile as numbered steps, including `--dry-run`.
-6. **What to expect:** the log lines of `send --watch`, in order, as a table.
+6. **What to expect:** the lines `send` shows at the default log level, in order, as a table.
 7. **Notes for this device:** things that only apply to this model.
 8. **Way back:** how to get Shelly OS back, with `restore` or over UART.
 

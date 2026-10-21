@@ -76,8 +76,8 @@ body:
   - type: textarea
     id: log
     attributes:
-      label: Output of `send --watch 120`
-      description: "Paste the whole output, also when everything worked. The lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot` matter most."
+      label: Log file of `send ... --log-file`
+      description: "Paste the whole file that `--log-file` writes (logs/<name>.send.log), also when everything worked. The lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot` matter most."
       render: shell
     validations:
       required: true

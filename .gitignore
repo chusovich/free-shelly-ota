@@ -1,6 +1,7 @@
 # Shelly firmware and generated packages: downloaded/built locally, never committed
 fw/
 out/
+logs/
 *.bin
 *.img
 

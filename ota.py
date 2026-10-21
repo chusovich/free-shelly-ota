@@ -13,11 +13,16 @@ import os
 import shutil
 import sys
 import tempfile
+import zipfile
 import textwrap
+import zipfile
 from pathlib import Path
 
-from shelly_ota import (MODULE_DIR, buildinfo, builder, devicegen, devkit, firmware, lint, logwatch, profile, secrets_check,
-                        sender, ui)
+from shelly_ota import (MODULE_DIR, buildinfo, builder, devicegen, devkit, firmware, lint, logview, logwatch, profile, rpc,
+                        secrets_check, sender, ui)
+from shelly_ota.logview import Level
+
+LOG_FILE_AUTO = "<auto>"    # --log-file without a path
 
 DESCRIPTION = ("Pack your ESPHome app image into an official-style Shelly OTA ZIP (Gen2 ESP32, Gen3 ESP32-C3, Gen4 ESP32-C6) "
                "and send it to the device.")
@@ -74,13 +79,31 @@ PC_GROUP = "this PC"
 
 
 def cmd_list(args) -> None:
-    for name in profile.list_devices():
-        p = profile.load_profile(name)
-        ui.say(f"{name:12s} {p.display_name:24s} app size=0x{p.app_slot_size:x}  profile rev {p.revision}")
-        for ver in firmware.list_versions(name):
-            meta_path = firmware.FW_DIR / name / ver / "meta.json"
-            build_id = json.loads(meta_path.read_text(encoding="utf-8")).get("build_id") if meta_path.is_file() else None
-            ui.say(f"    fw {ver}  {build_id or ''}")
+    names = profile.list_devices()
+    profiles = {name: profile.load_profile(name) for name in names}
+    name_w = max((len(n) for n in names), default=0)
+    if args.details:
+        title_w = max((len(p.display_name) for p in profiles.values()), default=0)
+        for name in names:
+            p = profiles[name]
+            ui.say(f"{name:{name_w}s}  {p.display_name:{title_w}s}  app size=0x{p.app_slot_size:x}  profile rev {p.revision}")
+            for ver in firmware.list_versions(name):
+                meta_path = firmware.FW_DIR / name / ver / "meta.json"
+                build_id = json.loads(meta_path.read_text(encoding="utf-8")).get("build_id") if meta_path.is_file() else None
+                ui.say(f"    fw {ver}  {build_id or ''}")
+        return
+    # one line per device; the device title is shortened so the line fits the terminal
+    width = shutil.get_terminal_size((100, 24)).columns
+    rows = [(name, profiles[name].display_name, f"0x{profiles[name].app_slot_size:x}",
+             ", ".join(firmware.list_versions(name)) or "-") for name in names]
+    slot_w = max((len(r[2]) for r in rows), default=0)
+    fw_w = max((len(r[3]) for r in rows), default=0)
+    title_w = max(10, min(max((len(r[1]) for r in rows), default=0), width - name_w - slot_w - fw_w - 6))
+    for name, title, slot, fws in rows:
+        if len(title) > title_w:
+            title = title[:title_w - 2] + ".."
+        ui.say(f"{name:{name_w}s}  {title:{title_w}s}  {slot:{slot_w}s}  {fws}")
+    ui.say("(app slot size and cached firmware versions; --details shows revision and build ids)")
 
 
 def cmd_colors(args) -> None:
@@ -101,8 +124,10 @@ def cmd_profiles(args) -> None:
     if args.update_lock:
         lock = profile.write_lock()
         ui.say(f"Wrote devices/{profile.LOCK_FILE} ({len(lock)} profiles)")
-    for name in profile.list_devices():
-        ui.say(f"{name:12s} revision {profile.load_profile(name).revision:<3d} content {profile.content_hash(name)}")
+    names = profile.list_devices()
+    name_w = max((len(n) for n in names), default=0)
+    for name in names:
+        ui.say(f"{name:{name_w}s}  revision {profile.load_profile(name).revision:<3d} content {profile.content_hash(name)}")
     problems = profile.check_lock()
     for problem in problems:
         ui.say(f"WARNING: {problem}")
@@ -208,8 +233,8 @@ def cmd_build(args) -> None:
     if args.dry_run:
         # Build in a scratch directory, so that an existing package (or its .sha256 and .report.json) stays untouched.
         builder.check_output_is_no_input(output, official, args.app)
-        with tempfile.TemporaryDirectory(prefix="free-shelly-ota-dryrun-") as scratch:
-            result = run_build(Path(scratch) / output.name)
+        with tempfile.TemporaryDirectory(prefix="free-shelly-ota-dryrun-") as dryrun:
+            result = run_build(Path(dryrun) / output.name)
         ui.say(f"DRY RUN, nothing written (a real build would write {output})")
         if would_replace:
             ui.say(f"  NOTE: {output.name} already exists, so a real build would stop here. "
@@ -228,26 +253,55 @@ def cmd_build(args) -> None:
         ui.say(f"  WARNING: {output} is inside a git work tree and not ignored there; git add would pick up this package.")
 
 
-def _send(args, zip_path: Path, restoring: bool = False) -> None:
+def _level(args, default: Level) -> Level:
+    """--log-level wins over -q, which wins over -v / -vv."""
+    name = getattr(args, "log_level", None)
+    if name:
+        return Level[name]
+    if getattr(args, "quiet", False):
+        return Level.quiet
+    verbose = getattr(args, "verbose", 0) or 0
+    return default if verbose == 0 else Level.verbose if verbose == 1 else Level.debug
+
+
+def _open_logfile(args, level: Level, default_name: str) -> logview.LogFile | None:
+    """--log-file: the whole run in a file, whatever the console level. Without a path: logs/<default_name>."""
+    value = getattr(args, "log_file", None)
+    if value is None:
+        return None
+    path = MODULE_DIR / "logs" / default_name if value == LOG_FILE_AUTO else Path(value)
+    logfile = logview.LogFile(path)
+    logfile.write("tool", f"free-shelly-ota {buildinfo.current().short()}")
+    if level >= Level.normal:
+        ui.say(f"Writing the full log to {path}")
+    return logfile
+
+
+def _send(args, zip_path: Path, log_name: str | None = None, restoring: bool = False) -> None:
     p = profile.load_profile(args.device)
-    sender.send(p, zip_path, args.ip, host=args.host, port=args.port, timeout=args.timeout,
-                assume_yes=args.yes, dry_run=args.dry_run, force=args.force, user=args.user,
-                password=args.password, watch=args.watch, log_port=args.log_port, ignore_slot=args.ignore_slot,
-                restoring=restoring)
+    level = _level(args, Level.normal)
+    logfile = _open_logfile(args, level, log_name or f"{zip_path.stem}.send.log")
+    try:
+        sender.send(p, zip_path, args.ip, host=args.host, port=args.port, timeout=args.timeout,
+                    assume_yes=args.yes, dry_run=args.dry_run, force=args.force, user=args.user,
+                    password=args.password, watch=args.watch, log_port=args.log_port, ignore_slot=args.ignore_slot,
+                    wait=getattr(args, "wait", sender.DEFAULT_WAIT), restoring=restoring, level=level, logfile=logfile)
+    finally:
+        if logfile:
+            logfile.close()
 
 
 def cmd_send(args) -> None:
     _send(args, args.zip)
 
 
-RESTORE_NOTE = """NOTE: restore sends the cached official package. It only works while the Shelly firmware is still running (only it
-      understands Shelly.Update); a device that already runs ESPHome does not answer, and the way back is then UART with a
-      flash backup.
-      The official package may reset NVS and otadata, so Wi-Fi credentials and settings can be lost (a PM Mini Gen3
-      kept them going from 2.0.1 to 2.0.1; do not count on it).
-      If ESPHome's bootloader is installed, the installer puts Shelly's back (seen once, on the Plus Plug S:
-      'Boot: cur 00000000 ... update? 1'). It also moves the stock firmware to the other slot, which is what the next send of an
-      ESPHome package needs when send reports that the installer would write to slot 1."""
+RESTORE_NOTE = """NOTE: restore sends the cached official package. It only works while the Shelly firmware is still running. A device
+      that already runs ESPHome does not answer; the way back is then UART, with a flash backup.
+
+NOTE: The package may reset NVS and otadata, so Wi-Fi credentials and settings can be lost.
+
+NOTE: If ESPHome's bootloader is installed, the installer writes Shelly's bootloader back and moves the stock firmware to
+      the other slot. That is also what `send` needs when it reports that the installer would write to slot 1."""
 
 
 def cmd_restore(args) -> None:
@@ -257,17 +311,22 @@ def cmd_restore(args) -> None:
     ui.say(f"Restoring the official firmware from {zip_path}")
     ui.say(RESTORE_NOTE)
     try:
-        _send(args, zip_path, restoring=True)
-    except builder.OtaError as e:
-        if str(e).startswith("No answer from the Shelly"):
-            raise builder.OtaError(f"{e}\n  Is the Shelly firmware still running? A device with ESPHome on it "
-                                   f"cannot be restored this way; use UART (see the note above).") from e
-        raise
+        _send(args, zip_path, f"{args.device}.restore.log", restoring=True)
+    except rpc.DeviceUnreachable as e:
+        raise builder.OtaError(f"{e}\n  Is the Shelly firmware still running? A device with ESPHome on it "
+                               f"cannot be restored this way; use UART (see the note above).") from e
 
 
 def cmd_log(args) -> None:
+    session = logview.Session(level=_level(args, Level.debug), out=ui.say)
+    if args.replay:     # a saved log (from --log-file, or the output of --log-level raw), no device needed
+        logview.replay(args.replay, session)
+        session.summary()
+        return
     host = args.host or sender.local_ip_for(args.ip)
-    logwatch.watch(args.ip, host, args.log_port, args.seconds, user=args.user, password=args.password)
+    logwatch.watch(args.ip, host, args.log_port, args.seconds, sink=session.device, user=args.user,
+                   password=args.password)
+    session.summary()
 
 
 def cmd_clean(args) -> None:
@@ -307,6 +366,18 @@ def device_options() -> argparse.ArgumentParser:
     return o
 
 
+def level_options() -> argparse.ArgumentParser:
+    """How much is shown: the tool's own messages and the device log."""
+    o = argparse.ArgumentParser(add_help=False)
+    o.add_argument("--log-level", choices=logview.LEVEL_NAMES, metavar="LEVEL",
+                   help="quiet (errors and the result), normal (+ warnings, key lines, progress), verbose (+ notes, every step "
+                        "of the update), debug (every device log entry), raw (the device log as it arrives); default: "
+                        "normal, for 'log' debug")
+    o.add_argument("-q", "--quiet", action="store_true", help="same as --log-level quiet")
+    o.add_argument("-v", "--verbose", action="count", default=0, help="-v is --log-level verbose, -vv is debug")
+    return o
+
+
 def send_options() -> argparse.ArgumentParser:
     o = argparse.ArgumentParser(add_help=False)
     g = o.add_argument_group(PC_GROUP)
@@ -319,8 +390,15 @@ def send_options() -> argparse.ArgumentParser:
     g.add_argument("--ignore-slot", action="store_true",
                    help="send even if the installer would write to a slot that ESPHome's bootloader does not start")
     g.add_argument("--watch", type=float, default=0, metavar="SEC",
-                   help="show the device log, and keep listening SEC seconds after the download")
+                   help="after the download keep listening up to SEC seconds for the device to confirm the update "
+                        "(default: 30 s if the device log shows an update)")
+    g.add_argument("--log-file", nargs="?", const=LOG_FILE_AUTO, metavar="PATH",
+                   help="write the whole run (every message, every device log entry) to a file, whatever the log level; "
+                        "without a path to logs/<name>.send.log. Put it after DEVICE and ZIP, or use --log-file=PATH")
     g.add_argument("--timeout", type=float, default=300, metavar="SEC", help="wait for the download (default: %(default)s)")
+    g.add_argument("--wait", type=float, default=sender.DEFAULT_WAIT, metavar="SEC",
+                   help="if the device refuses the update because it has only just started ('Not committed'): wait SEC "
+                        "seconds, then ask again before the next try (default: %(default)s)")
     return o
 
 
@@ -334,7 +412,7 @@ class _VersionAction(argparse.Action):
 
 
 def _width() -> int:
-    return max(60, min(shutil.get_terminal_size((100, 24)).columns - 2, 110))
+    return ui.width()
 
 
 def _rows(rows, indent: int, width: int, first_col: int) -> list[str]:
@@ -394,7 +472,7 @@ def build_parser() -> argparse.ArgumentParser:
                          "Put it before the command.")
     sub = ap.add_subparsers(dest="cmd", required=True, title="commands", metavar="<command>", parser_class=argparse.ArgumentParser)
     dev_help = "profile name (python ota.py list shows them)"
-    dev, snd = device_options(), send_options()
+    dev, snd, lvl = device_options(), send_options(), level_options()
 
     f = _command(sub, "fetch", usage="ota.py fetch DEVICE [options]", epilog=_epilog("fetch DuoBulbG3 --insecure", "fetch"))
     f.add_argument("device", metavar="DEVICE", help=dev_help)
@@ -481,23 +559,25 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--from-version", metavar="VER", help="with --download: ask the update API as a device running VER would")
     b.set_defaults(func=cmd_build)
 
-    t = _command(sub, "send", usage="ota.py send DEVICE ZIP [options]", parents=[dev, snd],
+    t = _command(sub, "send", usage="ota.py send DEVICE ZIP [options]", parents=[dev, snd, lvl],
                  epilog=_epilog("send DuoBulbG3 out/DuoBulbG3-app-<date>.zip --ip 192.168.1.50 --dry-run", "send"))
     t.add_argument("device", metavar="DEVICE", help=dev_help)
     t.add_argument("zip", type=Path, metavar="ZIP", help="the package made by build")
     t.set_defaults(func=cmd_send)
 
-    r = _command(sub, "restore", usage="ota.py restore DEVICE [options]", parents=[dev, snd],
+    r = _command(sub, "restore", usage="ota.py restore DEVICE [options]", parents=[dev, snd, lvl],
                  epilog=_epilog("restore DuoBulbG3 --ip 192.168.1.50", "restore", RESTORE_HELP))
     r.add_argument("device", metavar="DEVICE", help=dev_help)
     g = r.add_argument_group("firmware")
     g.add_argument("--version", metavar="VER", help="cached version (default: the newest stable one)")
     r.set_defaults(func=cmd_restore)
 
-    lg = _command(sub, "log", usage="ota.py log [options]", parents=[dev],
+    lg = _command(sub, "log", usage="ota.py log [options]", parents=[dev, lvl],
                   epilog=_epilog("log --ip 192.168.1.50 --seconds 30", "log"))
     g = lg.add_argument_group("what to do")
     g.add_argument("--seconds", type=float, metavar="SEC", help="stop after SEC seconds (default: Ctrl+C)")
+    g.add_argument("--replay", type=Path, metavar="FILE",
+                   help="no device: show a saved log (a --log-file file, or the output of --log-level raw) at the chosen level")
     lg.set_defaults(func=cmd_log)
 
     i = _command(sub, "inspect", usage="ota.py inspect ZIP [--device DEVICE]")
@@ -505,7 +585,9 @@ def build_parser() -> argparse.ArgumentParser:
     i.add_argument("--device", metavar="DEVICE", help="also show how full the app slot is")
     i.set_defaults(func=cmd_inspect)
 
-    _command(sub, "list").set_defaults(func=cmd_list)
+    ls = _command(sub, "list", usage="ota.py list [--details]")
+    ls.add_argument("--details", "--all", action="store_true", help="two lines per device: profile revision and firmware build ids")
+    ls.set_defaults(func=cmd_list)
 
     pr = _command(sub, "profiles")
     pr.add_argument("--update-lock", action="store_true",
@@ -524,12 +606,20 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> None:
     args = build_parser().parse_args()
     ui.configure(args.color)
-    if not (args.func is cmd_partition_csv and not args.output):   # that command prints data to stdout
+    quiet = getattr(args, "quiet", False) or getattr(args, "log_level", None) == "quiet"
+    if not quiet and not (args.func is cmd_partition_csv and not args.output):   # that command prints data to stdout
         ui.say(f"free-shelly-ota {buildinfo.current().short()}")
     try:
         args.func(args)
-    except (builder.OtaError, profile.ProfileError, FileNotFoundError) as e:
+    except KeyboardInterrupt:
+        print("Interrupted.", file=sys.stderr)
+        sys.exit(130)
+    except EOFError:
+        sys.exit(ui.error("No answer: the input was closed."))
+    except (builder.OtaError, profile.ProfileError, zipfile.BadZipFile, json.JSONDecodeError, OSError) as e:
         sys.exit(ui.error(e))
+    except KeyboardInterrupt:
+        sys.exit(ui.error("Interrupted (Ctrl+C)."))
 
 
 if __name__ == "__main__":

@@ -1,16 +1,13 @@
-<div align="left">       
 <h1 align="left">
   <img src="docs/assets/logo.png" width="80" align="left" alt="Free-Shelly OTA logo">
   Free-Shelly OTA<br>
-  <sup><sub><b>Pack your own ESPHome firmware into an official-style Shelly OTA package — and send it to the device.</b></sub></sup>
+  <sup><sup><sub>Pack your own ESPHome firmware into an official-style Shelly OTA package — and send it to the device.</sub></sup></sup>
 </h1>
 
 [![Status][status-shield]][status-url]
 [![Version][version-shield]][version-url]
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
-</div>
-
 
 [Supported devices](#supported-devices) · [Quick start](#quick-start) · [Documentation](#documentation) · [Request a device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml)
 
@@ -142,8 +139,8 @@ python ota.py fetch PlugMG3 --insecure
 # put your app into it; the ZIP goes to out/
 python ota.py build PlugMG3 app.ota.bin --esphome-factory app.factory.bin --esphome-yaml my-plug.yaml
 
-# send it to the device and show its log for 60 s
-python ota.py send PlugMG3 out/PlugMG3-app-<date>.zip --ip <device IP> --watch 60
+# send it to the device; progress and the device's confirmation are shown
+python ota.py send PlugMG3 out/PlugMG3-app-<date>.zip --ip <device IP>
 ```
 
 - `PlugMG3` is the example; use your device's profile from the table above.
@@ -169,7 +166,7 @@ hardware test: nobody can say a device works until someone has flashed one.
   (`--parent <base device>` for a variant, e.g. the Zigbee version). What a profile contains and what to do next:
   [Device profiles](devices/README.md#adding-a-profile), [`add-device`](docs/commands.md#add-device).
 - **Tell us how it went,** also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml)
-  (choose *Other* for a profile you made yourself).
+  (choose *Other* for a profile you made yourself) and attach the file `send --log-file` writes.
 
 > [!CAUTION]
 > Please do not attach flash dumps or built ZIPs to an issue: they can contain your Wi-Fi password and per-device secrets.
@@ -199,6 +196,7 @@ Almost everything this tool knows was found out by other people. Please visit an
 | [tasmota/mgos32-to-tasmota32](https://github.com/tasmota/mgos32-to-tasmota32) | GPL-3.0 | Converting a Shelly OTA ZIP so the stock updater accepts third-party firmware |
 | [inventor7777/ESPHome-Shelly-Plus-Plug-US](https://github.com/inventor7777/ESPHome-Shelly-Plus-Plug-US) | MIT | Replacing only the app image in Shelly's ZIP; the partition table at `0x10000`; the follow-up bootloader step |
 | [automatous-io/shelly-gen4-esphome](https://github.com/automatous-io/shelly-gen4-esphome) | Apache-2.0 | Gen4 (ESP32-C6) partition layout, the A/B slot rule, install documentation |
+| [jjanssen95](https://github.com/jjanssen95), [815rx1](https://github.com/815rx1), [yasdfgr](https://github.com/yasdfgr) | – | Device reports with logs: Mini 1 Gen3, Plug M Gen3 (the 2.1.0 package, loader 1.0.2) and Plus Uni (loader 1.0.3) |
 | [imsandli](https://github.com/imsandli) | – | The first external device report (PM Mini Gen3): a successful OTA run with logs, the BL0942 RX pull-up and voltage calibration, the idea for the reachability check |
 | Shelly / Allterco Robotics | – | The official OTA packages and update API (not redistributed here) |
 | [ESPHome](https://esphome.io), Espressif (esptool, ESP-IDF) | – | The firmware framework and tooling everything builds on |
