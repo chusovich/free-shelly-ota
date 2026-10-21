@@ -5,6 +5,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Recovery over UART: a section "Build your own UART adapter" (`docs/recovery-uart.md`). An ESP32 dev board with a USB-UART chip and one wire from `EN` to `GND` is enough, no FTDI stick needed:
+  parts, wiring (the dev board's `RX`/`TX` are not crossed), the UART pads of the ESP32, ESP32-C3 and ESP32-C6, a check of the adapter, how to enter download mode, a table of
+  typical errors, and a short note for a plain USB-to-UART module. The wiring is general ESP practice; this project did not re-run it.
+
 ### Changed
 - `Mini1G3` is confirmed on hardware (first report, #69): flash from Shelly 1.4.4 over OTA, ESPHome OTA afterwards. Relay, button, switch input and LED pins checked; the NTC calibration of the ESPHome device page reads high on that unit.
 
