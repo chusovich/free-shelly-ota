@@ -1,11 +1,18 @@
-<h1 align="left"><img src="docs/assets/logo.png" width="80" align="middle" alt="Free-Shelly OTA logo"> Free-Shelly OTA</h1>
-
-**Pack your own ESPHome firmware into an official-style Shelly OTA package — and send it to the device.**
+<div align="left">       
+<span>
+<img src="docs/assets/logo.png" width="80" align="left" alt="Free-Shelly OTA logo">
+  <h1 style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">  
+     Free-Shelly OTA    
+  </h1>  
+  <b>Pack your own ESPHome firmware into an official-style Shelly OTA package — and send it to the device.</b> 
+</span>
 
 [![Status][status-shield]][status-url]
 [![Version][version-shield]][version-url]
 [![Issues][issues-shield]][issues-url]
 [![License][license-shield]][license-url]
+</div>
+
 
 [Supported devices](#supported-devices) · [Quick start](#quick-start) · [Documentation](#documentation) · [Request a device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml)
 
@@ -82,12 +89,12 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | 2PM Gen4 | [`S2PMG4`](docs/devices/S2PMG4.md) | ESP32&#8209;C6 | 🧪 | |
 | 1L Gen4 | [`S1LG4`](docs/devices/S1LG4.md) | ESP32&#8209;C6 | 🧪 | |
 | 2L Gen4 | [`S2LG4`](docs/devices/S2LG4.md) | ESP32&#8209;C6 | 🧪 | |
-| i4 Gen4 | [`I4G4`](docs/devices/I4G4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
-| Dimmer Gen4 | [`DimmerG4`](docs/devices/DimmerG4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
-| Dimmer 0/1-10V PM Gen4 | [`Dimmer0110VPMG4`](docs/devices/Dimmer0110VPMG4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
+| i4 Gen4 | [`I4G4`](docs/devices/I4G4.md) | ESP32&#8209;C6 | 🔬 |  |
+| Dimmer Gen4 | [`DimmerG4`](docs/devices/DimmerG4.md) | ESP32&#8209;C6 | 🔬 |  |
+| Dimmer 0/1-10V PM Gen4 | [`Dimmer0110VPMG4`](docs/devices/Dimmer0110VPMG4.md) | ESP32&#8209;C6 | 🔬 |  |
 | EM Gen4 | [`EMG4`](docs/devices/EMG4.md) | ESP32&#8209;C6 | 🧪 | |
-| 1 Mini Gen4 | [`Mini1G4`](docs/devices/Mini1G4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
-| EM Mini Gen4 | [`MiniEMG4`](docs/devices/MiniEMG4.md) | ESP32&#8209;C6 | 🔬 | OTA played through on a dev board (DevKit image), not on the real device |
+| 1 Mini Gen4 | [`Mini1G4`](docs/devices/Mini1G4.md) | ESP32&#8209;C6 | 🔬 |  |
+| EM Mini Gen4 | [`MiniEMG4`](docs/devices/MiniEMG4.md) | ESP32&#8209;C6 | 🔬 |  |
 | Plug US Gen4 | [`PlugUSG4`](docs/devices/PlugUSG4.md) | ESP32&#8209;C6 | 🧪 | |
 | Presence Gen4 | [`PresenceG4`](docs/devices/PresenceG4.md) | ESP32&#8209;C6 | 🧪 | |
 
