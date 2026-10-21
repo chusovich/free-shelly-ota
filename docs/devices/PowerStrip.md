@@ -106,10 +106,10 @@ esphome:
    python ota.py send PowerStrip out/PowerStrip-app-<date>.zip --ip <device IP> --dry-run
    ```
 
-5. **Flash it** and watch the log:
+5. **Flash it** (the log goes to a file with `--log-file`):
 
    ```
-   python ota.py send PowerStrip out/PowerStrip-app-<date>.zip --ip <device IP> --watch 120
+   python ota.py send PowerStrip out/PowerStrip-app-<date>.zip --ip <device IP> --log-file
    ```
 
 `app.ota.bin` and `app.factory.bin` are the two files ESPHome compiles. `--dry-run` only checks the device and, for this
@@ -117,13 +117,13 @@ package, reads the update target slot. Command reference: [Commands](../commands
 
 ## What to expect
 
-In the `--watch` log look for these lines, in this order:
+`send` shows these lines at the default log level, in this order:
 
 | # | Log line | Meaning |
 | --- | --- | --- |
 | 1 | `Update target slot: 0 ...` | The slot check of `send`. Anything else: run `python ota.py restore PowerStrip` first |
-| 2 | `Boot: cur ... min ... update? 1` | The installer will write ESPHome's bootloader. `update? 0` means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
-| 3 | `ota_progress` up to 95 %, then `ota_success` | The device restarts into ESPHome |
+| 2 | `Device: The bootloader will be replaced ...` (raw log: `Boot: cur ... min ... update? 1`) | The installer will write ESPHome's bootloader. `WARNING: ESPHome's bootloader was NOT written` (`update? 0`) means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
+| 3 | The progress (`Update: ... %`, one line that updates in place) up to 100 %, then `Done: update installed, the device confirmed it` | The device restarts into ESPHome |
 
 > [!NOTE]
 > The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.

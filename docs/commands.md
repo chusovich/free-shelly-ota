@@ -2,7 +2,7 @@
 
 [← README](../README.md) · [Documentation](README.md) · [Device pages](devices/README.md) · [Troubleshooting](troubleshooting.md)
 
-[📥 fetch](#fetch) · [🔨 build](#build) · [📤 send](#send) · [↩️ restore](#restore) · [➕ add-device](#add-device) · [📋 partition-csv](#partition-csv) · [🔍 inspect](#inspect) · [🧪 devkit](#devkit) · [🧹 clean](#clean) · [📜 log](#log) · [🎨 Colors](#colors)
+[📥 fetch](#fetch) · [🔨 build](#build) · [📤 send](#send) · [↩️ restore](#restore) · [➕ add-device](#add-device) · [📋 partition-csv](#partition-csv) · [🔍 inspect](#inspect) · [🧪 devkit](#devkit) · [📃 list](#list) · [🧹 clean](#clean) · [📜 log](#log) · [🎨 Colors](#colors)
 
 The usual workflow is three steps:
 
@@ -69,6 +69,7 @@ file.
 | `--esphome-yaml YAML` | no | none | Also check the partition offset and `partitions:` CSV of this config, and run the [credential check](credential-check.md) |
 | `--esphome-factory FACTORY.bin` | no | none | Also ship ESPHome's bootloader and a clean `otadata` taken from this factory image (same build as `APP.bin`). See [Bootloader and slots](bootloader-and-slots.md) |
 | `--boot-min-version VER` | no | profile value, else one patch above Shelly's | Only with `--esphome-factory`: the bootloader `min_version` in the manifest. The installer writes only a newer bootloader. `keep` leaves it, which probably makes the installer skip the bootloader |
+| `--standalone` | no | off | Build without Shelly's ZIP, from the facts in the profile's `standalone:` section (needs `--esphome-factory`; only H&T Gen3 so far). The package holds no Shelly file: bootloader, `otadata` and partition table are ESPHome's and the filesystem image is an erased one (all 0xFF; the installer aborts with "Missing a part" without an `fs` image), so `fs_0` is wiped. Untested on a device |
 | `--secrets FILE` | no | `secrets.yaml` next to `--esphome-yaml` | Values to look for in the image |
 | `--fail-on-secrets` | no | off | Stop (no output) if the image contains credentials. Use it for packages meant to be shared |
 | `--tag LABEL` | no | none | Own label for file name and report; the manifest stays untouched |
@@ -114,7 +115,9 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 | --- | --- | --- | --- |
 | `DEVICE`, `ZIP` | yes | | Profile name and the ZIP to send |
 | `--ip IP` | no | `192.168.33.1` | Address of the Shelly |
-| `--watch SEC` | no | off | Show the device's debug log (UDP, switched on over RPC and restored afterwards) and keep listening SEC seconds after the download. Warns if the log says `update? 0` for a package that replaces the bootloader |
+| `--log-level LEVEL`, `-q`, `-v` | no | `normal` | How much is shown, see [Log levels](#log-levels) |
+| `--log-file [PATH]` | no | off | Write the whole run to a file, whatever the level (without a path: `logs/<zip name>.send.log`) |
+| `--watch SEC` | no | 30 s if an update is seen | After the download wait up to SEC seconds for the device to confirm the update |
 | `--user USER` / `--password PW` | no | `admin` / none | Login, if the device has a password (digest auth) |
 | `--yes` | no | off | Do not ask before flashing |
 | `--dry-run` | no | off | Check the device (also whether it can reach this PC), send nothing |
@@ -130,8 +133,34 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 | `--port PORT` | `8000` | Local web server port |
 | `--log-port PORT` | `9514` | UDP port for the debug log |
 | `--timeout SEC` | `300` | How long to wait for the device to download the ZIP |
+| `--wait SEC` | `120` | If the device refuses the update because it has only just started (`Not committed`): wait SEC seconds, then ask again before the next try |
 
 </details>
+
+A device that has been running for less than two minutes refuses `Shelly.Update` with `Not committed`. `send` reads the uptime
+(`Sys.GetStatus`) first, says so and offers to wait. If the device refuses anyway, `send` explains it, offers to wait `--wait`
+seconds and asks for a new confirmation before the next pass (at most three passes). With `--yes` it never waits or retries on its own.
+See [Troubleshooting](troubleshooting.md#send-stops-with-not-committed).
+
+### Log levels
+
+While the update runs, `send` reads the device's debug log (UDP, switched on over RPC and put back afterwards). That gives the
+progress and the device's own confirmation, without `--watch`. `--log-level` (or `-q`, `-v`, `-vv`) chooses how much of the output
+is shown:
+
+| Level | Shown |
+| --- | --- |
+| `quiet` (`-q`) | Errors, questions and the final result. After a failure the last lines of the device log are printed anyway. |
+| `normal` (default) | + warnings, the key lines (target slot, bootloader decision, update started ...) and the progress: one line that updates in place, or one line per 10 % when the output is not a terminal |
+| `verbose` (`-v`) | + notes and explanations, every step of the update, and how many entries were hidden |
+| `debug` (`-vv`) | every entry of the device log on its own line, the RPC requests of other clients included (`RPC Shelly.GetStatus <- 192.168.1.10:47470`) |
+| `raw` | like `debug`, and the device log exactly as it arrives (several entries glued together in one line) |
+
+`--log-file` writes everything to a file, whatever the level on the screen: each message and each device log entry on its own line.
+It is the file for a bug report. Without a path it is `logs/<zip name>.send.log` (`logs/<device>.restore.log` for `restore`) and
+the next run overwrites it; give a path to keep it. Put the option after DEVICE and ZIP, or write `--log-file=PATH`, otherwise it
+takes the next word as its path. Without a log that reaches this PC (a firewall) the progress and the confirmation are missing and
+`send` ends with "Done: the device downloaded the ZIP" ([Troubleshooting](troubleshooting.md#no-progress-no-device-log)).
 
 ## restore
 
@@ -187,6 +216,10 @@ Writes a flash image of a package, to play the whole update through on a dev boa
 > [!WARNING]
 > The image overwrites the whole flash of a board and holds Shelly's firmware. Use a spare board, not a device, and do not share the file.
 
+## list
+
+`python ota.py list` shows one line per device: profile, name, app slot size and the cached official firmware versions. The device name is shortened to fit the terminal. `--details` (or `--all`) shows two lines per device with the profile revision and the build id of each cached firmware.
+
 ## clean
 
 Deletes old ZIPs in `out/`. `--keep N` keeps the newest N (default 5); nothing is deleted without `--yes`.
@@ -194,8 +227,11 @@ Deletes old ZIPs in `out/`. `--keep N` keeps the newest N (default 5); nothing i
 ## log
 
 Shows the live debug log of a Shelly without sending anything:
-`python ota.py log --ip 192.168.1.50 --seconds 30`. Options: `--ip`, `--user`, `--password`, `--host`, `--log-port` and
-`--seconds` (default: until Ctrl+C).
+`python ota.py log --ip 192.168.1.50 --seconds 30`. Options: `--ip`, `--user`, `--password`, `--host`, `--log-port`,
+`--seconds` (default: until Ctrl+C) and `--log-level` / `-q` / `-v` (default `debug`, see [Log levels](#log-levels)).
+
+`--replay FILE` shows a saved log without a device: a `--log-file` file, or the output of `--log-level raw`, at the level you
+choose: `python ota.py log --replay logs/x.send.log --log-level normal`.
 
 ---
 

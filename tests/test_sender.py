@@ -5,7 +5,9 @@ import json
 import shutil
 import sys
 import tempfile
+import _thread
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.parse
@@ -23,8 +25,9 @@ class FakeShelly:
     reach: what HTTP.GET does. None: the method does not exist (404). "ok": fetches the url and reports its status.
     "blocked": cannot connect; the reply text is modelled on a device report, its HTTP status is a guess."""
 
-    def __init__(self, app="DuoBulbG3", auth_en=False, reach=None):
+    def __init__(self, app="DuoBulbG3", auth_en=False, reach=None, download=True, update_error=None):
         self.app, self.auth_en, self.reach = app, auth_en, reach
+        self.download, self.update_error = download, update_error
         self.updates = []
         self.fetched = []
         outer = self
@@ -35,10 +38,18 @@ class FakeShelly:
                 if u.path == "/rpc/Shelly.GetDeviceInfo":
                     body = json.dumps({"app": outer.app, "model": "X", "ver": "2.0.1", "id": "fake",
                                        "auth_en": outer.auth_en}).encode()
+                elif u.path == "/rpc/Shelly.Update" and outer.update_error:
+                    body = json.dumps({"code": -109, "message": outer.update_error}).encode()
+                    self.send_response(500)
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
                 elif u.path == "/rpc/Shelly.Update":
                     url = urllib.parse.parse_qs(u.query)["url"][0]
                     outer.updates.append(url)
-                    threading.Thread(target=lambda: urllib.request.urlopen(url).read()).start()
+                    if outer.download:
+                        threading.Thread(target=lambda: urllib.request.urlopen(url).read()).start()
                     body = b"{}"
                 elif u.path == "/rpc/HTTP.GET" and outer.reach == "ok":
                     url = urllib.parse.parse_qs(u.query)["url"][0]
@@ -92,6 +103,23 @@ class SenderTests(unittest.TestCase):
         self.assertTrue(ok)
         self.assertEqual(len(s.updates), 1)
 
+    def test_ctrl_c_ends_the_wait_for_the_download_quickly(self):
+        # On Windows one long Event.wait() ignores Ctrl+C until it times out: the wait must be sliced.
+        s = self._shelly(download=False)
+        timer = threading.Timer(1.0, _thread.interrupt_main)
+        timer.start()
+        self.addCleanup(timer.cancel)
+        start = time.monotonic()
+        with self.assertRaises(KeyboardInterrupt):
+            sender.send(self.profile, self.zip, s.addr, port=0, assume_yes=True, timeout=300, out=lambda m: None)
+        self.assertLess(time.monotonic() - start, 10)
+
+    def test_not_committed_gets_an_explanation(self):
+        s = self._shelly(update_error="Not committed")
+        with self.assertRaises(builder.OtaError) as cm:
+            sender.send(self.profile, self.zip, s.addr, port=0, assume_yes=True, out=lambda m: None)
+        self.assertIn("couple of minutes", str(cm.exception))      # the wording of explain_update_refusal
+
     def test_dry_run_sends_nothing(self):
         s = self._shelly()
         sender.send(self.profile, self.zip, s.addr, port=0, dry_run=True, out=lambda m: None)
@@ -122,6 +150,28 @@ class SenderTests(unittest.TestCase):
         self.assertEqual(len(s.fetched), 1)
         self.assertTrue(s.fetched[0].endswith("/"), s.fetched)  # the root, never the ZIP itself
         self.assertEqual(s.updates, [])
+
+    def _dry(self, level):
+        s = self._shelly(reach="ok")
+        log = []
+        sender.send(self.profile, self.zip, s.addr, port=0, dry_run=True, out=log.append, level=level)
+        return log
+
+    def test_normal_says_the_steps_but_not_the_details(self):
+        log = self._dry(sender.Level.normal)
+        self.assertTrue(any(l.startswith("Device ") and ", fw " in l for l in log), log)
+        self.assertTrue(any(l.startswith("ZIP: ") for l in log), log)
+        self.assertTrue(any(l.startswith("Dry run: nothing sent") for l in log), log)
+        self.assertFalse(any(l.startswith(("Download URL", "  parts:", "  model")) or "can reach this PC" in l for l in log), log)
+
+    def test_verbose_adds_the_details(self):
+        log = self._dry(sender.Level.verbose)
+        self.assertTrue(any(l.startswith("Download URL") for l in log), log)
+        self.assertTrue(any(l.startswith("  parts:") for l in log), log)
+        self.assertTrue(any("can reach this PC" in l for l in log), log)
+
+    def test_quiet_says_nothing_when_all_is_well(self):
+        self.assertEqual(self._dry(sender.Level.quiet), [])
 
     def test_dry_run_fails_when_the_device_cannot_reach_this_pc(self):
         s = self._shelly(reach="blocked")

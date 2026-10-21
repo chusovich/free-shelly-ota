@@ -7,7 +7,7 @@ import struct
 import zipfile
 from pathlib import Path
 
-from .builder import OtaError, read_official_manifest
+from .builder import OtaError, read_official_manifest, require_zip
 from .profile import DEVICES_DIR
 
 ENTRY = struct.Struct("<HBBII16sI")  # magic, type, subtype, offset, size, name, flags
@@ -36,7 +36,7 @@ def partition_csv(zip_path: Path) -> str:
 
     Needed so ESPHome builds against the layout the device really has (the table in flash stays Shelly's).
     """
-    with zipfile.ZipFile(zip_path) as zf:
+    with zipfile.ZipFile(require_zip(zip_path, "official ZIP")) as zf:
         manifest = read_official_manifest(zf)
         pt_part = manifest["parts"].get("pt")
         if not pt_part or "src" not in pt_part:
@@ -59,7 +59,7 @@ def partition_csv(zip_path: Path) -> str:
 def create_profile(zip_path: Path, *, name: str | None = None, devices_dir: Path = DEVICES_DIR,
                    force: bool = False, parent: str | None = None) -> tuple[Path, dict]:
     """Write devices/<name>.yaml from the manifest and partition table inside the ZIP."""
-    with zipfile.ZipFile(zip_path) as zf:
+    with zipfile.ZipFile(require_zip(zip_path, "official ZIP")) as zf:
         manifest = read_official_manifest(zf)
         name = name or manifest["name"]
         if not re.fullmatch(r"[A-Za-z0-9_-]+", name):

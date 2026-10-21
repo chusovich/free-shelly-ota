@@ -6,4 +6,10 @@ app_ptn: app_0
 app_slot_size: 0x280000   # app_0 @0x20000
 pt_offset: 0xf000   # partition table address (default 0x10000)
 boot_min_version: "1.0.9"   # the installer reports an installed loader 1.0.3, so 1.0.3 is skipped (see README)
-revision: 2   # counts changes of this profile: raise it when anything else in this file changes (see devices/profiles.lock)
+revision: 3   # counts changes of this profile: raise it when anything else in this file changes (see devices/profiles.lock)
+standalone:   # facts from the official 2.0.1 package, so a package can be built without Shelly's ZIP (build --standalone)
+  version: "2.0.1"
+  build_id: "20260923-075439/2.0.1-ge1a198b"
+  build_timestamp: "2026-09-23T07:54:39Z"
+  boot_header: "e903023f10bf3c40ee00000005000303"   # first 16 bytes of Shelly's bootloader: ESPHome's is compared with it
+  boot_min_version: "1.0.2"   # as in the official manifest; build raises it to boot_min_version above

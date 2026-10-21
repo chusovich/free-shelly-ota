@@ -130,7 +130,7 @@ def check_output_is_no_input(output: Path, *inputs: Path) -> None:
 def build(profile: Profile, app_path: Path, official_zip: Path, output: Path, *,
           drop: tuple[str, ...] = (), tag: str | None = None, factory: Path | None = None,
           boot_min_version: str | None = None, secrets: dict[str, list[bytes]] | None = None,
-          fail_on_secrets: bool = False) -> BuildResult:
+          fail_on_secrets: bool = False, pt_from_factory: bool = False) -> BuildResult:
     tag = check_tag(tag)
     for part in drop:
         if part not in DROPPABLE_PARTS:
@@ -139,6 +139,8 @@ def build(profile: Profile, app_path: Path, official_zip: Path, output: Path, *,
         raise OtaError("--boot-min-version only makes sense together with --esphome-factory.")
     if boot_min_version and boot_min_version != "keep" and not re.fullmatch(r"\d+\.\d+\.\d+", boot_min_version):
         raise OtaError("--boot-min-version must look like 1.0.3, or 'keep'.")
+    if pt_from_factory and not factory:
+        raise OtaError("Taking the partition table from the factory image needs --esphome-factory.")
     if factory and {"boot", "otadata"} & set(drop):
         raise OtaError("Cannot drop 'boot' or 'otadata' while taking them from a factory image.")
     check_output_is_no_input(output, official_zip, app_path)
@@ -160,7 +162,7 @@ def build(profile: Profile, app_path: Path, official_zip: Path, output: Path, *,
         warnings.append("Credentials were not checked (give --esphome-yaml with a secrets.yaml next to it, or --secrets FILE). "
                         "ESPHome images contain Wi-Fi data in plain text if the config has it: do not share this package.")
 
-    with zipfile.ZipFile(official_zip) as original:
+    with zipfile.ZipFile(require_zip(official_zip, "official ZIP")) as original:
         manifest = read_official_manifest(original, profile.name)
         if manifest.get("platform") and manifest["platform"] != profile.platform:
             raise OtaError(f"Package platform {manifest['platform']!r} != profile {profile.platform!r}.")
@@ -193,6 +195,12 @@ def build(profile: Profile, app_path: Path, official_zip: Path, output: Path, *,
                 parts[key]["size"] = len(data)
                 parts[key]["cs_sha256"] = hashlib.sha256(data).hexdigest()
                 replaced.append(key)
+            if pt_from_factory:  # standalone: Shelly's table is not shipped; bootswap already checked the entries match
+                pt_data = factory.read_bytes()[profile.pt_offset:profile.pt_offset + 4096]
+                replacements[parts["pt"]["src"]] = pt_data
+                parts["pt"]["size"] = len(pt_data)
+                parts["pt"]["cs_sha256"] = hashlib.sha256(pt_data).hexdigest()
+                replaced.append("pt")
             # The installer writes the bootloader only if the installed one is older than the package's boot
             # min_version (seen on the Plug M Gen3: 1.0.2 was skipped, 1.0.3 was written). So raise it by one patch
             # level unless the option or the profile says otherwise. The H&T Gen3 reports an installed 1.0.3
@@ -264,8 +272,30 @@ def write_report(result: BuildResult) -> None:
     Path(str(out) + ".report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 
 
+def require_zip(path, what: str = "OTA package") -> Path:
+    """The path as a Path, if it is a ZIP; otherwise an OtaError that says what the file probably is.
+
+    A DevKit image (`ota.py devkit`, a flash image for esptool) is the usual mix-up: it is a .bin, not a package.
+    """
+    path = Path(path)
+    if not path.is_file():
+        raise OtaError(f"The {what} {path} does not exist.")
+    if zipfile.is_zipfile(path):
+        return path
+    device = path.name.split("-devkit", 1)[0] if "-devkit" in path.name else "<profile>"
+    if "-devkit" in path.name or path.suffix.lower() == ".bin":
+        raise OtaError(
+            f"{path.name} is not a ZIP, so it is not an {what}."
+            + (" It is the flash image for a dev board" if "-devkit" in path.name else " It looks like a flash image")
+            + " (for esptool, not for the Shelly's updater). Put it on the board with the esptool commands that this prints:\n\n"
+            f"  python ota.py devkit {device}\n\n"
+            "  Then send an OTA ZIP to the board. The ZIP is the file that `build` writes to out/.")
+    raise OtaError(f"{path.name} is not a ZIP file, so it is not an {what}.")
+
+
 def inspect_zip(path: Path, profile: Profile | None = None) -> str:
     """Human-readable summary of an OTA ZIP; hashes are verified."""
+    require_zip(path)
     lines = []
     with zipfile.ZipFile(path) as zf:
         manifest = read_official_manifest(zf)

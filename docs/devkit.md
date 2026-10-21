@@ -67,7 +67,7 @@ The chip family must match and the flash must hold the whole partition table of 
    ```
 
    Expected: `Device ...: app=PlusUni`, the slot check and the reachability check.
-4. **Stage 3, the update.** Send a package built with `--esphome-factory` and read the log (`--watch 120`, see [What to look for](#what-to-look-for)). Then read the eFuses again.
+4. **Stage 3, the update.** Send a package built with `--esphome-factory` and read the log (`send` shows it; `--log-file` keeps it, see [What to look for](#what-to-look-for)). Then read the eFuses again.
 5. **Stage 4, again.** `erase-flash` and write the image once more. A run takes minutes, so the variations below are cheap.
 
 ## What to look for

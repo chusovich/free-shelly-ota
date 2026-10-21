@@ -15,7 +15,7 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from .builder import OtaError, read_official_manifest
+from .builder import OtaError, read_official_manifest, require_zip
 from .devicegen import parse_partitions
 from .profile import Profile
 
@@ -57,7 +57,7 @@ def build_image(zip_path: Path, profile: Profile, *, flash_size: str | None = No
     """The image for the package at zip_path. flash_size ('4MB', '8MB', '16MB') makes it stop if the layout needs more."""
     if flash_size is not None and flash_size not in FLASH_SIZES:
         raise OtaError(f"--flash-size must be one of {', '.join(FLASH_SIZES)}.")
-    with zipfile.ZipFile(zip_path) as zf:
+    with zipfile.ZipFile(require_zip(zip_path)) as zf:
         manifest = read_official_manifest(zf, profile.name)
         parts = manifest["parts"]
         if "pt" not in parts or "boot" not in parts:
