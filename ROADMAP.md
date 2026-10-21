@@ -8,13 +8,14 @@ Where the project stands and where it goes next.
 
 > [!NOTE]
 > This is a plan, not a promise: the order changes when a test report or a new device shows up.
-> State: 2026-10-18, at release 0.4.0 (see the [CHANGELOG](CHANGELOG.md)).
+> State: 2026-10-21, at release 0.5.0 (see the [CHANGELOG](CHANGELOG.md)).
 
 ## Now
 
 - **Dev board test bench.** `ota.py devkit` writes a flash image of a package, so the whole update (`send`, the installer, the bootloader swap, the slot logic) can be played
-  through on a dev board instead of a device, for any profile. The first runs are on a classic ESP32 (Plus Uni) and an ESP32-C3 (Plug M). Open: whether the Shelly app starts on a
-  board that is not a Shelly. What the boards showed goes into [Test on a dev board](docs/devkit.md#seen-on-a-board).
+  through on a dev board instead of a device, for any profile. Five Gen4 profiles have been through the whole update on an ESP32-C6 board with 8 MB. The Shelly app does start on a board
+  that is not a Shelly, but it checks the flash size and stops on a board with less than the device has (8 MB), so a 4 MB ESP32-C3 board is too small.
+  What the boards showed goes into [Test on a dev board](docs/devkit.md#seen-on-a-board).
 
 ## Next
 
@@ -28,7 +29,7 @@ Where the project stands and where it goes next.
 - **Device pages on devices.esphome.io** for the Plug M, Plug PM and PM Mini (new pages) and a correction of the Plug S page, each with the
   OTA route via this tool. A page for the Multicolor Bulb can follow now that its light component is published; Duo Bulb and Mini 1 Gen3
   when their hardware is checked.
-- **More of the test bench.** The profiles that need other boards (the ESP32-C6 devices and the Pro 3EM with 16 MB flash), and a plan B if the Shelly app wants its `shelly` partition:
+- **More of the test bench.** The profiles that need other boards (the ESP32-C3 devices need a board with 8 MB; the EM Gen4 (ESP32-C6) and the Pro 3EM (classic ESP32) 16 MB), and a plan B if the Shelly app wants its `shelly` partition:
   one taken from an own dump, never shared.
 - **Tests without the firmware cache.** Many tests need the local `fw/` folder, which is not in git. Small synthetic packages as
   fixtures, then a GitHub Actions run on every pull request.
@@ -51,9 +52,9 @@ Where the project stands and where it goes next.
 
 | What | Who can help | Where |
 | --- | --- | --- |
-| Flash a 🧪 device and report the `--watch` log | Owners of the 🧪 devices in the [table](README.md#supported-devices), 7 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
+| Flash a 🧪 device and report the `--watch` log | Owners of the 🧪 devices in the [table](README.md#supported-devices), 26 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Pro 3EM: a first hardware report. Plus Uni and Pro 3EM: the pins | Owners | Issues [#36](https://github.com/oxynatOr/free-shelly-ota/issues/36) and [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46) |
-| A board for the rest of the test bench: ESP32-C6 with 8 MB, classic ESP32 with 16 MB | Anyone with such a board | [Which board](docs/devkit.md#which-board) |
+| A board for the rest of the test bench: ESP32-C3 with 8 MB, ESP32-C6 and classic ESP32 with 16 MB | Anyone with such a board | [Which board](docs/devkit.md#which-board) |
 | Plug PM Gen3: readings against a reference meter | Owners | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Your device is missing | Anyone | [Request a new device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml) |
 
@@ -70,3 +71,5 @@ Items that stood under "Now" in an earlier version of this page.
 | Pro 3EM add-on (`Pro3EMProAddon`): no profile of its own, the `compatible` list covers it | [#49](https://github.com/oxynatOr/free-shelly-ota/pull/49) |
 | `send` stops before it sends a package that keeps Shelly's bootloader; the route without ESPHome's bootloader is described as the loader works | [#64](https://github.com/oxynatOr/free-shelly-ota/pull/64), [#65](https://github.com/oxynatOr/free-shelly-ota/pull/65) |
 | Release 0.4.0 | [CHANGELOG](CHANGELOG.md#040---2026-10-18) |
+| 25 profiles for Gen3 and Gen4 devices, the 🔬 state, Mini 1 Gen3 confirmed on hardware, a guide for a home-made UART adapter | [CHANGELOG](CHANGELOG.md#050---2026-10-21) |
+| Release 0.5.0 | [CHANGELOG](CHANGELOG.md#050---2026-10-21) |

@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-21
+
 ### Added
 - Recovery over UART: a section "Build your own UART adapter" (`docs/recovery-uart.md`). An ESP32 dev board with a USB-UART chip and one wire from `EN` to `GND` is enough, no FTDI stick needed:
   parts, wiring (the dev board's `RX`/`TX` are not crossed), the UART pads of the ESP32, ESP32-C3 and ESP32-C6, a check of the adapter, how to enter download mode, a table of
