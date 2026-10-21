@@ -47,6 +47,7 @@ All notable changes to this project are documented here. The format follows
   `rpc.RpcError` and `rpc.DeviceUnreachable` replace error-text matching in `restore`.
 - Power Strip example config (`configs/shelly-power-strip-gen4/`): README and YAML name this tool instead of "ShellyOTA", the build command is relative to the
   repository root, and the slot-0 note links the Power Strip device page and "The app must land in slot 0" instead of a README section that is gone.
+- `Mini1G3` is confirmed on hardware (first report, #69): flash from Shelly 1.4.4 over OTA, ESPHome OTA afterwards. Relay, button, switch input and LED pins checked; the NTC calibration of the ESPHome device page reads high on that unit.
 
 
 ## [0.4.0] - 2026-10-18
