@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-22
+
 ### Added
 - Log levels for `send`, `restore` and `log`: `--log-level quiet|normal|verbose|debug|raw`, `-q`, `-v`, `-vv`. They apply to the tool's own
   messages and to the device log. Default `normal` shows warnings, the key lines of the update (target slot, bootloader decision, update
@@ -28,6 +30,9 @@ All notable changes to this project are documented here. The format follows
 - `send`, `inspect`, `devkit --zip`, `add-device` and `build --official`: a file that is not a ZIP, usually a DevKit image (`.bin`), gets a message that says what it is and which command writes it to a board, instead of a traceback.
 - `send` asks for the uptime after the slot check, so a wrong slot or device no longer costs the wait first; the countdown shows in half-second steps; it says at once when the device has downloaded the ZIP.
 
+- Recovery over UART: a section "Build your own UART adapter" (`docs/recovery-uart.md`). An ESP32 dev board with a USB-UART chip and one wire from `EN` to `GND` is enough, no FTDI stick needed:
+  parts, wiring (the dev board's `RX`/`TX` are not crossed), the UART pads of the ESP32, ESP32-C3 and ESP32-C6, a check of the adapter, how to enter download mode, a table of
+  typical errors, and a short note for a plain USB-to-UART module. The wiring is general ESP practice; this project did not re-run it.
 ### Changed
 - Device pages, the README and the device-report issue form: the log lines to look for are the ones `send` shows at the default level;
   reports attach the `--log-file` file instead of the output of `send --watch`.
@@ -43,8 +48,10 @@ All notable changes to this project are documented here. The format follows
   `rpc.RpcError` and `rpc.DeviceUnreachable` replace error-text matching in `restore`.
 - Power Strip example config (`configs/shelly-power-strip-gen4/`): README and YAML name this tool instead of "ShellyOTA", the build command is relative to the
   repository root, and the slot-0 note links the Power Strip device page and "The app must land in slot 0" instead of a README section that is gone.
-- `Mini1G3` is confirmed on hardware (first report, #69): flash from Shelly 1.4.4 over OTA, ESPHome OTA afterwards. Relay, button, switch input and LED pins checked; the NTC calibration of the ESPHome device page reads high on that unit.
-
+- `Mini1G3` is confirmed on hardware (first report, #69): flash from Shelly 1.4.4 over OTA, ESPHome OTA afterwards. Relay, button, switch input and LED pins checked; the NTC calibration of the ESPHome device page reads high on that unit. The stock firmware converts the NTC with B 3950 (read from the official 2.0.1 app), not the 3350 of that page.
+- H&T Gen3 page: Shelly's update API answers per installed version, so a request without the `Shelly-Info` header showed no stable release (it
+  looked like a removed one on 2026-10-10); `fetch HTG3 --from-version 1.4.4` gets the stable 2.0.1. The H&T Gen3 with display is reported to run with ESPHome.
+- README header with a bigger logo; `docs/commands.md` documents `--channel` and `--from-version` of `fetch` and `build`, and `--version` of `restore`.
 
 ## [0.4.0] - 2026-10-18
 
