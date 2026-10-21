@@ -113,8 +113,10 @@ RULES = (
     Rule(r"Boot: cur (\w+), new (\w+), min (\w+), update\? 1", "milestone", Level.normal,
          "The bootloader will be replaced (current {0}, minimum {2})"),
     Rule(r"Boot: cur (\w+), new (\w+), min (\w+), update\? 0", "warn", Level.normal,
-         "The bootloader will NOT be replaced (current {0}, minimum {2}): build the package again, "
-         "see docs/bootloader-and-slots.md"),
+         "ESPHome's bootloader was NOT written: the device keeps Shelly's loader (installed {0}, package min {2}, update? 0). "
+         "Later ESPHome OTAs may not take effect or need several restarts. Build again with a higher --boot-min-version "
+         "(for example 1.0.9) or set boot_min_version: in the profile. See docs/bootloader-and-slots.md",
+         key="bootskip"),
     Rule(r"Installing BL (\d+)@", "milestone", Level.normal, "Installing the bootloader ({0} bytes)"),
     Rule(r"New fw: (\S+) ver (\S+)", "milestone", Level.verbose, "The device sees the package {0} {1}"),
     Rule(r"HTTP GET http", "milestone", Level.verbose, "The device starts downloading the ZIP"),
@@ -218,6 +220,9 @@ class Session:
         self.result: str | None = None      # "ok" or "error"
         self.error_text: str | None = None
         self.update_seen = False            # the log showed an update (progress or a result): worth waiting for its end
+        # False: the package is Shelly's own (restore), "update? 0" is what is meant and says nothing. None: it is a warning,
+        # because ESPHome takes no OTAs until its own bootloader has been written (also when unknown, as in a replay).
+        self.expect_new_loader: bool | None = None
         self._tail: collections.deque[tuple[LogRecord | str, Entry]] = collections.deque(maxlen=tail)
         self._hidden: collections.Counter[str] = collections.Counter()
         self._shown_keys: set[str] = set()
@@ -271,6 +276,9 @@ class Session:
             return
         if entry.kind in ("result_ok", "result_error"):
             return                              # the sender reports the result; it is in the file and at debug
+        if entry.key == "bootskip" and self.expect_new_loader is False:
+            self._hidden[entry.kind] += 1       # expected: this package keeps Shelly's bootloader
+            return
         if entry.key:
             if entry.key in self._shown_keys:
                 self._hidden[entry.kind] += 1

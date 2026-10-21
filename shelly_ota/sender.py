@@ -286,6 +286,14 @@ class BootWatch:
             self.out(logwatch.boot_skipped_warning(boot))
 
 
+def quiet_about_kept_loader(boot_replaced: bool | None, keeps_loader: bool, restoring: bool) -> bool | None:
+    """What logview.Session.expect_new_loader gets. ESPHome only takes OTAs after its own bootloader was written, so
+    'update? 0' is a warning for every ESPHome package, also one that is unclear or was forced without the bootloader.
+    Only the official Shelly package (restore, or the unchanged ZIP sent by hand) may keep Shelly's loader: False, no warning."""
+    official = restoring or (boot_replaced is False and not keeps_loader)
+    return False if official else None
+
+
 PLAIN_PACKAGE_DOC = "docs/bootloader-and-slots.md#without-esphomes-bootloader-plain-package"
 
 
@@ -421,6 +429,7 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
         say(Level.normal, f"NOTE: no official {profile.name} ZIP cached, so it was not checked whether this package replaces "
                           "Shelly's bootloader. Fetch it and try again, or look at the package with 'ota.py inspect':\n\n"
                           f"  python ota.py fetch {profile.name} --insecure")
+    session.expect_new_loader = quiet_about_kept_loader(boot_replaced, keeps_loader, restoring)
     note = secrets_check.report_note(zip_path)
     if note:
         say(Level.quiet if note[0] == "WARNING" else Level.verbose if note[0].startswith("NOTE") else Level.normal,

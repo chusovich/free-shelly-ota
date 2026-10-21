@@ -115,7 +115,34 @@ class RuleTests(unittest.TestCase):
                                   f"min 010002ff, update? 0", DEVICE)[0]
         e = logview.classify(r)
         self.assertEqual((e.kind, e.level), ("warn", Level.normal))
-        self.assertIn("NOT be replaced", e.text)
+        self.assertIn("NOT written", e.text)
+        self.assertIn("--boot-min-version", e.text)
+
+    def _boot_skipped_lines(self, expect_new_loader):
+        lines = []
+        session = logview.Session(level=Level.normal, out=lines.append, device_id=DEVICE)
+        session.expect_new_loader = expect_new_loader
+        session.device(f"{DEVICE} 5 9.000 2 2|2xx_ota_backend.cpp:689 Boot: cur 010003ff, new 00000000, min 010003ff, update? 0")
+        return lines
+
+    def test_update_zero_is_a_warning_when_the_package_should_replace_the_bootloader(self):
+        for expect in (True, None):          # None: unknown, as in a replay
+            lines = self._boot_skipped_lines(expect)
+            self.assertEqual(len(lines), 1, expect)
+            self.assertTrue(lines[0].startswith("WARNING: ESPHome's bootloader was NOT written"), lines)
+
+    def test_update_zero_says_nothing_only_for_shellys_own_package(self):
+        """restore sends Shelly's package: the loader stays Shelly's on purpose."""
+        self.assertEqual(self._boot_skipped_lines(False), [])
+
+    def test_which_packages_may_keep_the_loader_silently(self):
+        from shelly_ota import sender
+        quiet = sender.quiet_about_kept_loader
+        self.assertIs(quiet(False, False, True), False)      # restore
+        self.assertIs(quiet(False, False, False), False)     # the official ZIP sent by hand: nothing changed
+        self.assertIsNone(quiet(True, False, False))         # ESPHome's loader in the package: warn if it is not written
+        self.assertIsNone(quiet(False, True, False))         # an ESPHome app that keeps Shelly's loader (--force): warn
+        self.assertIsNone(quiet(None, False, False))         # no official ZIP to compare with: unknown, warn
 
     def test_unknown_entries_follow_the_severity(self):
         def kind(sev):
