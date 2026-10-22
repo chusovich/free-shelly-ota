@@ -135,7 +135,7 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 | `--host IP` | auto | This PC's address as seen by the Shelly |
 | `--port PORT` | `8000` | Local web server port |
 | `--log-port PORT` | `9514` | UDP port for the debug log |
-| `--timeout SEC` | `300` | How long to wait for the device to download the ZIP |
+| `--timeout SEC` | `300` | How long to wait for the device to download the ZIP. A device on a weak Wi-Fi signal can need much longer (about 1 % per 5 s at -68 dBm): use `--timeout 1200` |
 | `--wait SEC` | `120` | If the device refuses the update because it has only just started (`Not committed`): wait SEC seconds, then ask again before the next try |
 
 </details>
