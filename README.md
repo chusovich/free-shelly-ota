@@ -63,7 +63,7 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | Plus Plug IT (Gen2) | [`PlusPlugIT`](docs/devices/PlusPlugIT.md) | ESP32 | ✅ | Flashed without UART |
 | The Pill | [`Pill`](docs/devices/Pill.md) | ESP32&#8209;C3 | 🧪 | |
 | Mini 1 Gen3 | [`Mini1G3`](docs/devices/Mini1G3.md) | ESP32&#8209;C3 | ✅ | |
-| Mini 1PM Gen3 | [`Mini1PMG3`](docs/devices/Mini1PMG3.md) | ESP32&#8209;C3 | 🧪 | |
+| Mini 1PM Gen3 | [`Mini1PMG3`](docs/devices/Mini1PMG3.md) | ESP32&#8209;C3 | 🟡 | Flashed over OTA (two units); a second OTA, the relay under load and the meter not checked |
 | Mini 1PM Gen4 | [`Mini1PMG4`](docs/devices/Mini1PMG4.md) | ESP32&#8209;C6 | 🧪 | |
 | Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](docs/devices/Mini1PMG4.md#zigbee-variant) | ESP32&#8209;C6 | 🧪 | |
 | Plus Uni (Gen2) | [`PlusUni`](docs/devices/PlusUni.md) | ESP32 | 🟡 | Flashed over OTA, ESPHome's bootloader step not checked |
