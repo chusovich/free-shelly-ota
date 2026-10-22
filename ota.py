@@ -395,7 +395,7 @@ def send_options() -> argparse.ArgumentParser:
     g.add_argument("--log-file", nargs="?", const=LOG_FILE_AUTO, metavar="PATH",
                    help="write the whole run (every message, every device log entry) to a file, whatever the log level; "
                         "without a path to logs/<name>.send.log. Put it after DEVICE and ZIP, or use --log-file=PATH")
-    g.add_argument("--timeout", type=float, default=300, metavar="SEC", help="wait for the download (default: %(default)s)")
+    g.add_argument("--timeout", type=float, default=300, metavar="SEC", help="wait for the download (default: %(default)s); a weak Wi-Fi signal can need much more, send asks")
     g.add_argument("--wait", type=float, default=sender.DEFAULT_WAIT, metavar="SEC",
                    help="if the device refuses the update because it has only just started ('Not committed'): wait SEC "
                         "seconds, then ask again before the next try (default: %(default)s)")
