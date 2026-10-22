@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Changed
+- `Mini1G3` page: a second report (a device in the wall): the `Boot:` lines of `restore` and of the ESPHome flash, the slot-1 case fixed by `restore` with Wi-Fi settings kept, and the NTC of the stock firmware against ESPHome on the same device. Troubleshooting and `commands.md`: `--timeout 1200` for a device on a weak Wi-Fi.
 - `PowerStrip` page: the ADE7953 chip select and IRQ pins and the outlet mapping corrected from [devices.esphome.io PR #1811](https://github.com/esphome/devices.esphome.io/pull/1811)
   (chip 0, CS GPIO15, measures outlets 4+3; chip 1, CS GPIO10, outlets 2+1; IRQ GPIO5 / GPIO6), with notes on the polarity of channel B and the missing factor 4 in the readings.
 - `DuoBulbG3` page: the bulb was flashed over OTA with this tool and runs; the GPIOs are still not confirmed on the hardware.
