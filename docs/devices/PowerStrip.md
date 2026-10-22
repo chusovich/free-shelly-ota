@@ -20,7 +20,8 @@ Gen4 / ESP32-C6. The pins and an example config are on the ESPHome device page (
 | ESPHome device page | [Shelly Power Strip 4 Gen4](https://devices.esphome.io/devices/shelly-power-strip-4-gen4/): pins and an example config |
 
 > [!NOTE]
-> **Partly checked:** ESPHome boots and joins Wi-Fi/Home Assistant (UART log). Outlets and metering not checked here.
+> **Partly checked:** ESPHome boots and joins Wi-Fi/Home Assistant (UART log). Outlets and metering were not checked by this project. The metering was tested on two strips under load by miguelangel-nubla
+> ([devices.esphome.io PR #1811](https://github.com/esphome/devices.esphome.io/pull/1811)); see the notes below.
 
 ## Before you start
 
@@ -74,8 +75,8 @@ esphome:
 | Function | Pin | Source |
 | --- | --- | --- |
 | SPI MISO / MOSI / SCLK | GPIO12 / GPIO11 / GPIO13 | stock boot log (`SPI2 init ok`) |
-| ADE7953 chip select (outlets 1+2 / 3+4) | GPIO15 / GPIO10 | stock boot log (`CS0/1/2: 15/10/-1`) |
-| ADE7953 IRQ (chip 0 / chip 1) | GPIO6 / GPIO7 | in use on the owner's device |
+| ADE7953 chip select (chip 0 = outlets 4+3 / chip 1 = outlets 2+1) | GPIO15 / GPIO10 | stock boot log (`CS0/1/2: 15/10/-1`); the outlet mapping from the stock firmware and PR #1811 |
+| ADE7953 IRQ (chip 0 / chip 1) | GPIO5 / GPIO6 | measured by resetting each chip and watching the line (PR #1811); an earlier version of this page said GPIO6 / GPIO7 |
 | Relays 1 to 4 | GPIO4 / GPIO2 / GPIO3 / GPIO1 | in use on the owner's device |
 | Buttons 1 to 4 (pull-up, inverted) | GPIO20 / GPIO22 / GPIO23 / GPIO21 | in use on the owner's device |
 | LED ring (WS2812, 12 LEDs, 3 per outlet) | GPIO18 | in use on the owner's device |
@@ -140,6 +141,9 @@ package, reads the update target slot. Command reference: [Commands](../commands
 - **After a good install** the UART log shows `ESP-IDF ... 2nd stage bootloader`, `ota data partition invalid and no factory,
   will try all partitions` (expected) and `Loaded app from partition at offset 0x20000`.
 - **OTA encryption:** the owner's build requires it (`Encryption: required`); the example config has no `encryption:` entry.
+- **Metering** (from [PR #1811](https://github.com/esphome/devices.esphome.io/pull/1811), tested on two strips; the stock side read from the 1.7.99 firmware, not tested here):
+  - Outlets 4 and 3 are measured by chip 0 (channel A and B), outlets 2 and 1 by chip 1. Channel B of both chips is wired with reversed polarity, so the active power of outlets 3 and 1 needs a factor of -1 (the stock firmware uses a negative scale there too).
+  - ESPHome reads the current and power about four times too low with its fixed constants. The stock firmware sets the PGA to 8x on both current channels; ESPHome's constants fit 4x. The ESPHome device page uses a `multiply: 4.0` filter instead of the PGA setting, because chip 1 comes back in its power-on state after every ESP32 reboot and loses what ESPHome wrote in setup.
 
 ## Way back
 
