@@ -21,6 +21,7 @@ The file name without `.yaml` is the profile name you give to `fetch`, `build`, 
 | `PowerStrip` | Shelly Power Strip 4 Gen4 | ESP32-C6 | 2 | [PowerStrip](../docs/devices/PowerStrip.md) |
 | `PowerStripZB` | Shelly Power Strip 4 Gen4 (Zigbee) | ESP32-C6 | 2 | [PowerStripZB](../docs/devices/PowerStripZB.md) |
 | `PlusPlugS` | Shelly Plus Plug S | ESP32 | 2 | [PlusPlugS](../docs/devices/PlusPlugS.md) |
+| `PlusPlugIT` | Shelly Plus Plug IT | ESP32 | 1 | [PlusPlugIT](../docs/devices/PlusPlugIT.md) |
 | `Pill` | Shelly The Pill | ESP32-C3 | 2 | [Pill](../docs/devices/Pill.md) |
 | `Mini1G3` | Shelly Mini 1 Gen3 | ESP32-C3 | 1 | [Mini1G3](../docs/devices/Mini1G3.md) |
 | `Mini1PMG3` | Shelly Mini 1PM Gen3 | ESP32-C3 | 1 | [Mini1PMG3](../docs/devices/Mini1PMG3.md) |

@@ -23,6 +23,7 @@ checked yet, 🧪 = the package builds and verifies, but nobody has flashed it y
 | Power Strip 4 Gen4 | [`PowerStrip`](PowerStrip.md) | ESP32-C6 | `0x10000` | `0x300000` | 🟡 boots, outlets not checked |
 | Power Strip 4 Gen4 (Zigbee) | [`PowerStripZB`](PowerStripZB.md) | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |
 | Plus Plug S (V2 hardware, Gen2) | [`PlusPlugS`](PlusPlugS.md) | **ESP32** | **`0x8000`** | `0x190000` | ✅ without UART |
+| Plus Plug IT (Gen2) | [`PlusPlugIT`](PlusPlugIT.md) | **ESP32** | **`0x8000`** | `0x190000` | ✅ without UART |
 | The Pill | [`Pill`](Pill.md) | ESP32-C3 | `0x10000` | `0x280000` | 🧪 |
 | Mini 1 Gen3 | [`Mini1G3`](Mini1G3.md) | ESP32-C3 | **`0xf000`** | `0x2a0000` | ✅ |
 | Mini 1PM Gen3 | [`Mini1PMG3`](Mini1PMG3.md) | ESP32-C3 | **`0xf000`** | `0x2a0000` | 🧪 |
@@ -38,7 +39,7 @@ does not match the profile. Details per device are on its page.
 
 - **Partition table at `0xf000`:** [H&T Gen3](HTG3.md), [PM Mini Gen3](MiniPMG3.md), [Mini 1 Gen3](Mini1G3.md) and [Mini 1PM Gen3](Mini1PMG3.md). A default
   ESPHome build uses ESP-IDF's default `0x8000` and does not match.
-- **Classic ESP32 (Gen2):** the [Plus Plug S](PlusPlugS.md), [Plus Uni](PlusUni.md) and [Pro 3EM](Pro3EM.md). Partition table at
+- **Classic ESP32 (Gen2):** the [Plus Plug S](PlusPlugS.md), [Plus Plug IT](PlusPlugIT.md), [Plus Uni](PlusUni.md) and [Pro 3EM](Pro3EM.md). Partition table at
   `0x8000`, bootloader at `0x1000`, and the ESPHome build needs the 80 MHz flash frequency. Flash is 4 MB, except on the Pro 3EM
   (16 MB, so `flash_size: 16MB`, and an extra `emdata` partition).
 - **Gen4 / ESP32-C6:** [Power Strip](PowerStrip.md), [Power Strip (Zigbee)](PowerStripZB.md) and
