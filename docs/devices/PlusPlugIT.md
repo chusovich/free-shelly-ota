@@ -74,8 +74,7 @@ Read from the stock 2.0.1 firmware and checked on the hardware by the reporter (
 | NTC | GPIO34: 10 kΩ at 25 °C, B 3950, 10 kΩ series resistor, NTC to GND (`DOWNSTREAM`) |
 
 The power readings use ESPHome's `hlw8012` platform with `current_resistor: 0.001 ohm` and `voltage_divider: 770`. Against a reference
-meter, two units needed these extra factors: voltage about 2.86 to 2.95, current about 1.06 to 1.10, power about 3.36 to 3.49. Treat them as a
-starting point and calibrate your own unit.
+meter, two units needed these extra factors: voltage about 2.86 to 2.95, current about 1.06 to 1.10, power about 3.36 to 3.49. Treat them as a starting point and calibrate your own unit: after calibration unit 1 read 216.5 V / 8.75 A / 1892 W against 215 V / 8.70 A / 1871 W on a reference (about 1 % at a 1.9 kW load) and stays there, but the two units differ by 3 to 4 % (unit 1: V x2.857, I x1.057, P x3.355; unit 2: V x2.950, I x1.096, P x3.489). The reference was another smart plug, not a lab meter, and unit 2 was calibrated in cascade, so part of that spread may come from the reference.
 
 ## Flash it
 
@@ -132,6 +131,8 @@ On the reporter's unit the raw log also showed `FW signatures: want 07 got 00` a
 
 A second unit (factory firmware 0.11.99) went Shelly, then Tasmota (`mgos32-to-tasmota32`), then ESPHome through Tasmota's firmware upgrade,
 keeping Shelly's two-slot partition table. That route is not part of this tool.
+
+That unit had a different table in flash when read at `0x8000`: app slots of `0x180000` (app_0 at `0x10000`, app_1 at `0x200000`), fs_0 at `0x190000` and fs_1 at `0x380000` (both `0x70000`), and no `aux` or `shelly` partitions. It never went through this tool, so it is not known whether an update to 2.x rewrites the table. If your unit still runs a factory firmware around 0.11.x, read its table before sending ([`inspect`](../commands.md#inspect) and the slot check of `send --dry-run`).
 
 ## Way back
 
