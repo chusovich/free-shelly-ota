@@ -135,7 +135,7 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 | `--host IP` | auto | This PC's address as seen by the Shelly |
 | `--port PORT` | `8000` | Local web server port |
 | `--log-port PORT` | `9514` | UDP port for the debug log |
-| `--timeout SEC` | `300` | How long to wait for the device to download the ZIP. A device on a weak Wi-Fi signal can need much longer (about 1 % per 5 s at -68 dBm): use `--timeout 1200` |
+| `--timeout SEC` | `300` | How long to wait for the device to download the ZIP. A device on a weak Wi-Fi signal can need much longer (about 1 % per 5 s at -68 dBm); `send` then asks, see [Wi-Fi signal](#wi-fi-signal) |
 | `--wait SEC` | `120` | If the device refuses the update because it has only just started (`Not committed`): wait SEC seconds, then ask again before the next try |
 
 </details>
@@ -144,6 +144,20 @@ A device that has been running for less than two minutes refuses `Shelly.Update`
 (`Sys.GetStatus`) first, says so and offers to wait. If the device refuses anyway, `send` explains it, offers to wait `--wait`
 seconds and asks for a new confirmation before the next pass (at most three passes). With `--yes` it never waits or retries on its own.
 See [Troubleshooting](troubleshooting.md#send-stops-with-not-committed).
+
+### Wi-Fi signal
+
+`send` reads the device's Wi-Fi signal (`Wifi.GetStatus`, a hint only: a device that does not answer is not an error) and shows it at `-v`. At **-67 dBm or weaker** it says that
+the download can be very slow (a Mini 1 Gen3 at -68 dBm needed about 20 minutes) and asks how long to wait:
+
+```
+Wait for the download for [1200 s]  Enter = that, a number = other seconds, s = skip, c = cancel:
+```
+
+Enter takes the suggested wait (at least 1200 s), a number sets another one, `s` skips the question and keeps `--timeout`, `c` cancels before anything is sent.
+The same question comes if the wait runs out while the device is still taking the ZIP ("the device has taken about 28 % ... still downloading"): Enter waits as long again,
+a number waits that long, `c` stops. `send` never waits longer on its own: with `--yes` or `--dry-run` it only says so, and a stalled download still ends with an error.
+The threshold is a guess from one report.
 
 ### Log levels
 

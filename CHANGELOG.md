@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- `send` checks the device's Wi-Fi signal (`Wifi.GetStatus`). At -67 dBm or weaker it says what that does to the download and asks "seconds / s / c" how long to wait (Enter takes 1200 s, `s` skips, `c` cancels). If the wait runs out while the device is still taking the ZIP, `send` asks the same way instead of stopping. It never waits longer on its own: with `--yes` or `--dry-run` it only says so. The threshold is a guess from one report ([Wi-Fi signal](docs/commands.md#wi-fi-signal)).
+
 ### Changed
 - `Mini1G3` page: a second report (a device in the wall): the `Boot:` lines of `restore` and of the ESPHome flash, the slot-1 case fixed by `restore` with Wi-Fi settings kept, and the NTC of the stock firmware against ESPHome on the same device. Troubleshooting and `commands.md`: `--timeout 1200` for a device on a weak Wi-Fi.
 - `PowerStrip` page: the ADE7953 chip select and IRQ pins and the outlet mapping corrected from [devices.esphome.io PR #1811](https://github.com/esphome/devices.esphome.io/pull/1811)

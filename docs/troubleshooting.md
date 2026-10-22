@@ -96,7 +96,7 @@ http://<Shelly IP>/rpc/HTTP.GET?url="http://<PC IP>:8000/"
 Any HTTP status in the answer (a 404 is fine) means the way is open. Allow TCP port 8000 (or your `--port`) from the Shelly's
 network to this PC, or put the PC in the same network for the update. If `send` picked the wrong PC address, set `--host`.
 
-A device with a **weak Wi-Fi signal** can reach this PC and still be too slow: at -68 dBm a Mini 1 Gen3 downloaded about 1 % per 5 s and `send` stopped after the default 300 s at 28 %. Nothing breaks then (the device keeps its old firmware); run it again with a longer wait, for example `--timeout 1200`, or move the device or the access point closer.
+A device with a **weak Wi-Fi signal** can reach this PC and still be too slow: at -68 dBm a Mini 1 Gen3 downloaded about 1 % per 5 s and `send` stopped after the default 300 s at 28 %. The device kept its old firmware. `send` now says it when the signal is -67 dBm or weaker and asks how long to wait ([Wi-Fi signal](commands.md#wi-fi-signal)); with `--yes` run it again with `--timeout 1200`, or move the device or the access point closer.
 
 ### Battery devices (H&T Gen3)
 
