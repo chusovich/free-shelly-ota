@@ -34,6 +34,10 @@ SETTLE_SECONDS = 120
 DEFAULT_WAIT = 120      # seconds to wait before the next pass after a refusal (--wait)
 MAX_PASSES = 3          # how often send() offers to try again after a "Not committed" refusal
 RESULT_WAIT = 30        # seconds to wait for the device's own "update succeeded" after it has downloaded the ZIP
+# A weak Wi-Fi signal slows the download down to a crawl: a Mini 1 Gen3 at -68 dBm took about 1 % per 5 to 10 s and was at 28 % after
+# the default 300 s (one report). Where exactly it starts to hurt is not known, so this is a guess from that one report.
+WEAK_RSSI = -67         # dBm; at or below this send() says so and offers a longer wait
+SLOW_TIMEOUT = 1200     # the wait suggested for a weak signal (that report finished with --timeout 1200)
 
 
 def device_info(addr: str, timeout: float = 10) -> dict:
@@ -56,6 +60,37 @@ def device_uptime(addr: str, **auth) -> int | None:
     except OtaError:
         return None
     return int(uptime) if isinstance(uptime, (int, float)) and not isinstance(uptime, bool) else None
+
+
+def device_wifi_rssi(addr: str, **auth) -> int | None:
+    """Signal strength of the device's Wi-Fi in dBm (Wifi.GetStatus), or None if it cannot be told.
+
+    Like the uptime, only a hint: a device or firmware that does not answer is not an error.
+    """
+    try:
+        rssi = rpc.call(addr, "Wifi.GetStatus", timeout=5, **auth).get("rssi")
+    except OtaError:
+        return None
+    return int(rssi) if isinstance(rssi, (int, float)) and not isinstance(rssi, bool) and rssi < 0 else None
+
+
+def ask_seconds(ask: Callable[[str], str], question: str, suggested: float) -> float | None:
+    """Ask for a wait in seconds: Enter takes the suggested one, a number another one, 's' skips (returns None: go on as it is),
+    'c' cancels (OtaError). Anything else is asked again."""
+    while True:
+        answer = ask(f"{question} [{suggested:.0f} s]  Enter = that, a number = other seconds, s = skip, c = cancel: ").strip().lower()
+        if answer == "":
+            return suggested
+        if answer == "s":
+            return None
+        if answer == "c":
+            raise OtaError("Cancelled.")
+        try:
+            seconds = float(answer)
+        except ValueError:
+            continue
+        if seconds > 0:
+            return seconds
 
 
 class Refusal(NamedTuple):
@@ -104,6 +139,25 @@ def _settle(addr: str, auth: dict, *, say: Callable[[Level, str], None], ask: Ca
     _wait_with_countdown(pause, lambda text: say(Level.normal, text), sleep, live)
 
 
+def _check_wifi(addr: str, auth: dict, *, say: Callable[[Level, str], None], ask: Callable[[str], str], timeout: float,
+                dry_run: bool, assume_yes: bool) -> float:
+    """Read the Wi-Fi signal; if it is weak, say what that does to the download and offer a longer wait. Returns the wait for
+    the download in seconds. Never changes anything on its own: with --dry-run or --yes it only says so."""
+    rssi = device_wifi_rssi(addr, **auth)
+    if rssi is None:
+        return timeout
+    say(Level.verbose, f"Wi-Fi signal of the device: {rssi} dBm.")
+    if rssi > WEAK_RSSI:
+        return timeout
+    say(Level.normal, f"NOTE: weak Wi-Fi signal of the device ({rssi} dBm). It downloads the ZIP over Wi-Fi, which can be very slow: a "
+                      f"Mini 1 Gen3 at -68 dBm needed about 20 minutes. The wait for the download is {timeout:.0f} s "
+                      f"(--timeout); moving the device or the access point closer helps more.")
+    if dry_run or assume_yes:
+        return timeout
+    chosen = ask_seconds(ask, "Wait for the download for", max(timeout, SLOW_TIMEOUT))
+    return timeout if chosen is None else chosen
+
+
 def local_ip_for(addr: str) -> str:
     """Local address this PC would use to reach addr (no packet is sent)."""
     host = addr.rsplit(":", 1)[0] if addr.count(":") == 1 else addr
@@ -122,6 +176,8 @@ class FileServer:
         self.path = path
         self.name = path.name
         self.served = threading.Event()
+        self.size = path.stat().st_size
+        self.bytes_sent = 0   # handed to the socket so far, all requests together: about as far as the device has read
         outer = self
 
         class Handler(http.server.BaseHTTPRequestHandler):
@@ -145,6 +201,7 @@ class FileServer:
                     with outer.path.open("rb") as f:
                         while chunk := f.read(64 * 1024):
                             self.wfile.write(chunk)
+                            outer.bytes_sent += len(chunk)
                     self.wfile.flush()
                     outer.served.set()
                 except OSError:
@@ -433,6 +490,11 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
             f"{note[0]}: {note[1]}")
     # last, so that a refusal (wrong slot, wrong device) does not first cost the wait
     _settle(addr, auth, say=say, ask=ask, sleep=sleep, dry_run=dry_run, assume_yes=assume_yes, live=session.out is ui.say)
+    try:
+        timeout = _check_wifi(addr, auth, say=say, ask=ask, timeout=timeout, dry_run=dry_run, assume_yes=assume_yes)
+    except OtaError:   # cancelled at the question
+        server.httpd.server_close()
+        raise
     if dry_run:
         server.start()  # the device fetches http://host:port/ from it; the ZIP is not requested
         try:
@@ -473,13 +535,29 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
                 trigger = f"http://{addr}/rpc/Shelly.Update?url={urllib.parse.quote(srv.url(host), safe='')}"
                 answer = rpc.request(trigger, timeout=30, **auth).decode(errors="replace").strip()
                 say(Level.verbose, f"Device accepted the request: {answer or 'ok'}")
-                say(Level.verbose, "Waiting for the device to download the ZIP ...")
-                deadline = time.monotonic() + timeout
+                say(Level.verbose, f"Waiting up to {timeout:.0f} s for the device to download the ZIP ...")
+                started = time.monotonic()
+                deadline = started + timeout
+                seen = 0   # bytes sent at the last deadline
                 while not srv.served.wait(0.5):   # short steps, so Ctrl+C works at once (also on Windows)
                     if session.result == "error":
                         break
                     if time.monotonic() >= deadline:
-                        raise OtaError(f"The device did not download the ZIP within {timeout:.0f}s. Check that it can "
+                        if srv.bytes_sent > seen and not assume_yes:   # the device is still taking it: ask, never decide alone
+                            seen = srv.bytes_sent
+                            say(Level.normal, f"NOTE: after {time.monotonic() - started:.0f} s the device has taken about "
+                                              f"{min(100, 100 * srv.bytes_sent // max(srv.size, 1))} % of the ZIP and is still "
+                                              f"downloading (a weak Wi-Fi signal?).")
+                            more = ask_seconds(ask, "Wait longer for", timeout)
+                            deadline = time.monotonic() + (timeout if more is None else more)
+                            continue
+                        waited = time.monotonic() - started
+                        if srv.bytes_sent:   # it did start: slow, not unreachable
+                            raise OtaError(f"The device did not finish the download within {waited:.0f}s (about "
+                                           f"{min(100, 100 * srv.bytes_sent // max(srv.size, 1))} % of the ZIP). In the one case seen "
+                                           f"the device stayed on its old firmware. A weak Wi-Fi signal is the usual cause: move it closer "
+                                           f"or wait longer with --timeout {SLOW_TIMEOUT}.")
+                        raise OtaError(f"The device did not download the ZIP within {waited:.0f}s. Check that it can "
                                        f"reach {host}:{srv.port} (firewall, network).")
                 if srv.served.is_set():
                     say(Level.normal, "The device downloaded the ZIP and installs it now.")

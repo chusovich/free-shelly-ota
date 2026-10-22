@@ -24,8 +24,10 @@ class FakeRpcShelly:
 
     def __init__(self, password=None, slot=1, app="DuoBulbG3", target_slot=None, core_dump_target=None, uptime=None,
                  update_refusals=(), send_log=True, getconfig_fails=False, restore_fails=False, ota_events=None,
-                 device_id=None):
+                 device_id=None, rssi=None, slow=None):
         self.app = app
+        self.rssi = rssi  # if set, Wifi.GetStatus reports it (dBm)
+        self.slow = slow  # (bytes, seconds): the download reads that much, then waits, like a device on a weak Wi-Fi
         self.ota_events = ota_events  # None, "success" or "error": the update then reports progress in the log like a real device
         self.device_id = device_id    # reported by Shelly.GetDeviceInfo; log entries use it (a made-up one if None)
         self.password = password
@@ -93,7 +95,7 @@ class FakeRpcShelly:
                                                                                  "progress_percent": 0}])
                         threading.Thread(target=outer.finish_update, args=(url,)).start()
                     else:
-                        threading.Thread(target=lambda: urllib.request.urlopen(url).read()).start()
+                        threading.Thread(target=outer.download, args=(url,)).start()
                     return self._reply({})
                 self.send_error(404)
 
@@ -103,6 +105,8 @@ class FakeRpcShelly:
                 req = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
                 if req["method"] == "Sys.GetStatus" and outer.uptime is not None:
                     return self._reply({"id": 1, "result": {"uptime": outer.uptime}})
+                if req["method"] == "Wifi.GetStatus" and outer.rssi is not None:
+                    return self._reply({"id": 1, "result": {"status": "got ip", "ssid": "home", "rssi": outer.rssi}})
                 if req["method"] == "Sys.GetConfig":
                     if outer.getconfig_fails:
                         return self._reply({"id": 1, "error": {"code": -105, "message": "cannot read the config"}})
@@ -146,6 +150,19 @@ class FakeRpcShelly:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto("".join(entries).encode(), (host, int(port)))
         sock.close()
+
+    def download(self, url):
+        """Fetch the ZIP; with `slow` in small steps and pauses."""
+        with urllib.request.urlopen(url) as resp:
+            if not self.slow:
+                resp.read()
+                return
+            step, pause = self.slow
+            try:
+                while resp.read(step):
+                    time.sleep(pause)
+            except OSError:
+                pass   # the PC stopped serving
 
     def finish_update(self, url):
         """Like the real device: the download takes a moment, progress is reported, then success (or an error)."""
