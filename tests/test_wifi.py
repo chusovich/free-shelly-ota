@@ -50,7 +50,7 @@ class WifiTests(unittest.TestCase):
         self.assertFalse(any("weak" in l.lower() for l in lines), lines)
 
     def test_a_weak_signal_is_said_and_asked_about(self):
-        for answer, wait in (("", 1200), ("s", 300), ("600", 600)):
+        for answer, wait in (("", 1200), ("s", 300), ("skip", 300), ("600", 600)):
             with self.subTest(answer=answer):
                 s = self._shelly(rssi=-72)
                 script = Script(answer, "yes")
@@ -66,6 +66,10 @@ class WifiTests(unittest.TestCase):
         self.assertIsInstance(ok, builder.OtaError)
         self.assertIn("Cancelled", str(ok))
         self.assertEqual(s.updates, [])
+
+    def test_cancel_can_be_spelled_out(self):
+        ok, lines = self._send(self._shelly(rssi=-80), Script("Cancel"))
+        self.assertIn("Cancelled", str(ok))
 
     def test_an_answer_that_is_not_understood_is_asked_again(self):
         s = self._shelly(rssi=-80)

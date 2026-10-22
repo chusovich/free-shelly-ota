@@ -154,7 +154,7 @@ the download can be very slow (a Mini 1 Gen3 at -68 dBm needed about 20 minutes)
 Wait for the download for [1200 s]  Enter = that, a number = other seconds, s = skip, c = cancel:
 ```
 
-Enter takes the suggested wait (at least 1200 s), a number sets another one, `s` skips the question and keeps `--timeout`, `c` cancels before anything is sent.
+Enter takes the suggested wait (at least 1200 s), a number sets another one, `s` (or `skip`) skips the question and keeps `--timeout`, `c` (or `cancel`) cancels before anything is sent.
 The same question comes if the wait runs out while the device is still taking the ZIP ("the device has taken about 28 % ... still downloading"): Enter waits as long again,
 a number waits that long, `c` stops. `send` never waits longer on its own: with `--yes` or `--dry-run` it only says so, and a stalled download still ends with an error.
 The threshold is a guess from one report.

@@ -75,15 +75,15 @@ def device_wifi_rssi(addr: str, **auth) -> int | None:
 
 
 def ask_seconds(ask: Callable[[str], str], question: str, suggested: float) -> float | None:
-    """Ask for a wait in seconds: Enter takes the suggested one, a number another one, 's' skips (returns None: go on as it is),
-    'c' cancels (OtaError). Anything else is asked again."""
+    """Ask for a wait in seconds: Enter takes the suggested one, a number another one, 's' / 'skip' skips (returns None: go on as it
+    is), 'c' / 'cancel' cancels (OtaError). Anything else is asked again."""
     while True:
         answer = ask(f"{question} [{suggested:.0f} s]  Enter = that, a number = other seconds, s = skip, c = cancel: ").strip().lower()
         if answer == "":
             return suggested
-        if answer == "s":
+        if answer in ("s", "skip"):
             return None
-        if answer == "c":
+        if answer in ("c", "cancel"):
             raise OtaError("Cancelled.")
         try:
             seconds = float(answer)
