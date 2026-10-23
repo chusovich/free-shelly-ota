@@ -62,15 +62,8 @@ ota:
 
 ## Pins
 
-| Function | Pin |
-| --- | --- |
-| Relay | GPIO4 |
-| Button | GPIO9 |
-| Internal temperature | GPIO33 |
-| LED ring: LEDs 1 and 2 / LEDs 3 and 4 | GPIO25 / GPIO26 |
-| Power measurement | HLW8012 (CF, CF1 and SEL pins: see the device-database page) |
-
-Source: the Shelly Plus Plug S page in the ESPHome device database (config tested by its author, bobkersten; not by
+The pins (relay, button, temperature, LED ring, the HLW8012 pins for the power measurement) are on the
+[ESPHome device page](https://devices.esphome.io/devices/shelly-plus-plug-s/) (config tested by its author, bobkersten; not by
 this project).
 
 ## Flash it
