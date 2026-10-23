@@ -97,6 +97,17 @@ class SecretsTests(unittest.TestCase):
         data = json.loads((self.tmp / "o.zip.report.json").read_text(encoding="utf-8"))
         self.assertIsNone(data["contains_secrets"])
 
+    def test_build_warns_if_the_image_lacks_partition_access(self):
+        p = profile.load_profile("PlugMG3")
+        official = firmware.cached_zip("PlugMG3")
+        app = self.tmp / "app.bin"
+        app.write_bytes(fake_app(100_000))
+        res = builder.build(p, app, official, self.tmp / "o.zip")
+        self.assertTrue(any("allow_partition_access" in w for w in res.warnings))
+        app.write_bytes(fake_app(100_000) + builder.PARTITION_ACCESS_MARKER)
+        res = builder.build(p, app, official, self.tmp / "o2.zip")
+        self.assertFalse(any("allow_partition_access" in w for w in res.warnings))
+
     def test_report_note(self):
         z = self.tmp / "x.zip"
         z.write_bytes(b"")

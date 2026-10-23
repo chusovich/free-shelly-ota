@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- `build` also checks the image itself for `allow_partition_access: true` (ESPHome's "Partition access allowed" text) and warns if it is
+  missing, also without `--esphome-yaml`.
 - 25 profiles for Shelly Gen3 and Gen4 devices, made from the official packages, each with its partition CSV, a device page and a row in the
   README: Gen3 (ESP32-C3) `S1G3` (1), `S1PMG3` (1PM), `S2PMG3` (2PM), `S1LG3` (1L), `S2LG3` (2L), `I4G3` (i4), `DimmerG3`,
   `Dimmer0110VPMG3` (Dimmer 0/1-10V PM), `EMG3`, `S3EMG3` (3EM-63), `OutdoorPlugSG3`, `BluGwG3` (BLU Gateway); Gen4 (ESP32-C6) `S1G4`, `S1PMG4`,

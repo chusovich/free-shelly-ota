@@ -24,6 +24,10 @@ CHIP_IDS = {"esp32": 0x0000, "esp32c3": 0x0005, "esp32c6": 0x000D}  # esp_chip_i
 APP_DESC_MAGIC = bytes.fromhex("3254cdab")  # esp_app_desc_t.magic_word 0xABCD5432, little endian
 
 
+# ESPHome logs this line from dump_config() only when it was built with ota esphome > allow_partition_access
+PARTITION_ACCESS_MARKER = b"Partition access allowed"
+
+
 class OtaError(Exception):
     pass
 
@@ -145,6 +149,11 @@ def build(profile: Profile, app_path: Path, official_zip: Path, output: Path, *,
 
     app = app_path.read_bytes()
     warnings = check_app_image(app, profile.platform, profile.app_slot_size, profile.app_ptn)
+    if PARTITION_ACCESS_MARKER not in app:
+        warnings.append("The image does not look like it was built with 'allow_partition_access: true' under 'ota: - platform: esphome' "
+                        "(the text 'Partition access allowed' is missing). Without it ESPHome cannot update the bootloader or the "
+                        "partition table later; normal app updates are not affected (see docs/bootloader-and-slots.md). If the option "
+                        "is set, a logger level below CONFIG can hide the text.")
 
     secrets_found: list[str] | None = None
     if secrets is not None:
