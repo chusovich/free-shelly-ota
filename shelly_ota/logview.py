@@ -128,6 +128,8 @@ RULES = (
     Rule(r"New min heap free: (\d+)", "noise", Level.debug, "Free heap minimum: {0} bytes"),
     Rule(r"(?i)(streaming|stopped streaming) logs to (\S+)", "noise", Level.debug, "Log {0} to {1}"),
     Rule(r"UDP log set up to", "noise", Level.debug, "UDP log set up"),
+    # The power meter chip does not answer on its UART while the update runs; repeated every few seconds, harmless
+    Rule(r"packet read timed out", "noise", Level.debug, "Power meter chip: packet read timed out"),
     Rule(r"Status change of (\S+):", "noise", Level.debug, "Status change of {0}"),
 )
 
