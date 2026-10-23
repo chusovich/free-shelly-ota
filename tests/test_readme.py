@@ -42,6 +42,8 @@ def _table_states(path: Path, state_cell: str) -> dict:
         if not m:
             continue
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) <= state_cell:
+            continue                      # another table with a profile column (the dev board runs)
         symbol = cells[state_cell].split(" ")[0]
         states[m.group(1)] = symbol
     return states
@@ -51,25 +53,32 @@ class ReadmeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.text = README.read_text(encoding="utf-8")
-        cls.states = _table_states(README, state_cell=3)  # Device | Profile | Chip | State | Note
+        cls.states = _table_states(README, state_cell=3)  # Device | Profile | Chip | State | Note: the confirmed devices
+        cls.overview = _table_states(DEVICE_OVERVIEW, state_cell=5)  # Device | Profile | Chip | Table | Slot | State: all of them
 
-    def test_every_profile_is_in_the_device_table_and_nothing_else(self):
-        self.assertEqual(sorted(self.states), profile.list_devices())
+    def test_the_overview_has_every_profile_and_nothing_else(self):
+        self.assertEqual(sorted(self.overview), profile.list_devices())
+
+    def test_the_readme_table_has_exactly_the_confirmed_devices(self):
+        confirmed = {name: symbol for name, symbol in self.overview.items() if symbol in ("✅", "🟡")}
+        self.assertEqual(self.states, confirmed)
 
     def test_states_are_known_symbols(self):
-        for name, symbol in self.states.items():
+        for name, symbol in self.overview.items():
             self.assertIn(symbol, STATES, name)
 
     def test_summary_line_matches_the_table(self):
         m = re.search(r"\*\*(\d+) profiles:\*\* ✅ (\d+) confirmed · 🟡 (\d+) partly checked · 🔬 (\d+) DevKit-tested · 🧪 (\d+) untested", self.text)
         self.assertIsNotNone(m, "summary line above the device table is missing or changed its form")
-        symbols = list(self.states.values())
+        symbols = list(self.overview.values())
         expected = (len(symbols), symbols.count("✅"), symbols.count("🟡"), symbols.count("🔬"), symbols.count("🧪"))
         self.assertEqual(tuple(int(g) for g in m.groups()), expected)
 
-    def test_device_overview_has_the_same_states(self):
-        overview = _table_states(DEVICE_OVERVIEW, state_cell=5)  # Device | Profile | Chip | Table | Slot | State
-        self.assertEqual(overview, self.states)
+    def test_the_dev_board_section_lists_exactly_the_devkit_tested_devices(self):
+        text = DEVICE_OVERVIEW.read_text(encoding="utf-8")
+        section = text.split("## Tested on a dev board", 1)[1].split("\n## ", 1)[0]
+        listed = set(re.findall(r"\[`(\w+)`\]", section))
+        self.assertEqual(listed, {name for name, symbol in self.overview.items() if symbol == "🔬"})
 
     def test_relative_links_and_images_exist(self):
         for m in re.finditer(r"\]\(([^)\s]+)\)", self.text):
@@ -94,7 +103,7 @@ class DevicePageTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.pages = sorted(p for p in (ROOT / "docs" / "devices").glob("*.md") if p.name != "README.md")
-        cls.states = _table_states(README, state_cell=3)
+        cls.states = _table_states(DEVICE_OVERVIEW, state_cell=5)
 
     def _profiles(self, text):
         m = re.search(r"(?m)^\| Profile \| (.+) \|$", text)

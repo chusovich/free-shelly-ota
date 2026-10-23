@@ -54,7 +54,7 @@ Where the project stands and where it goes next.
 
 | What | Who can help | Where |
 | --- | --- | --- |
-| Flash a 🧪 device and report the `--log-file` file | Owners of the 🧪 devices in the [table](README.md#supported-devices), 25 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
+| Flash a 🧪 device and report the `--log-file` file | Owners of the 🧪 devices in the [list](docs/devices/README.md#devices), 25 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Pro 3EM: a first hardware report. Plus Uni and Pro 3EM: the pins | Owners | Issues [#36](https://github.com/oxynatOr/free-shelly-ota/issues/36) and [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46) |
 | A board for the rest of the test bench: ESP32-C3 with 8 MB, ESP32-C6 and classic ESP32 with 16 MB | Anyone with such a board | [Which board](docs/devkit.md#which-board) |
 | Plug PM Gen3: readings against a reference meter | Owners | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |

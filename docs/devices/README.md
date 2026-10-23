@@ -4,7 +4,8 @@
 
 One page per device: the ESPHome config with the partition table that device needs, the pins where they are known, the exact
 commands, the log lines to look for and the way back to Shelly OS. Pick your device below, then read
-[Commands](../commands.md) for what the options do.
+[Commands](../commands.md) for what the options do. The README of the project lists only the devices confirmed on real hardware
+(✅ and 🟡); this page lists every profile.
 
 ✅ = the whole chain ran on a real device, 🟡 = flashed on a real device, but part of the chain or of the function is not
 checked yet, 🔬 = the OTA ran through on a dev board with the [DevKit image](../devkit.md), but not on the real device, 🧪 = the package builds and verifies, but nobody has flashed it yet.
@@ -59,6 +60,18 @@ checked yet, 🔬 = the OTA ran through on a dev board with the [DevKit image](.
 
 The partition table offset goes into your ESPHome config as `CONFIG_PARTITION_TABLE_OFFSET`; `build` refuses a config that
 does not match the profile. Details per device are on its page.
+
+## Tested on a dev board
+
+These profiles went through the whole update on a dev board with the [DevKit image](../devkit.md), but not on the real device yet. What the board showed is in [Seen on a board](../devkit.md#seen-on-a-board).
+
+| Device | Profile | Board | Date |
+| --- | --- | --- | --- |
+| i4 Gen4 | [`I4G4`](I4G4.md) | ESP32-C6 dev board, 8 MB | 2026-10-21 |
+| Dimmer Gen4 | [`DimmerG4`](DimmerG4.md) | ESP32-C6 dev board, 8 MB | 2026-10-21 |
+| Dimmer 0/1-10V PM Gen4 | [`Dimmer0110VPMG4`](Dimmer0110VPMG4.md) | ESP32-C6 dev board, 8 MB | 2026-10-21 |
+| 1 Mini Gen4 | [`Mini1G4`](Mini1G4.md) | ESP32-C6 dev board, 8 MB | 2026-10-21 |
+| EM Mini Gen4 | [`MiniEMG4`](MiniEMG4.md) | ESP32-C6 dev board, 8 MB | 2026-10-21 |
 
 ## Where devices differ
 
