@@ -8,7 +8,7 @@ Where the project stands and where it goes next.
 
 > [!NOTE]
 > This is a plan, not a promise: the order changes when a test report or a new device shows up.
-> State: 2026-10-21, at release 0.5.0 (see the [CHANGELOG](CHANGELOG.md)).
+> State: 2026-10-22, at release 0.5.0 (see the [CHANGELOG](CHANGELOG.md)).
 
 ## Now
 
@@ -38,6 +38,7 @@ Where the project stands and where it goes next.
 ## Later (ideas, not planned)
 
 - **A package without Shelly's ZIP** (`build --standalone`, H&T Gen3 first). The package is built from the facts of the official one that the profile keeps (version, build id, bootloader header) and the partition CSV, with ESPHome's bootloader, `otadata` and partition table and an erased filesystem image, so it holds no file from Shelly and can be shared. Not run on a device yet, and no longer needed for the H&T Gen3: the 2.0.1 package is still served when the request carries the `Shelly-Info` header (`fetch --from-version`).
+- **Shelly Gen1 (ESP8266).** Many old devices (Shelly 1, 1PM, 2.5, Plug S, ...) have no way in except UART, and their owners cannot open them. The official Gen1 package is a Mongoose OS ZIP with a `manifest.json` and an rboot layout with two app slots, updated over HTTP (`/ota?url=`), so an OTA route looks possible. Open: whether an ESPHome image can start from an rboot slot, whether the bootloader part can be replaced, and whether the current stock firmware accepts an unsigned package; the first step would be a bench test on an ESP8266 board with 2 MB flash. Needs its own sender (no RPC on Gen1) and a device and a tester with UART ([#47](https://github.com/oxynatOr/free-shelly-ota/issues/47)). If it works, the README can say all generations instead of Gen2 to Gen4.
 - **Tasmota support.** Pack a Tasmota image into the official package instead of an ESPHome one, the way
   [tasmota/mgos32-to-tasmota32](https://github.com/tasmota/mgos32-to-tasmota32) converts Shelly packages. Open questions: which of the
   profiles it fits (ESP32, ESP32-C3, ESP32-C6), the partition table and bootloader Tasmota needs, and the way back. Needs a device and a
@@ -53,7 +54,7 @@ Where the project stands and where it goes next.
 
 | What | Who can help | Where |
 | --- | --- | --- |
-| Flash a 🧪 device and report the `--watch` log | Owners of the 🧪 devices in the [table](README.md#supported-devices), 26 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
+| Flash a 🧪 device and report the `--log-file` file | Owners of the 🧪 devices in the [table](README.md#supported-devices), 25 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Pro 3EM: a first hardware report. Plus Uni and Pro 3EM: the pins | Owners | Issues [#36](https://github.com/oxynatOr/free-shelly-ota/issues/36) and [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46) |
 | A board for the rest of the test bench: ESP32-C3 with 8 MB, ESP32-C6 and classic ESP32 with 16 MB | Anyone with such a board | [Which board](docs/devkit.md#which-board) |
 | Plug PM Gen3: readings against a reference meter | Owners | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
@@ -72,5 +73,5 @@ Items that stood under "Now" in an earlier version of this page.
 | Pro 3EM add-on (`Pro3EMProAddon`): no profile of its own, the `compatible` list covers it | [#49](https://github.com/oxynatOr/free-shelly-ota/pull/49) |
 | `send` stops before it sends a package that keeps Shelly's bootloader; the route without ESPHome's bootloader is described as the loader works | [#64](https://github.com/oxynatOr/free-shelly-ota/pull/64), [#65](https://github.com/oxynatOr/free-shelly-ota/pull/65) |
 | Release 0.4.0 | [CHANGELOG](CHANGELOG.md#040---2026-10-18) |
-| 25 profiles for Gen3 and Gen4 devices, the 🔬 state, Mini 1 Gen3 confirmed on hardware, a guide for a home-made UART adapter | [CHANGELOG](CHANGELOG.md#050---2026-10-21) |
-| Release 0.5.0 | [CHANGELOG](CHANGELOG.md#050---2026-10-21) |
+| Log levels, progress and error handling for `send`, `restore` and `log`; Mini 1 Gen3 confirmed on hardware; a guide for a home-made UART adapter | [CHANGELOG](CHANGELOG.md#050---2026-10-22) |
+| Release 0.5.0 | [CHANGELOG](CHANGELOG.md#050---2026-10-22) |

@@ -5,12 +5,7 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-10-21
-
 ### Added
-- Recovery over UART: a section "Build your own UART adapter" (`docs/recovery-uart.md`). An ESP32 dev board with a USB-UART chip and one wire from `EN` to `GND` is enough, no FTDI stick needed:
-  parts, wiring (the dev board's `RX`/`TX` are not crossed), the UART pads of the ESP32, ESP32-C3 and ESP32-C6, a check of the adapter, how to enter download mode, a table of
-  typical errors, and a short note for a plain USB-to-UART module. The wiring is general ESP practice; this project did not re-run it.
 - 25 profiles for Shelly Gen3 and Gen4 devices, made from the official packages, each with its partition CSV, a device page and a row in the
   README: Gen3 (ESP32-C3) `S1G3` (1), `S1PMG3` (1PM), `S2PMG3` (2PM), `S1LG3` (1L), `S2LG3` (2L), `I4G3` (i4), `DimmerG3`,
   `Dimmer0110VPMG3` (Dimmer 0/1-10V PM), `EMG3`, `S3EMG3` (3EM-63), `OutdoorPlugSG3`, `BluGwG3` (BLU Gateway); Gen4 (ESP32-C6) `S1G4`, `S1PMG4`,
@@ -20,6 +15,21 @@ All notable changes to this project are documented here. The format follows
 - State 🔬 "DevKit-tested" (README, device pages, `docs/devkit.md`): the update ran through on a dev board with the DevKit image, not on the real
   device. `Mini1G4`, `MiniEMG4`, `DimmerG4`, `Dimmer0110VPMG4` and `I4G4` have it, from runs on an ESP32-C6 dev board with 8 MB
   ("Seen on a board" in `docs/devkit.md`). A real device moves a profile to 🟡 or ✅.
+
+### Added
+- `PlusPlugIT` profile and device page (Shelly Plus Plug IT, SNPL-00110IT, ESP32, Gen2): confirmed on hardware by a device report, with the pins read from the stock firmware ([#83](https://github.com/oxynatOr/free-shelly-ota/issues/83)).
+- `send` checks the device's Wi-Fi signal (`Wifi.GetStatus`). At -67 dBm or weaker it says what that does to the download and asks "seconds / s / c" how long to wait (Enter takes 1200 s, `s` skips, `c` cancels). If the wait runs out while the device is still taking the ZIP, `send` asks the same way instead of stopping. It never waits longer on its own: with `--yes` or `--dry-run` it only says so. The threshold is a guess from one report ([Wi-Fi signal](docs/commands.md#wi-fi-signal)).
+
+### Changed
+- `Mini1PMG3` page: first device report ([#82](https://github.com/oxynatOr/free-shelly-ota/issues/82)), two units from stock 1.4.0 with the 2.1.0 package run ESPHome; state 🟡 until a second OTA, the relay under load and the meter are checked. First loader 1.0.0 seen (`Boot: cur 010000ff ... update? 1`).
+- `Mini1G3` page: a second report (a device in the wall): the `Boot:` lines of `restore` and of the ESPHome flash, the slot-1 case fixed by `restore` with Wi-Fi settings kept, and the NTC of the stock firmware against ESPHome on the same device. Troubleshooting and `commands.md`: `--timeout 1200` for a device on a weak Wi-Fi.
+- `PowerStrip` page: the ADE7953 chip select and IRQ pins and the outlet mapping corrected from [devices.esphome.io PR #1811](https://github.com/esphome/devices.esphome.io/pull/1811)
+  (chip 0, CS GPIO15, measures outlets 4+3; chip 1, CS GPIO10, outlets 2+1; IRQ GPIO5 / GPIO6), with notes on the polarity of channel B and the missing factor 4 in the readings.
+- `DuoBulbG3` page: the bulb was flashed over OTA with this tool and runs; the GPIOs are still not confirmed on the hardware.
+
+## [0.5.0] - 2026-10-22
+
+### Added
 - Log levels for `send`, `restore` and `log`: `--log-level quiet|normal|verbose|debug|raw`, `-q`, `-v`, `-vv`. They apply to the tool's own
   messages and to the device log. Default `normal` shows warnings, the key lines of the update (target slot, bootloader decision, update
   started), a progress line that updates in place (one line per 10 % without a terminal) and the result; `verbose` adds notes and every
@@ -42,6 +52,9 @@ All notable changes to this project are documented here. The format follows
 - `send`, `inspect`, `devkit --zip`, `add-device` and `build --official`: a file that is not a ZIP, usually a DevKit image (`.bin`), gets a message that says what it is and which command writes it to a board, instead of a traceback.
 - `send` asks for the uptime after the slot check, so a wrong slot or device no longer costs the wait first; the countdown shows in half-second steps; it says at once when the device has downloaded the ZIP.
 
+- Recovery over UART: a section "Build your own UART adapter" (`docs/recovery-uart.md`). An ESP32 dev board with a USB-UART chip and one wire from `EN` to `GND` is enough, no FTDI stick needed:
+  parts, wiring (the dev board's `RX`/`TX` are not crossed), the UART pads of the ESP32, ESP32-C3 and ESP32-C6, a check of the adapter, how to enter download mode, a table of
+  typical errors, and a short note for a plain USB-to-UART module. The wiring is general ESP practice; this project did not re-run it.
 ### Changed
 - Device pages, the README and the device-report issue form: the log lines to look for are the ones `send` shows at the default level;
   reports attach the `--log-file` file instead of the output of `send --watch`.
@@ -57,11 +70,10 @@ All notable changes to this project are documented here. The format follows
   `rpc.RpcError` and `rpc.DeviceUnreachable` replace error-text matching in `restore`.
 - Power Strip example config (`configs/shelly-power-strip-gen4/`): README and YAML name this tool instead of "ShellyOTA", the build command is relative to the
   repository root, and the slot-0 note links the Power Strip device page and "The app must land in slot 0" instead of a README section that is gone.
-- `Mini1G3` is confirmed on hardware (first report, #69): flash from Shelly 1.4.4 over OTA, ESPHome OTA afterwards. Relay, button, switch input and LED pins checked; the NTC calibration of the ESPHome device page reads high on that unit.
+- `Mini1G3` is confirmed on hardware (first report, #69): flash from Shelly 1.4.4 over OTA, ESPHome OTA afterwards. Relay, button, switch input and LED pins checked; the NTC calibration of the ESPHome device page reads high on that unit. The stock firmware converts the NTC with B 3950 (read from the official 2.0.1 app), not the 3350 of that page.
 - H&T Gen3 page: Shelly's update API answers per installed version, so a request without the `Shelly-Info` header showed no stable release (it
   looked like a removed one on 2026-10-10); `fetch HTG3 --from-version 1.4.4` gets the stable 2.0.1. The H&T Gen3 with display is reported to run with ESPHome.
-- README header: logo on the left, the tagline in the header.
-
+- README header with a bigger logo; `docs/commands.md` documents `--channel` and `--from-version` of `fetch` and `build`, and `--version` of `restore`.
 
 ## [0.4.0] - 2026-10-18
 

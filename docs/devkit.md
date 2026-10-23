@@ -27,6 +27,7 @@ The chip family must match and the flash must hold the whole partition table of 
 | --- | --- | --- | --- | --- |
 | `PlusUni` | Plus Uni | ESP32 | 4 MiB | classic ESP32 board, 4 MB |
 | `PlusPlugS` | Plus Plug S | ESP32 | 4 MiB | classic ESP32 board, 4 MB |
+| `PlusPlugIT` | Plus Plug IT | ESP32 | 4 MiB | classic ESP32 board, 4 MB |
 | `Pro3EM` | Pro 3EM | ESP32 | 16 MiB | classic ESP32 board with 16 MB (rare) |
 | `PlugMG3` | Plug M Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |
 | `PlugSG3` | Plug S Gen3 | ESP32-C3 | 8 MiB | ESP32-C3 board with 8 MB |

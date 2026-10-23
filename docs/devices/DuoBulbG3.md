@@ -18,7 +18,7 @@ The owner reports the same main board as the Multicolor Bulb with a different la
 | App slot size | `0x280000` |
 
 > [!NOTE]
-> **Partly checked:** the OTA package builds and verifies, but this tool has not flashed it. The owner flashed an ESPHome config over UART and it runs. The GPIOs are **not confirmed on the hardware** (the lamp was opened for the UART connection, so they were not checked with the LEDs); they come from the stock firmware, see [Pins](#pins).
+> **Partly checked:** the owner flashed the package from this tool over OTA and the bulb runs ESPHome (before that an ESPHome config was flashed over UART). The GPIOs are **not confirmed on the hardware** (they were not checked with the LEDs); they come from the stock firmware, see [Pins](#pins). The log of the OTA run is not recorded here.
 
 ## Before you start
 
@@ -119,7 +119,7 @@ package, reads the update target slot. Command reference: [Commands](../commands
 
 ## Notes for this device
 
-The OTA chain should work the same way as on the Multicolor Bulb, but it has not been run. The profile sets `boot_min_version: 1.0.9` because the Multicolor Bulb
+The OTA chain is the same as on the Multicolor Bulb, and the owner has run it with this tool. The profile sets `boot_min_version: 1.0.9` because the Multicolor Bulb
 (same main board) runs loader 1.0.3 after a return to stock, which the default 1.0.3 would skip. Please report the file written by `--log-file`, especially the line `Boot: cur ... min ... update?`.
 
 ## Way back

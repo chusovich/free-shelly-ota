@@ -2,7 +2,7 @@
 
 [← README](../../README.md) · [All devices](README.md) · [Commands](../commands.md)
 
-![State: untested](https://img.shields.io/badge/state-untested-lightgrey.svg?style=flat-square)
+![State: partly checked](https://img.shields.io/badge/state-partly%20checked-yellow.svg?style=flat-square)
 ![Chip: ESP32-C3](https://img.shields.io/badge/chip-ESP32--C3-blue.svg?style=flat-square)
 
 [🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
@@ -105,7 +105,11 @@ package, reads the update target slot. Command reference: [Commands](../commands
 
 ## Notes for this device
 
-No device-specific findings yet. Please report the file written by `--log-file`, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
+- **Result:** first report ([#82](https://github.com/oxynatOr/free-shelly-ota/issues/82)), two units, both on stock **1.4.0**, with the 2.1.0 package built from this profile (revision 2, `--esphome-factory`). `/shelly` showed slot 1 on both, but `send --dry-run` said `Update target slot: 0`, so no `restore` was needed. The update was confirmed by the device, it rebooted into ESPHome by itself, joined Wi-Fi and served the ESPHome web page. The same reporter flashed two [Mini 1 Gen3](Mini1G3.md) the same day (stock 1.4.4, package 2.0.1): both run ESPHome.
+- **Loader 1.0.0 on stock 1.4.0:** the log shows `Boot: cur 010000ff, new 00000000, min 010009ff, update? 1`, the oldest loader seen on a Gen3 device so far. `boot_min_version: 1.0.9` is higher, so ESPHome's bootloader was written. Stock 1.4.0 does not print a `Will write to slot` line; the slot comes from the check of `send`. The two lines `EFUSE write error bit[1]: 5636` and `bit[2]: 5636` come after the update was confirmed and are the same as on the other Gen3 reports ([why they are harmless](../troubleshooting.md#esphome-does-not-start-after-the-update)).
+- **Not checked yet:** a second (ESPHome) OTA, which is what proves that the bootloader step took effect, the relay under a load (it is almost silent without one, like the Mini 1 Gen3) and the BL0942 readings. The state goes to confirmed with a report on these.
+- **Pins used in the report** (from the [ESPHome device page](https://devices.esphome.io/devices/shelly-1pm-mini-gen3/), the pins as such not verified): relay GPIO5, switch input GPIO10, button GPIO1 (inverted, pull-up), LED GPIO0 (inverted), BL0942 on UART TX GPIO6 / RX GPIO7 (RX with pull-up, as on the [PM Mini Gen3](MiniPMG3.md)), NTC GPIO3 with B 3950, 10 kOhm, `DOWNSTREAM`, as in the [Mini 1 Gen3 notes](Mini1G3.md).
+- Please report the file written by `--log-file`, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
 
 ## Way back
 
