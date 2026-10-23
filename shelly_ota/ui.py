@@ -275,6 +275,8 @@ _lock = threading.RLock()      # the device log is printed from a reader thread,
 _live_text: str | None = None  # the line that stays at the bottom of the screen (timer, progress), without its newline
 _live_drawn = 0                # how many characters of it are on the screen
 _progress_step: dict[str, int] = {}
+_progress_start: dict[str, tuple[float, int]] = {}   # label -> (time, percent) of the first value of this run
+_clock = time.monotonic
 
 
 def _wipe() -> None:
@@ -370,6 +372,13 @@ def progress(label: str, percent: int, out: Callable[[str], None] | None = None)
         filled = percent * 20 // 100
         text = f"{label} [{'#' * filled}{'-' * (20 - filled)}] {percent:3d} %"
         with _lock:
+            now = _clock()
+            first = _progress_start.get(label)
+            if first is None or percent < first[1] or _progress_step.get(label) == 11:
+                first = _progress_start[label] = (now, percent)    # a new run
+            # the speed of this run so far; with less than 5 % or 3 s behind it the guess would jump around
+            if first[1] < percent < 100 and percent - first[1] >= 5 and now - first[0] >= 3:
+                text += f", about {duration((now - first[0]) * (100 - percent) / (percent - first[1]))} left"
             if percent >= 100:
                 if _progress_step.get(label) == 11:
                     return                               # the device logs 100 % twice: the finished line is shown once

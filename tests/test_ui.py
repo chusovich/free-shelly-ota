@@ -186,7 +186,8 @@ class LiveLineTests(unittest.TestCase):
     def setUp(self):
         ui._live_text, ui._live_drawn = None, 0
         ui._progress_step.clear()
-        self.addCleanup(lambda: (setattr(ui, "_live_text", None), setattr(ui, "_live_drawn", 0), ui._progress_step.clear()))
+        ui._progress_start.clear()
+        self.addCleanup(lambda: (setattr(ui, "_live_text", None), setattr(ui, "_live_drawn", 0), ui._progress_step.clear(), ui._progress_start.clear()))
 
     def tty(self):
         fake = _Tty()
@@ -278,6 +279,17 @@ class LiveLineTests(unittest.TestCase):
         ui.progress("Update", 100)
         self.assertTrue(out.getvalue().endswith("Update [####################] 100 %\n"))
         self.assertIsNone(ui._live_text)
+
+    def test_progress_on_a_terminal_estimates_the_time_left_from_its_own_speed(self):
+        out = self.tty()
+        clock = iter([0.0, 1.0, 10.0, 30.0])
+        with mock.patch.object(ui, "_clock", lambda: next(clock)):
+            for pct in (10, 12, 30, 60):
+                ui.progress("Update", pct)
+        text = out.getvalue()
+        self.assertNotIn("left", text.split("30 %")[0])           # too early: under 3 s, then under 5 %
+        self.assertIn(" 30 %, about 35 s left", text)               # 20 % in 10 s: the 70 % to go take 35 s
+        self.assertIn(" 60 %, about 24 s left", text)               # 50 % in 30 s: the 40 % to go take 24 s
 
     def test_the_device_logging_100_percent_twice_shows_the_finished_line_once(self):
         out = self.tty()

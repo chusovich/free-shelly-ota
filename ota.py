@@ -296,11 +296,8 @@ def cmd_send(args) -> None:
 
 
 RESTORE_NOTE = """NOTE: restore sends the cached official package. It only works while the Shelly firmware is still running. A device
-      that already runs ESPHome does not answer; the way back is then UART, with a flash backup.
-
-NOTE: The package may reset NVS and otadata, so Wi-Fi credentials and settings can be lost.
-
-NOTE: If ESPHome's bootloader is installed, the installer writes Shelly's bootloader back and moves the stock firmware to
+      that already runs ESPHome does not answer; the way back is then UART, with a flash backup."""
+RESTORE_SLOT_NOTE = """NOTE: If ESPHome's bootloader is installed, the installer writes Shelly's bootloader back and moves the stock firmware to
       the other slot. That is also what `send` needs when it reports that the installer would write to slot 1."""
 
 
@@ -310,6 +307,8 @@ def cmd_restore(args) -> None:
         raise builder.OtaError(f"No official {args.device} ZIP cached. Run 'ota.py fetch {args.device}' first.")
     ui.say(f"Restoring the official firmware from {zip_path}")
     ui.say(RESTORE_NOTE)
+    if _level(args, Level.normal) >= Level.verbose:
+        ui.say(RESTORE_SLOT_NOTE)
     try:
         _send(args, zip_path, f"{args.device}.restore.log", restoring=True)
     except rpc.DeviceUnreachable as e:

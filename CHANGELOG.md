@@ -23,6 +23,10 @@ All notable changes to this project are documented here. The format follows
 - `send` checks the device's Wi-Fi signal (`Wifi.GetStatus`). At -67 dBm or weaker it says what that does to the download and asks "seconds / s / c" how long to wait (Enter takes 1200 s, `s` skips, `c` cancels). If the wait runs out while the device is still taking the ZIP, `send` asks the same way instead of stopping. It never waits longer on its own: with `--yes` or `--dry-run` it only says so. The threshold is a guess from one report ([Wi-Fi signal](docs/commands.md#wi-fi-signal)).
 
 ### Changed
+- `restore` prints one NOTE (what it does and that a device with ESPHome does not answer) instead of three; the explanation of the slot change and the
+  second NVS sentence are gone or only shown with `-v` (the WARNING with the question already says the NVS is wiped).
+- The progress line (`Update [####---] 76 %`) shows an estimate of the time left (`, about 14 s left`) once the run is 5 % and 3 s on its way, measured from the
+  speed of this run. Only on a terminal; a log file keeps the 10 % lines.
 - `send` follows the download: from the bytes it has handed out it estimates the time left, shows `Download 31 %, about 14 min left` while the device's own
   progress line is not there, and extends the wait on its own when the device is slow but steady, with a NOTE that says so. `--max-wait SEC` (default 3600) caps
   the total; a download that stands still is not extended, and the question at the end of `--timeout` stays.
