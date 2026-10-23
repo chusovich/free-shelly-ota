@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- `ota.py ble scan|info|call|wifi`: talk to a Shelly over Bluetooth LE (its RPC channel), mainly to give a device without Wi-Fi its Wi-Fi (`ble wifi SSID -`, then `send` with
+  the printed address). Found on the Mini 1PM Gen4 Zigbee firmware on a dev board: no Wi-Fi, no access point, `provision: pending`. The logic is `shelly_ota/ble.py`, `bleak` is optional
+  (`requirements-ble.txt`, imported only when `ble` runs). Tested against a fake connection (framing, chunking, errors); on hardware only on that one board.
 - `build` also checks the image itself for `allow_partition_access: true` (ESPHome's "Partition access allowed" text) and warns if it is
   missing, also without `--esphome-yaml`.
 - 25 profiles for Shelly Gen3 and Gen4 devices, made from the official packages, each with its partition CSV, a device page and a row in the

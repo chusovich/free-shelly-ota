@@ -2,7 +2,7 @@
 
 [← README](../README.md) · [Documentation](README.md) · [Device pages](devices/README.md) · [Troubleshooting](troubleshooting.md)
 
-[📥 fetch](#fetch) · [🔨 build](#build) · [📤 send](#send) · [↩️ restore](#restore) · [➕ add-device](#add-device) · [📋 partition-csv](#partition-csv) · [🔍 inspect](#inspect) · [🧪 devkit](#devkit) · [📃 list](#list) · [🧹 clean](#clean) · [📜 log](#log) · [🎨 Colors](#colors)
+[📥 fetch](#fetch) · [🔨 build](#build) · [📤 send](#send) · [↩️ restore](#restore) · [📶 ble](#ble) · [➕ add-device](#add-device) · [📋 partition-csv](#partition-csv) · [🔍 inspect](#inspect) · [🧪 devkit](#devkit) · [📃 list](#list) · [🧹 clean](#clean) · [📜 log](#log) · [🎨 Colors](#colors)
 
 The usual workflow is three steps:
 
@@ -20,6 +20,7 @@ python ota.py send  PlugMG3 out/<file>.zip              # 3. send it to the devi
 | Build | [`build`](#build) | Replace the app part, check the image, write the ZIP to `out/` |
 | Deploy | [`send`](#send) | Check the device, serve the ZIP, trigger the update |
 | Deploy | [`restore`](#restore) | Send the cached official firmware back |
+| Deploy | [`ble`](#ble) | Bluetooth: scan, call an RPC method, give a device without Wi-Fi its Wi-Fi |
 | Deploy | [`log`](#log) | Show the device's live debug log |
 | Tools | [`inspect`](#inspect) | Show and verify a ZIP |
 | Tools | [`devkit`](#devkit) | Write a flash image of a package for a dev board and print the `esptool` commands |
@@ -190,6 +191,32 @@ Takes the same options as `send`, but sends the cached official firmware instead
 
 The official package may also reset NVS and `otadata`, so Wi-Fi credentials and settings can be lost (a PM Mini Gen3 that went
 from 2.0.1 to 2.0.1 this way kept both; do not count on it).
+
+## ble
+
+`python ota.py ble ACTION [ARG ...]` talks to a Shelly over Bluetooth LE. A device that has no Wi-Fi yet cannot be reached by `send`, which needs an
+address: the Zigbee firmware on a dev board (Mini 1PM Gen4) came up with `WiFi mode: off`, no access point and `provision: pending`, and only its
+Bluetooth RPC was on. `ble wifi` gives it a Wi-Fi, then `send` works as usual.
+
+| Action | What it does |
+| --- | --- |
+| `scan` | List the Shellies in range, the strongest first |
+| `info` | `Shelly.GetDeviceInfo` (app, version, `provision`) |
+| `call METHOD [JSON]` | Any RPC method, for example `call Zigbee.GetStatus` or `call Wifi.GetStatus` |
+| `wifi SSID [PASSWORD]` | `Wifi.SetConfig` (station), then waits for the address and prints it. `-` as the password asks for it without showing it |
+
+Options: `-a ADDR` (Bluetooth address; default: the strongest Shelly in range), `--timeout SEC` (answer, default 15), `--wait SEC` (address after `wifi`, default
+40), `--no-wait`. It needs `pip install bleak` (also `requirements-ble.txt`) and a Bluetooth LE adapter in this PC; all other commands work without both.
+
+```
+python ota.py ble scan
+python ota.py ble wifi MyNetwork -
+python ota.py send Mini1PMG4ZB out/<package>.zip --ip <the address printed> --dry-run
+```
+
+> [!NOTE]
+> The Bluetooth address is not the Wi-Fi MAC (on the device seen it was the MAC + 2). A password typed on the command line stays in the shell history: use `-`.
+> `restore` and the ESPHome package wipe NVS, so the Wi-Fi is gone again afterwards; `ble wifi` sets it once more.
 
 ## add-device
 

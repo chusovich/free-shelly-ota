@@ -18,7 +18,7 @@ import textwrap
 import zipfile
 from pathlib import Path
 
-from shelly_ota import (MODULE_DIR, buildinfo, builder, devicegen, devkit, firmware, lint, logview, logwatch, profile, rpc,
+from shelly_ota import (MODULE_DIR, ble, buildinfo, builder, devicegen, devkit, firmware, lint, logview, logwatch, profile, rpc,
                         secrets_check, sender, ui)
 from shelly_ota.logview import Level
 
@@ -40,6 +40,7 @@ COMMANDS = [
     ("Deploy", [
         ("send", "send a ZIP to a Shelly (it downloads from this PC)"),
         ("restore", "send the cached official firmware back to a Shelly"),
+        ("ble", "Bluetooth: give a device without Wi-Fi (e.g. Zigbee firmware) its Wi-Fi"),
         ("log", "show the live debug log of a Shelly"),
     ]),
     ("Tools", [
@@ -316,6 +317,44 @@ def cmd_restore(args) -> None:
                                f"cannot be restored this way; use UART (see the note above).") from e
 
 
+def cmd_ble(args) -> None:
+    rest = args.args
+    if args.action == "scan":
+        found = ble.scan()
+        if not found:
+            raise builder.OtaError("No Shelly found over Bluetooth. Is it powered and close by, and is BLE RPC on?")
+        for f in found:
+            ui.say(f"{f.address}  {f.name}  {f.rssi} dBm")
+        return
+    expected = {"info": (0, 0), "call": (1, 2), "wifi": (1, 2)}[args.action]
+    if not expected[0] <= len(rest) <= expected[1]:
+        raise builder.OtaError({"info": "info takes no argument.", "call": "call needs METHOD and optionally a JSON object.",
+                                "wifi": "wifi needs SSID and optionally PASSWORD ('-' asks for it without showing it)."}[args.action])
+    address = args.address
+    if not address:
+        found = ble.find_device()
+        address = found.address
+        ui.say(f"Using {found.name or 'the Shelly'} ({address}, {found.rssi} dBm)")
+    if args.action == "wifi":
+        ssid, password = rest[0], rest[1] if len(rest) > 1 else ""
+        if password == "-":
+            import getpass
+            password = getpass.getpass("Wi-Fi password: ")
+        ip = ble.provision_wifi(address, ssid, password, wait=0 if args.no_wait else args.wait)
+        if ip:
+            ui.say(f"The device joined {ssid} and has the address {ip}.")
+            ui.say(f"Next: python ota.py send DEVICE ZIP --ip {ip}   (restore first if send reports slot 1)")
+        else:
+            ui.say(f"Wi-Fi {ssid} is set. Ask for the address with: python ota.py ble call Wifi.GetStatus -a {address}")
+        return
+    method = "Shelly.GetDeviceInfo" if args.action == "info" else rest[0]
+    try:
+        params = json.loads(rest[1]) if args.action == "call" and len(rest) > 1 else None
+    except ValueError as e:
+        raise builder.OtaError(f"The parameters are not JSON: {e}") from e
+    print(json.dumps(ble.rpc(address, method, params, timeout=args.timeout), indent=2))
+
+
 def cmd_log(args) -> None:
     session = logview.Session(level=_level(args, Level.debug), out=ui.say)
     if args.replay:     # a saved log (from --log-file, or the output of --log-level raw), no device needed
@@ -572,6 +611,23 @@ def build_parser() -> argparse.ArgumentParser:
     g = r.add_argument_group("firmware")
     g.add_argument("--version", metavar="VER", help="cached version (default: the newest stable one)")
     r.set_defaults(func=cmd_restore)
+
+    bl = _command(sub, "ble", usage="ota.py ble {scan,info,call,wifi} [ARG ...] [options]",
+                  epilog=_epilog("ble wifi MyNetwork -", "ble",
+                                 "scan: the Shellies in range.  info: Shelly.GetDeviceInfo.\n"
+                                 "call METHOD [JSON]: any RPC method.\n"
+                                 "wifi SSID [PASSWORD]: set the Wi-Fi and wait for the address ('-' asks for\n"
+                                 "the password).\n"
+                                 "Needs: pip install bleak, and a Bluetooth LE adapter."))
+    bl.add_argument("action", choices=["scan", "info", "call", "wifi"])
+    bl.add_argument("args", nargs="*", metavar="ARG", help="call: METHOD [JSON]; wifi: SSID [PASSWORD]")
+    g = bl.add_argument_group("the Shelly")
+    g.add_argument("-a", "--address", metavar="ADDR", help="Bluetooth address (default: the strongest Shelly in range)")
+    g = bl.add_argument_group("what to do")
+    g.add_argument("--timeout", type=float, default=15.0, metavar="SEC", help="wait for an answer (default: %(default)s)")
+    g.add_argument("--wait", type=float, default=40.0, metavar="SEC", help="wifi: wait for the address up to SEC (default: %(default)s)")
+    g.add_argument("--no-wait", action="store_true", help="wifi: do not wait for the address")
+    bl.set_defaults(func=cmd_ble)
 
     lg = _command(sub, "log", usage="ota.py log [options]", parents=[dev, lvl],
                   epilog=_epilog("log --ip 192.168.1.50 --seconds 30", "log"))

@@ -116,7 +116,7 @@ Played through on a dev board with the DevKit image on 2026-10-23 (see [Seen on 
 
 ## Zigbee variant
 
-`Mini1PMG4ZB` is the Zigbee firmware variant of the same hardware (listed under `alt` in the update reply of `Mini1PMG4`; its profile has `parent: Mini1PMG4`). Use the same config and flash it with `python ota.py send Mini1PMG4ZB ...` after building with `build Mini1PMG4ZB`. Played through on a dev board as well (2026-10-23, see [Seen on a board](../devkit.md#seen-on-a-board)); not on the real device.
+`Mini1PMG4ZB` is the Zigbee firmware variant of the same hardware (listed under `alt` in the update reply of `Mini1PMG4`; its profile has `parent: Mini1PMG4`). Use the same config and flash it with `python ota.py send Mini1PMG4ZB ...` after building with `build Mini1PMG4ZB`. Played through on a dev board as well (2026-10-23, see [Seen on a board](../devkit.md#seen-on-a-board)); not on the real device. On the dev board the Zigbee firmware had no Wi-Fi and opened no access point: `python ota.py ble wifi SSID -` ([ble](../commands.md#ble)) gave it one before `send`.
 
 ## Way back
 

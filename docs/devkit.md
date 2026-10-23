@@ -86,7 +86,7 @@ The chip family must match and the flash must hold the whole partition table of 
    ```
 
    Open a serial monitor at 115200 Bd. Expected: Shelly's loader prints its version and `Booting app 0`. Whether the Shelly app then runs and opens an access point is the open question.
-3. **Stage 2, the tool reaches it.** Join the board's access point and check it:
+3. **Stage 2, the tool reaches it.** Join the board's access point and check it. A board with the Zigbee firmware opens none: give it a Wi-Fi over Bluetooth first (`python ota.py ble wifi SSID -`, see [ble](commands.md#ble)) and use the address it prints for `--ip`:
 
    ```
    python ota.py send PlusUni out/<package>.zip --ip 192.168.33.1 --dry-run

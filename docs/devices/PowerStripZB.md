@@ -85,6 +85,7 @@ package, reads the update target slot. Command reference: [Commands](../commands
 
 - A device that runs the Zigbee firmware reports another app name (`PowerStripZB`), so `send PowerStripZB` is the matching
   profile.
+- A unit that has no Wi-Fi yet can be given one over Bluetooth: `python ota.py ble wifi SSID -` ([ble](../commands.md#ble); seen on the Mini 1PM Gen4 Zigbee firmware, not on this model).
 - It has not been flashed. Please report the file written by `--log-file`. The slot rule and `min_version` notes of the Power Strip apply.
 
 ## Way back
