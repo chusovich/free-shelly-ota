@@ -24,7 +24,7 @@ A classic ESP32 like the [Plus Plug S](PlusPlugS.md): partition table at the ESP
 | Shelly documentation | [Shelly Plus Uni](https://kb.shelly.cloud/knowledge-base/shelly-plus-uni) (Knowledge Base) |
 
 > [!NOTE]
-> **Partly checked:** flashed over OTA on a real Plus Uni (stock 2.0.1, `send` with `--esphome-factory`, October 2026). The tester reports that ESPHome runs and that one later ESPHome OTA took effect; further ones did not (the unit keeps starting the old image). His package had `min_version` 1.0.3 instead of this profile's 1.0.9, so the installer skipped ESPHome's bootloader (`update? 0`, see the notes): that step is not checked on this model. The pins of the inputs and outputs are not known.
+> **Partly checked:** flashed over OTA on a real Plus Uni (stock 2.0.1, `send` with `--esphome-factory`, October 2026). The tester reports that ESPHome runs and that one later ESPHome OTA took effect; further ones did not (the unit keeps starting the old image). His package had `min_version` 1.0.3 instead of this profile's 1.0.9, so the installer skipped ESPHome's bootloader (`update? 0`, see the notes): that step is not checked on this model. One UART flash of ESPHome's factory image fixed it (a Raspberry Pi as adapter); since then OTAs work and an ESPHome "Update bootloader" over OTA worked too. The inputs and outputs are mapped (see [Pins](#pins)), the 1-Wire pin is not.
 
 ## Before you start
 
@@ -57,7 +57,7 @@ esp32:
 
 ota:
   - platform: esphome
-    allow_partition_access: true
+    allow_partition_access: true         # keep it in the FIRST config: it lets ESPHome Builder's "Update bootloader" fix a bootloader problem over OTA
 ```
 
 ## Pins
@@ -77,8 +77,25 @@ ota:
 > [!WARNING]
 > The order is read from Shelly's drawing, not from a board. Check with a multimeter that pin 7 is connected to the `GND` terminal before you apply 3.3 V. The board has a coating film (the pads may need cleaning), and every other supply (8-24 VAC, 9-28 VDC, 5 VDC) must be disconnected while the adapter is connected. Steps: [Recovery over UART](../recovery-uart.md).
 
-**Inputs and outputs.** The GPIOs are not known. The ESPHome device database has no page for the Plus Uni (checked 2026-10-12); its page for the original
-Shelly Uni is Gen1 hardware (ESP8266) and does not apply. Shelly's names for the connections are `ANALOG IN`, `DATA` (1-Wire), `COUNT IN` (pulse counter), `IN1`, `IN2`, `SENSOR VCC` and the two potential-free solid-state relay outputs `OUT1` and `OUT2`.
+**Inputs and outputs.** Measured and tested by [yasdfgr](https://github.com/yasdfgr) on his unit ([#46](https://github.com/oxynatOr/free-shelly-ota/issues/46)); not checked on a second board. The ESPHome device database has no page for the Plus Uni (checked 2026-10-12); its page for the original
+Shelly Uni is Gen1 hardware (ESP8266) and does not apply.
+
+| GPIO | Shelly name | Wire | Function |
+| --- | --- | --- | --- |
+| – | `VAC1`, `VAC2` | red, black | 8-24 VAC / 9-28 VDC supply |
+| 36 | `ANALOG IN` | white | analog input 0..30 VDC; scaling measured: 10.0 V reads 0.8 V at the pin |
+| – | `SENSOR VCC` | yellow | supply for 1-Wire sensors |
+| not known | `DATA` | blue | 1-Wire data line (1 x DHT22 or 5 x DS18B20) |
+| – | `+5 VDC`, `GND` | gray, green | 5 VDC supply; `GND` is also the sensor ground |
+| 39 | `COUNT IN` | purple | pulse counter input, active low (< 1.5 V, 50 kΩ) |
+| 38 | `IN1` | orange | digital input 1, active low (< 1.5 V, 50 kΩ) |
+| 37 | `IN2` | brown | digital input 2, active low (< 1.5 V, 50 kΩ) |
+| 19 | `OUT1` | black | solid-state relay 1 (potential-free) |
+| 21 | `OUT2` | black | solid-state relay 2 (potential-free) |
+| 18 | red LED on the board | | inverted |
+| not known | reset button on the board | | |
+
+GPIO 36 to 39 are input-only pins of the ESP32 and have no pull-up of their own; the board pulls the inputs up (active low).
 
 ## Flash it
 
@@ -155,6 +172,8 @@ never started: the unit kept running the old image (the tester's follow-up; no U
 loader works: it switches slots once, during its countdown, and then stays on the slot it committed
 ([why](../bootloader-and-slots.md#without-esphomes-bootloader-plain-package)). A run with this profile (`update? 1`) is still open.
 
+**Fixing it over UART, and the bootloader over OTA.** The tester wired a Raspberry Pi to the UART header, flashed ESPHome's factory image once, and the unit then took OTAs normally. He also ran ESPHome Builder's **Update bootloader** over OTA afterwards, which worked. That needs `allow_partition_access: true` in the config that is running, so keep it in the first config you send: then a bootloader problem can be fixed over OTA, without UART ([steps](../bootloader-and-slots.md)). The tester did not report whether the header order of the table under Pins matched his board.
+
 **eFuse.** After `FW signatures: want 07 got 00` the log shows `BURN BLOCK3 - OK` twice, not the `EFUSE write error` of the H&T and PM Mini.
 Whether the eFuse changed on this unit was not checked ([eFuse note](../troubleshooting.md#efuse)).
 
@@ -167,7 +186,7 @@ the target slot for you ([why](../bootloader-and-slots.md#the-app-must-land-in-s
 Once ESPHome runs they can be added with an ESPHome OTA, which replaces only the app. Read the chip revision of the unit from its boot
 log first: an app built for a higher minimum revision than the chip has does not start.
 
-Still open: the GPIOs of the inputs and outputs, the UART header on a real board, and a run with this profile. Please report the file written by `--log-file`, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
+Still open: the 1-Wire (`DATA`) pin, the reset button, and a run with this profile. Please report the file written by `--log-file`, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
 
 ## Way back
 
