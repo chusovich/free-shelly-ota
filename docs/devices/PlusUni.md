@@ -85,7 +85,7 @@ Shelly Uni is Gen1 hardware (ESP8266) and does not apply.
 | – | `VAC1`, `VAC2` | red, black | 8-24 VAC / 9-28 VDC supply |
 | 36 | `ANALOG IN` | white | analog input 0..30 VDC; scaling measured: 10.0 V reads 0.8 V at the pin |
 | – | `SENSOR VCC` | yellow | supply for 1-Wire sensors |
-| not known | `DATA` | blue | 1-Wire data line (1 x DHT22 or 5 x DS18B20) |
+| 13 ⚠️ | `DATA` | blue | 1-Wire data line (1 x DHT22 or 5 x DS18B20); read from the firmware, not measured |
 | – | `+5 VDC`, `GND` | gray, green | 5 VDC supply; `GND` is also the sensor ground |
 | 39 | `COUNT IN` | purple | pulse counter input, active low (< 1.5 V, 50 kΩ) |
 | 38 | `IN1` | orange | digital input 1, active low (< 1.5 V, 50 kΩ) |
@@ -93,7 +93,9 @@ Shelly Uni is Gen1 hardware (ESP8266) and does not apply.
 | 19 | `OUT1` | black | solid-state relay 1 (potential-free) |
 | 21 | `OUT2` | black | solid-state relay 2 (potential-free) |
 | 18 | red LED on the board | | inverted |
-| not known | reset button on the board | | |
+| 32 ⚠️ | reset button on the board | | read from the firmware, not measured |
+
+The Plus Uni 2.0.1 firmware agrees with the measured GPIOs (36, 37, 38, 39, 19, 21, 18): its init code creates the inputs, the counter, the two outputs and the LED on exactly these pins. The two ⚠️ rows come from the same code and nobody has tried them on a board: `DATA` is the pin the firmware hands to its DHT22 and 1-Wire drivers, and GPIO 32 is the one input the firmware creates under the system id 999 (the LED has that id too), which fits a reset button. Please confirm them (for example `dallas` / `dht` on GPIO13, a `binary_sensor` on GPIO32 with a button press).
 
 GPIO 36 to 39 are input-only pins of the ESP32 and have no pull-up of their own; the board pulls the inputs up (active low).
 
@@ -186,7 +188,7 @@ the target slot for you ([why](../bootloader-and-slots.md#the-app-must-land-in-s
 Once ESPHome runs they can be added with an ESPHome OTA, which replaces only the app. Read the chip revision of the unit from its boot
 log first: an app built for a higher minimum revision than the chip has does not start.
 
-Still open: the 1-Wire (`DATA`) pin, the reset button, and a run with this profile. Please report the file written by `--log-file`, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
+Still open: a check of the two ⚠️ pins (1-Wire `DATA`, reset button) on a board, and a run with this profile. Please report the file written by `--log-file`, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
 
 ## Way back
 
