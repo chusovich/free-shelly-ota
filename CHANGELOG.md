@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- `Mini1PMG4` device page: a Pins section with the button (GPIO22), the BL0942 UART (RX 19, TX 20, 9600 8N1) and its IRQ input (GPIO18), **read from the stock firmware with a disassembler and not
+  confirmed on a device** (marked on the page, with how sure each pin is). Relay and LED pins were not read.
 - `ota.py ble scan|info|call|wifi`: talk to a Shelly over Bluetooth LE (its RPC channel), mainly to give a device without Wi-Fi its Wi-Fi (`ble wifi SSID -`, then `send` with
   the printed address). Found on the Mini 1PM Gen4 Zigbee firmware on a dev board: no Wi-Fi, no access point, `provision: pending`. The logic is `shelly_ota/ble.py`, `bleak` is optional
   (`requirements-ble.txt`, imported only when `ble` runs). Tested against a fake connection (framing, chunking, errors); on hardware only on that one board.

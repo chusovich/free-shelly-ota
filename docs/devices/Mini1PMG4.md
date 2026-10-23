@@ -5,7 +5,7 @@
 ![State: DevKit-tested](https://img.shields.io/badge/state-devkit%20tested-blueviolet.svg?style=flat-square)
 ![Chip: ESP32-C6](https://img.shields.io/badge/chip-ESP32--C6-blue.svg?style=flat-square)
 
-[🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
+[🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [📍 Pins](#pins) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
 
 Gen4 / ESP32-C6.
 
@@ -60,6 +60,22 @@ esphome:
     board_build.f_flash: 80000000L
     board_build.flash_size: 8MB
 ```
+
+## Pins
+
+> [!WARNING]
+> **Read from the stock firmware, not confirmed on a device.** These values come from the code of Shelly's own firmware (Mini 1PM Gen4 2.0.1 and its Zigbee
+> variant, the same initialisation in both), read with a disassembler. Nobody measured them on a board with the parts fitted. Check them on your unit before you rely on them.
+
+| Function | Pin | How sure |
+| --- | --- | --- |
+| Button | **GPIO22**, reads low when pressed | Good: it is the pin of the button object and of the boot-time safe-mode check |
+| BL0942 power meter (UART 1, 9600 baud, 8N1) | **RX GPIO19**, **TX GPIO20** | Baud rate and pins are in the code; which of the two is RX and which TX is the less certain part: if the meter stays silent, swap them |
+| BL0942 interrupt input | GPIO18 | Medium: the firmware's own message calls it the "IRQ pin"; what the meter drives there was not checked |
+| Relay, LED | not read | |
+
+The ESPHome device page for this model does not exist yet (sitemap checked 2026-10-16), so there is nothing to compare with. The Zigbee variant and the normal
+variant share the same values.
 
 ## Flash it
 
