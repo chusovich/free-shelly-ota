@@ -38,7 +38,8 @@ def _table_states(path: Path, state_cell: str) -> dict:
     """{profile: state symbol} from the rows that link a profile as [`Name`](...)."""
     states = {}
     for line in path.read_text(encoding="utf-8").splitlines():
-        m = re.match(r"\|[^|]*\|\s*\[`(\w+)`\]\([^)]*\)\s*\|", line)
+        m = re.match(r"\|[^|]*\|\s*\[`(\w+)`\]\([^)]*\)\s*\|", line) \
+            or re.match(r"\|\s*\[[^\]]+\]\([^)]*\)\s*\|\s*`(\w+)`\s*\|", line)    # the profile linked, or the device linked
         if not m:
             continue
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
@@ -77,7 +78,7 @@ class ReadmeTests(unittest.TestCase):
     def test_the_dev_board_section_lists_exactly_the_devkit_tested_devices(self):
         text = DEVICE_OVERVIEW.read_text(encoding="utf-8")
         section = text.split("## Tested on a dev board", 1)[1].split("\n## ", 1)[0]
-        listed = set(re.findall(r"\[`(\w+)`\]", section))
+        listed = set(re.findall(r"(?m)^\| \[[^\]]+\]\([^)]*\) \| `(\w+)` \|", section))
         self.assertEqual(listed, {name for name, symbol in self.overview.items() if symbol == "🔬"})
 
     def test_relative_links_and_images_exist(self):
