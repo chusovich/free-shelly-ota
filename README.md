@@ -124,6 +124,9 @@ python ota.py send PlugMG3 out/PlugMG3-app-<date>.zip --ip <device IP>
   still guards against transfer errors ([`fetch`](docs/commands.md#fetch)).
 - Without `--ip`, `send` talks to `192.168.33.1`, the Shelly's own access point. Add `--dry-run` first to check the device
   without sending anything ([`send`](docs/commands.md#send)).
+- **A device without Wi-Fi** (the Zigbee firmware opens no access point and has no network yet): give it one over Bluetooth first with
+  `python ota.py ble wifi <SSID> -`, which asks for the password and prints the address to use as `--ip`. It needs `pip install bleak` and a Bluetooth LE
+  adapter ([`ble`](docs/commands.md#ble); seen on one Zigbee unit on a dev board, not yet on a real device).
 
 > [!CAUTION]
 > The package wipes NVS (Wi-Fi and settings), and a package built from your config can contain your Wi-Fi password.
@@ -153,7 +156,7 @@ hardware test: nobody can say a device works until someone has flashed one.
 | Page | What is in it |
 | --- | --- |
 | [Device pages](docs/devices) | One page per device: config, commands, log lines, pitfalls |
-| [Commands](docs/commands.md) | `fetch`, `build`, `send`, `restore`, `log` and the rest, with all options |
+| [Commands](docs/commands.md) | `fetch`, `build`, `send`, `restore`, `ble`, `log` and the rest, with all options |
 | [Bootloader and slots](docs/bootloader-and-slots.md) | Why ESPHome's bootloader is shipped, `min_version`, why the app must land in slot 0 |
 | [Troubleshooting](docs/troubleshooting.md) | Header errors, empty log, battery devices, eFuse, power cycle |
 | [Recovery over UART](docs/recovery-uart.md) | Back to Shelly OS with `esptool` |

@@ -147,6 +147,12 @@ A device that has been running for less than two minutes refuses `Shelly.Update`
 seconds and asks for a new confirmation before the next pass (at most three passes). With `--yes` it never waits or retries on its own.
 See [Troubleshooting](troubleshooting.md#send-stops-with-not-committed).
 
+### A slow download
+
+While the device downloads, `send` works out the time left from what it has handed out (it does not need the device's log) and shows `Download 31 %, about 14 min left` as long as the device's own progress line is not there.
+If the end lies beyond the wait (`--timeout`), `send` extends the wait on its own and says so, up to `--max-wait` (default 3600 s). A download that stands still is not extended; after `--timeout` the
+question "Wait longer?" stays as it was.
+
 ### Wi-Fi signal
 
 `send` reads the device's Wi-Fi signal (`Wifi.GetStatus`, a hint only: a device that does not answer is not an error) and shows it at `-v`. At **-67 dBm or weaker** it says that
@@ -170,7 +176,7 @@ is shown:
 | Level | Shown |
 | --- | --- |
 | `quiet` (`-q`) | Errors, questions and the final result. After a failure the last lines of the device log are printed anyway. |
-| `normal` (default) | + warnings, the key lines (target slot, bootloader decision, update started ...) and the progress: one line that updates in place, or one line per 10 % when the output is not a terminal |
+| `normal` (default) | + warnings, the key lines (target slot, bootloader decision, update started ...) and the progress: one line that updates in place (`Update [####---] 45 %, about 14 s left`; the time left appears once 20 points are done), or one line per 10 % when the output is not a terminal. `--log-level debug` shows the device's log lines instead of the bar |
 | `verbose` (`-v`) | + notes and explanations, every step of the update, and how many entries were hidden |
 | `debug` (`-vv`) | every entry of the device log on its own line, the RPC requests of other clients included (`RPC Shelly.GetStatus <- 192.168.1.10:47470`) |
 | `raw` | like `debug`, and the device log exactly as it arrives (several entries glued together in one line) |
@@ -205,7 +211,7 @@ Bluetooth RPC was on. `ble wifi` gives it a Wi-Fi, then `send` works as usual.
 | `call METHOD [JSON]` | Any RPC method, for example `call Zigbee.GetStatus` or `call Wifi.GetStatus` |
 | `wifi SSID [PASSWORD]` | `Wifi.SetConfig` (station), then waits for the address and prints it. `-` as the password asks for it without showing it |
 
-Options: `-a ADDR` (Bluetooth address; default: the strongest Shelly in range), `--timeout SEC` (answer, default 15), `--wait SEC` (address after `wifi`, default
+Options: `-a ADDR` / `--address ADDR` (Bluetooth address; default: the strongest Shelly in range), `--timeout SEC` (answer, default 15), `--wait SEC` (address after `wifi`, default
 40), `--no-wait`. It needs `pip install bleak` (also `requirements-ble.txt`) and a Bluetooth LE adapter in this PC; all other commands work without both.
 
 ```
