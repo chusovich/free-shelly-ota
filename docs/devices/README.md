@@ -28,7 +28,7 @@ checked yet, 🔬 = the OTA ran through on a dev board with the [DevKit image](.
 | [The Pill](Pill.md) | `Pill` | ESP32-C3 | `0x10000` | `0x280000` | 🧪 |  |
 | [Mini 1 Gen3](Mini1G3.md) | `Mini1G3` | ESP32-C3 | **`0xf000`** | `0x2a0000` | ✅ |  |
 | [Mini 1PM Gen3](Mini1PMG3.md) | `Mini1PMG3` | ESP32-C3 | **`0xf000`** | `0x2a0000` | 🟡 | Flashed over OTA (two units); a second OTA, the relay under load and the meter not checked |
-| [Mini 1PM Gen4](Mini1PMG4.md) | `Mini1PMG4` | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |  |
+| [Mini 1PM Gen4](Mini1PMG4.md) | `Mini1PMG4` | ESP32-C6 | `0x10000` | `0x300000` | 🔬 |  |
 | [Mini 1PM Gen4 (Zigbee)](Mini1PMG4.md#zigbee-variant) | `Mini1PMG4ZB` | ESP32-C6 | `0x10000` | `0x300000` | 🧪 |  |
 | [Plus Uni (Gen2)](PlusUni.md) | `PlusUni` | **ESP32** | **`0x8000`** | `0x190000` | 🟡 | Flashed over OTA, ESPHome's bootloader step not checked |
 | [Pro 3EM (Gen2)](Pro3EM.md) | `Pro3EM` | **ESP32** | **`0x8000`** | `0x200000` | 🧪 |  |
@@ -72,6 +72,7 @@ These profiles went through the whole update on a dev board with the [DevKit ima
 | [Dimmer 0/1-10V PM Gen4](Dimmer0110VPMG4.md) | `Dimmer0110VPMG4` | ESP32-C6 dev board, 8 MB | 2026-10-21 |
 | [1 Mini Gen4](Mini1G4.md) | `Mini1G4` | ESP32-C6 dev board, 8 MB | 2026-10-21 |
 | [EM Mini Gen4](MiniEMG4.md) | `MiniEMG4` | ESP32-C6 dev board, 8 MB | 2026-10-21 |
+| [Mini 1PM Gen4](Mini1PMG4.md) | `Mini1PMG4` | ESP32-C6 dev board, 8 MB | 2026-10-23 |
 
 ## Where devices differ
 

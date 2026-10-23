@@ -2,7 +2,8 @@
 
 [← README](../../README.md) · [All devices](README.md) · [Commands](../commands.md)
 
-![State: untested](https://img.shields.io/badge/state-untested-lightgrey.svg?style=flat-square)
+![State: DevKit-tested](https://img.shields.io/badge/state-devkit%20tested-blueviolet.svg?style=flat-square)
+![State of the Zigbee variant: untested](https://img.shields.io/badge/state-untested-lightgrey.svg?style=flat-square)
 ![Chip: ESP32-C6](https://img.shields.io/badge/chip-ESP32--C6-blue.svg?style=flat-square)
 
 [🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
@@ -112,11 +113,11 @@ package, reads the update target slot. Command reference: [Commands](../commands
 
 ## Notes for this device
 
-No device-specific findings yet. Please report the file written by `--log-file`, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
+Played through on a dev board with the DevKit image on 2026-10-23 (see [Seen on a board](../devkit.md#seen-on-a-board)); not on the real device yet. Please report the `--watch` log of a real device, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
 
 ## Zigbee variant
 
-`Mini1PMG4ZB` is the Zigbee firmware variant of the same hardware (listed under `alt` in the update reply of `Mini1PMG4`; its profile has `parent: Mini1PMG4`). Use the same config and flash it with `python ota.py send Mini1PMG4ZB ...` after building with `build Mini1PMG4ZB`. Not tested either.
+`Mini1PMG4ZB` is the Zigbee firmware variant of the same hardware (listed under `alt` in the update reply of `Mini1PMG4`; its profile has `parent: Mini1PMG4`). Use the same config and flash it with `python ota.py send Mini1PMG4ZB ...` after building with `build Mini1PMG4ZB`. Not tested either (🧪): the dev board run was with `Mini1PMG4`.
 
 ## Way back
 

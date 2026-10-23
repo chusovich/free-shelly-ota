@@ -15,7 +15,7 @@ All notable changes to this project are documented here. The format follows
   Every profile sets `boot_min_version: 1.0.9`. The packages build and verify; **none was flashed on a real device yet**. The EM Gen4 has a 16 MB
   flash layout (its DevKit image needs a 16 MB board), the i4 Gen4 is only listed with the beta 2.2.0-beta1 in the update API.
 - State 🔬 "DevKit-tested" (README, device pages, `docs/devkit.md`): the update ran through on a dev board with the DevKit image, not on the real
-  device. `Mini1G4`, `MiniEMG4`, `DimmerG4`, `Dimmer0110VPMG4` and `I4G4` have it, from runs on an ESP32-C6 dev board with 8 MB
+  device. `Mini1G4`, `Mini1PMG4`, `MiniEMG4`, `DimmerG4`, `Dimmer0110VPMG4` and `I4G4` have it, from runs on an ESP32-C6 dev board with 8 MB
   ("Seen on a board" in `docs/devkit.md`). A real device moves a profile to 🟡 or ✅.
 
 ### Added

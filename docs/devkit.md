@@ -138,6 +138,7 @@ A profile gets 🔬 once a row here shows the OTA ran through on a board with it
 | 2026-10-21 | ESP32-C6 dev board, 8 MB | `I4G4` | DevKit image flashed, then `send` of the ESPHome SoftAP package (ESPHome's bootloader, `min_version` 1.0.9) with `--watch`: the log showed `ota_success` (progress 100 %), then ESPHome's access point appeared (`shelly-i4g4`). No relay, meter or button on the board. |
 | 2026-10-21 | ESP32-C6 dev board, 8 MB | `Mini1G4` | DevKit image flashed, then `send` of the ESPHome SoftAP package (ESPHome's bootloader, `min_version` 1.0.9) with `--watch`: the installer wrote to slot 0, the bootloader was replaced (current 1.0.3, minimum 1.0.9), the log showed `ota_success`, then ESPHome's access point appeared (`shelly-mini1g4`). No relay, meter or button on the board. |
 | 2026-10-21 | ESP32-C6 dev board, 8 MB | `MiniEMG4` | DevKit image flashed, then `send` of the ESPHome SoftAP package (ESPHome's bootloader, `min_version` 1.0.9): ESPHome's access point appeared (`shelly-miniemg4`); the log of the run was not reported. No relay, meter or button on the board. |
+| 2026-10-23 | ESP32-C6 dev board, 8 MB | `Mini1PMG4` | DevKit image flashed, then `send` of the ESPHome SoftAP package (ESPHome's bootloader, `min_version` 1.0.9): ESPHome's access point appeared (`shelly-mini1pmg4`). During the update the stock log repeated `shos_bl0942.c: packet read timed out` (no power meter chip on the board); it is harmless and hidden below `--log-level debug`. No relay, meter or button on the board. |
 
 ---
 
