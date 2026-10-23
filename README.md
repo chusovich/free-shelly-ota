@@ -44,7 +44,7 @@ flowchart LR
 
 ## Supported devices
 
-**43 profiles:** ✅ 8 confirmed · 🟡 5 partly checked · 🔬 6 DevKit-tested · 🧪 24 untested
+**43 profiles:** ✅ 8 confirmed · 🟡 5 partly checked · 🔬 7 DevKit-tested · 🧪 23 untested
 
 Click the profile for the device page: ESPHome config, the exact commands and what to expect. This table shows the devices that ran on
 real hardware (✅ and 🟡). All profiles, also the DevKit-tested (🔬) and the untested (🧪) ones, are on the
