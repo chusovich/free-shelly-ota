@@ -282,7 +282,7 @@ def _send(args, zip_path: Path, log_name: str | None = None, restoring: bool = F
     level = _level(args, Level.normal)
     logfile = _open_logfile(args, level, log_name or f"{zip_path.stem}.send.log")
     try:
-        sender.send(p, zip_path, args.ip, host=args.host, port=args.port, timeout=args.timeout,
+        sender.send(p, zip_path, args.ip, host=args.host, port=args.port, timeout=args.timeout, max_wait=getattr(args, "max_wait", sender.MAX_WAIT),
                     assume_yes=args.yes, dry_run=args.dry_run, force=args.force, user=args.user,
                     password=args.password, watch=args.watch, log_port=args.log_port, ignore_slot=args.ignore_slot,
                     wait=getattr(args, "wait", sender.DEFAULT_WAIT), restoring=restoring, level=level, logfile=logfile)
@@ -396,6 +396,8 @@ def send_options() -> argparse.ArgumentParser:
                    help="write the whole run (every message, every device log entry) to a file, whatever the log level; "
                         "without a path to logs/<name>.send.log. Put it after DEVICE and ZIP, or use --log-file=PATH")
     g.add_argument("--timeout", type=float, default=300, metavar="SEC", help="wait for the download (default: %(default)s); a weak Wi-Fi signal can need much more, send asks")
+    g.add_argument("--max-wait", type=float, default=sender.MAX_WAIT, metavar="SEC",
+                   help="if the device downloads slowly but steadily, the wait is extended on its own, up to SEC in total (default: %(default)s)")
     g.add_argument("--wait", type=float, default=sender.DEFAULT_WAIT, metavar="SEC",
                    help="if the device refuses the update because it has only just started ('Not committed'): wait SEC "
                         "seconds, then ask again before the next try (default: %(default)s)")

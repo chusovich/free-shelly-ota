@@ -23,6 +23,11 @@ All notable changes to this project are documented here. The format follows
 - `send` checks the device's Wi-Fi signal (`Wifi.GetStatus`). At -67 dBm or weaker it says what that does to the download and asks "seconds / s / c" how long to wait (Enter takes 1200 s, `s` skips, `c` cancels). If the wait runs out while the device is still taking the ZIP, `send` asks the same way instead of stopping. It never waits longer on its own: with `--yes` or `--dry-run` it only says so. The threshold is a guess from one report ([Wi-Fi signal](docs/commands.md#wi-fi-signal)).
 
 ### Changed
+- `send` follows the download: from the bytes it has handed out it estimates the time left, shows `Download 31 %, about 14 min left` while the device's own
+  progress line is not there, and extends the wait on its own when the device is slow but steady, with a NOTE that says so. `--max-wait SEC` (default 3600) caps
+  the total; a download that stands still is not extended, and the question at the end of `--timeout` stays.
+- `send`: while it waits for the update target slot (up to 8 s) a live line counts down, so the screen is not silent. The slot refusal no longer
+  points to `--ignore-slot` (it stays in the docs): the message says to restore first.
 - `docs/devices/README.md`: the device name in the list links to its page (the profile is plain text now) and a Note column holds what stood after the state symbol; EM Gen4 (16 MB flash layout) and i4 Gen4 (beta package only) got a note.
 - Device pages `HTG3`, `Pill` and `PlusPlugS`: the pin tables were copies of the ESPHome device page and are replaced by a link to it. The pages whose pins this project checked itself (`PlugSG3`, `MiniPMG3`, `PowerStrip`) or that have no such page (`PlugMG3`, `PlugPMG3`, `DuoBulbG3`, `PlusPlugIT`, `PlusUni`) keep theirs.
 - Device pages: the table at the top has a row "ESPHome device page" with the link for every device that has such a page on devices.esphome.io (16 pages; it was 8). The hint in the ESPHome config section no longer claims what the other page contains. `tests/test_readme.py` checks the row.

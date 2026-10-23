@@ -136,6 +136,7 @@ warns and goes on, because the download is what counts. A device without `HTTP.G
 | `--port PORT` | `8000` | Local web server port |
 | `--log-port PORT` | `9514` | UDP port for the debug log |
 | `--timeout SEC` | `300` | How long to wait for the device to download the ZIP. A device on a weak Wi-Fi signal can need much longer (about 1 % per 5 s at -68 dBm); `send` then asks, see [Wi-Fi signal](#wi-fi-signal) |
+| `--max-wait SEC` | `3600` | If the device takes the ZIP slowly but steadily, `send` estimates the end from the speed of the last minute, says so with the time left and extends the wait on its own, up to SEC in total. The speed comes from what the PC has handed out, so it works without the device's log. A download that stands still is not extended |
 | `--wait SEC` | `120` | If the device refuses the update because it has only just started (`Not committed`): wait SEC seconds, then ask again before the next try |
 
 </details>

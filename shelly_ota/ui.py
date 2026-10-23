@@ -329,6 +329,17 @@ def live_end(final: str | None = None) -> None:
         sys.stdout.flush()
 
 
+def duration(seconds: float) -> str:
+    """'45 s', '14 min', '1 h 5 min': a time span for people."""
+    seconds = int(round(seconds))
+    if seconds < 90:
+        return f"{seconds} s"
+    if seconds < 3600:
+        return f"{round(seconds / 60)} min"
+    hours, minutes = divmod(round(seconds / 60), 60)
+    return f"{hours} h {minutes} min" if minutes else f"{hours} h"
+
+
 def countdown(seconds: float, label: str = "Waiting", sleep: Callable[[float], None] = time.sleep,
               out: Callable[[str], None] | None = None) -> None:
     """Count down `seconds` in half-second steps (Ctrl+C works at once). On a terminal one line is updated every second;

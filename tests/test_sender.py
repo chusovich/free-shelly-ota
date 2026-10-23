@@ -9,6 +9,7 @@ import _thread
 import threading
 import time
 import unittest
+from unittest import mock
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -25,9 +26,15 @@ class FakeShelly:
     reach: what HTTP.GET does. None: the method does not exist (404). "ok": fetches the url and reports its status.
     "blocked": cannot connect; the reply text is modelled on a device report, its HTTP status is a guess."""
 
-    def __init__(self, app="DuoBulbG3", auth_en=False, reach=None, download=True, update_error=None):
+    def _fetch(self, url):
+        with urllib.request.urlopen(url) as r:
+            while chunk := r.read(self.rate // 10 if self.rate else 65536):
+                if self.rate:
+                    time.sleep(0.1)
+
+    def __init__(self, app="DuoBulbG3", auth_en=False, reach=None, download=True, update_error=None, rate=None):
         self.app, self.auth_en, self.reach = app, auth_en, reach
-        self.download, self.update_error = download, update_error
+        self.download, self.update_error, self.rate = download, update_error, rate
         self.updates = []
         self.fetched = []
         outer = self
@@ -49,7 +56,7 @@ class FakeShelly:
                     url = urllib.parse.parse_qs(u.query)["url"][0]
                     outer.updates.append(url)
                     if outer.download:
-                        threading.Thread(target=lambda: urllib.request.urlopen(url).read()).start()
+                        threading.Thread(target=lambda: outer._fetch(url)).start()
                     body = b"{}"
                 elif u.path == "/rpc/HTTP.GET" and outer.reach == "ok":
                     url = urllib.parse.parse_qs(u.query)["url"][0]
@@ -211,3 +218,58 @@ class SenderTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DownloadWatchTests(unittest.TestCase):
+    def test_eta_follows_the_speed_of_the_window(self):
+        w = sender.DownloadWatch(1000, window=60)
+        self.assertIsNone(w.eta())                       # nothing yet
+        w.add(0, 0)
+        w.add(5, 50)
+        self.assertIsNone(w.eta())                       # too short a span to tell
+        w.add(20, 200)                                    # 10 bytes/s
+        self.assertAlmostEqual(w.eta(), 80.0)
+        self.assertEqual(w.percent(), 20)
+
+    def test_a_stall_gives_no_estimate_and_old_samples_fall_out(self):
+        w = sender.DownloadWatch(1000, window=60)
+        for t in range(0, 200, 10):
+            w.add(t, min(t, 100))                         # fast, then standing still at 100 bytes
+        self.assertIsNone(w.eta())
+
+    def test_duration_for_people(self):
+        from shelly_ota import ui
+        self.assertEqual([ui.duration(x) for x in (5, 89, 600, 3600, 3900, 7200)],
+                         ["5 s", "89 s", "10 min", "1 h", "1 h 5 min", "2 h"])
+
+
+class SlowDownloadTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.zip = self.tmp / "t.zip"
+        shutil.copy(firmware.cached_zip("DuoBulbG3"), self.zip)
+        self.profile = profile.load_profile("DuoBulbG3")
+        self.size = self.zip.stat().st_size
+
+    def _send(self, seconds, **kw):
+        s = FakeShelly(rate=self.size // seconds)
+        self.addCleanup(s.addCleanup)
+        log = []
+        with mock.patch.object(sender, "ETA_MIN_SPAN", 1.0):
+            try:
+                ok = sender.send(self.profile, self.zip, s.addr, port=0, assume_yes=True, out=log.append,
+                                 level=sender.Level.normal, **kw)
+            except sender.OtaError as e:
+                ok = e
+        return ok, log
+
+    def test_a_slow_but_steady_download_extends_the_wait(self):
+        ok, log = self._send(9, timeout=4, max_wait=60)
+        self.assertIs(ok, True, (ok, log))
+        self.assertTrue(any("extended" in l for l in log), log)
+
+    def test_the_cap_is_kept(self):
+        ok, log = self._send(30, timeout=3, max_wait=5)
+        self.assertIsInstance(ok, sender.OtaError)
+        self.assertTrue(any("--max-wait" in l for l in log), log)
