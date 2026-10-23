@@ -14,7 +14,7 @@
 | Official package | 2.1.0 (stable since 2026-10-14; Bootloader, partition table and filesystem are the same as in 2.0.1; the hardware runs were made with 2.0.1) |
 | Partition table | `0x10000` |
 | App slot size | `0x2a0000` |
-| ESPHome device page | [Shelly Plug S Gen3](https://devices.esphome.io/devices/shelly-plug-s-gen3/): pins and a full config |
+| ESPHome device page | [Shelly Plug S Gen3](https://devices.esphome.io/devices/shelly-plug-s-gen3/) |
 
 > [!NOTE]
 > **Confirmed:** the whole chain ran on a real device. The package route was confirmed with a minimal config (Wi-Fi, API and OTA

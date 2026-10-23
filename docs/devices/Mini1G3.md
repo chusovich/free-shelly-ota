@@ -17,7 +17,7 @@ Like the H&T Gen3 and the Mini 1PM Gen3, the official package keeps its partitio
 | Official package | 2.0.1 |
 | Partition table | `0xf000` |
 | App slot size | `0x2a0000` |
-| ESPHome device page | [Shelly 1 Mini Gen3](https://devices.esphome.io/devices/shelly-1-mini-gen3/): the pins, no example config |
+| ESPHome device page | [Shelly 1 Mini Gen3](https://devices.esphome.io/devices/shelly-1-mini-gen3/) |
 
 ## Before you start
 

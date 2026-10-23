@@ -18,7 +18,7 @@ The first device that was flashed and reported by someone else: thanks to [imsan
 | Partition table | **`0xf000`** (not `0x10000`) |
 | App slot size | `0x280000` |
 | Bootloader `min_version` | `1.0.9` (set in the profile) |
-| ESPHome device page | [Shelly PM Mini Gen3](https://devices.esphome.io/devices/shelly-pm-mini-gen3/): pins and an example config |
+| ESPHome device page | [Shelly PM Mini Gen3](https://devices.esphome.io/devices/shelly-pm-mini-gen3/) |
 
 > [!NOTE]
 > **Confirmed:** the whole chain ran on a real device: `send` from stock 2.0.1 with `--esphome-factory`; ESPHome boots, six and more ESPHome OTAs took effect, BLE, Wi-Fi and the power meter work.

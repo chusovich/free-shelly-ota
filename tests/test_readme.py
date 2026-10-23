@@ -130,6 +130,17 @@ class DevicePageTests(unittest.TestCase):
             for name in self._profiles(text):
                 self.assertIn(BADGE[self.states[name]], text, f"{page.name}: {name}")
 
+    def test_a_page_that_links_the_esphome_device_page_has_it_as_a_row_of_the_table(self):
+        """The link is in the Fact table once, as https://devices.esphome.io/devices/<slug>/, and every other link on the page goes to the same page."""
+        for page in self.pages:
+            text = page.read_text(encoding="utf-8")
+            linked = set(re.findall(r"https://devices\.esphome\.io/devices/([^/)\s]+)/", text))
+            if not linked:
+                continue
+            rows = re.findall(r"(?m)^\| ESPHome device page \| \[[^\]]+\]\(https://devices\.esphome\.io/devices/([a-z0-9-]+)/\)", text)
+            self.assertEqual(len(rows), 1, f"{page.name}: one ESPHome device page row")
+            self.assertEqual(linked, {rows[0]}, f"{page.name}: all links go to the page of the row")
+
     def test_flash_commands_use_the_profile_of_the_page(self):
         for page in self.pages:
             text = page.read_text(encoding="utf-8")

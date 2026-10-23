@@ -17,7 +17,7 @@ Gen4 / ESP32-C6. The pins and an example config are on the ESPHome device page (
 | Partition table | `0x10000` |
 | App slot size | `0x300000` |
 | Bootloader `min_version` | `1.0.9` (set in the profile) |
-| ESPHome device page | [Shelly Power Strip 4 Gen4](https://devices.esphome.io/devices/shelly-power-strip-4-gen4/): pins and an example config |
+| ESPHome device page | [Shelly Power Strip 4 Gen4](https://devices.esphome.io/devices/shelly-power-strip-4-gen4/) |
 
 > [!NOTE]
 > **Partly checked:** ESPHome boots and joins Wi-Fi/Home Assistant (UART log). Outlets and metering were not checked by this project. The metering was tested on two strips under load by miguelangel-nubla

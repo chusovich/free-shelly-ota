@@ -21,6 +21,7 @@ All notable changes to this project are documented here. The format follows
 - `send` checks the device's Wi-Fi signal (`Wifi.GetStatus`). At -67 dBm or weaker it says what that does to the download and asks "seconds / s / c" how long to wait (Enter takes 1200 s, `s` skips, `c` cancels). If the wait runs out while the device is still taking the ZIP, `send` asks the same way instead of stopping. It never waits longer on its own: with `--yes` or `--dry-run` it only says so. The threshold is a guess from one report ([Wi-Fi signal](docs/commands.md#wi-fi-signal)).
 
 ### Changed
+- Device pages: the table at the top has a row "ESPHome device page" with the link for every device that has such a page on devices.esphome.io (16 pages; it was 8). The hint in the ESPHome config section no longer claims what the other page contains. `tests/test_readme.py` checks the row.
 - The README lists only the devices that ran on real hardware (✅ and 🟡) so that its table stays short; every profile, with the DevKit-tested (🔬) and
   the untested (🧪) ones, is in `docs/devices/README.md`, which has a section "Tested on a dev board" below the full list. `tests/test_readme.py` checks
   both tables against the profiles.

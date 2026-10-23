@@ -16,6 +16,7 @@ Gen3 / ESP32-C3.
 | Official package | 2.1.0 |
 | Partition table | `0xf000` |
 | App slot size | `0x2c0000` |
+| ESPHome device page | [Shelly 1PM Gen3](https://devices.esphome.io/devices/shelly-1pm-gen3/) |
 
 ## Before you start
 
@@ -51,7 +52,7 @@ ota:
 ```
 
 > [!TIP]
-> The [ESPHome device page](https://devices.esphome.io/devices/shelly-1pm-gen3/) has the pins and an example config. Replace its `esp32:` block with the one above, or `build` refuses it.
+> The [ESPHome device page](https://devices.esphome.io/devices/shelly-1pm-gen3/) has a config to start from. Replace its `esp32:` block with the one above, or `build` refuses it.
 
 ## Flash it
 

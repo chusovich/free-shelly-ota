@@ -16,6 +16,7 @@ Gen4 / ESP32-C6.
 | Official package | 2.1.0 |
 | Partition table | `0x10000` |
 | App slot size | `0x300000` |
+| ESPHome device page | [Shelly Plus 2PM Gen 4](https://devices.esphome.io/devices/shelly-plus-2pm-gen-4/) |
 
 ## Before you start
 
@@ -61,7 +62,7 @@ esphome:
 ```
 
 > [!TIP]
-> The [ESPHome device page](https://devices.esphome.io/devices/shelly-plus-2pm-gen-4/) has the pins and an example config. Replace its `esp32:` block with the one above, or `build` refuses it.
+> The [ESPHome device page](https://devices.esphome.io/devices/shelly-plus-2pm-gen-4/) has a config to start from. Replace its `esp32:` block with the one above, or `build` refuses it.
 
 ## Flash it
 

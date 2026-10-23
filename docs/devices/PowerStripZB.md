@@ -16,6 +16,7 @@ The Zigbee firmware variant of the [Power Strip 4 Gen4](PowerStrip.md): same har
 | Official package | 2.1.0 (stable since 2026-10-14; Bootloader, partition table and filesystem are the same as in 2.0.1) |
 | Partition table | `0x10000` |
 | App slot size | `0x300000` |
+| ESPHome device page | [Shelly Power Strip 4 Gen4](https://devices.esphome.io/devices/shelly-power-strip-4-gen4/) (the same hardware as `PowerStrip`) |
 | Bootloader `min_version` | `1.0.9` (set in the profile) |
 
 ## Before you start

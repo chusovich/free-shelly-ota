@@ -18,7 +18,7 @@ The only Gen2 device so far. Classic ESP32 differs from the Gen3/Gen4 models in 
 | Bootloader address | `0x1000` |
 | App slot size | `0x190000` |
 | Bootloader `min_version` | `1.0.9` (set in the profile) |
-| ESPHome device page | [Shelly Plus Plug S](https://devices.esphome.io/devices/shelly-plus-plug-s/): pins and an example config |
+| ESPHome device page | [Shelly Plus Plug S](https://devices.esphome.io/devices/shelly-plus-plug-s/) |
 
 > [!NOTE]
 > **Confirmed:** the whole chain ran on a real device, without UART: `restore`, then `send` with `--esphome-factory`; an ESPHome OTA took effect (0.2.0 to 0.2.11).

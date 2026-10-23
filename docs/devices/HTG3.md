@@ -17,7 +17,7 @@ A battery device. The partition table is at `0xf000`, so a default ESPHome build
 | Partition table | **`0xf000`** (not `0x10000`) |
 | App slot size | `0x280000` |
 | Bootloader `min_version` | `1.0.9` (set in the profile) |
-| ESPHome device page | [Shelly H&T Gen3](https://devices.esphome.io/devices/shelly-ht-gen3/): pins and an example config |
+| ESPHome device page | [Shelly H&T Gen3](https://devices.esphome.io/devices/shelly-ht-gen3/) |
 
 > [!NOTE]
 > **Confirmed:** the whole chain ran on a real device: `send` from stock 2.0.1 (slot 0) with `--esphome-factory`; ESPHome boots and ESPHome OTAs take effect.
