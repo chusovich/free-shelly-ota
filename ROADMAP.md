@@ -8,12 +8,12 @@ Where the project stands and where it goes next.
 
 > [!NOTE]
 > This is a plan, not a promise: the order changes when a test report or a new device shows up.
-> State: 2026-10-22, at release 0.5.0 (see the [CHANGELOG](CHANGELOG.md)).
+> State: 2026-10-23, at release 0.5.0 (see the [CHANGELOG](CHANGELOG.md)).
 
 ## Now
 
 - **Dev board test bench.** `ota.py devkit` writes a flash image of a package, so the whole update (`send`, the installer, the bootloader swap, the slot logic) can be played
-  through on a dev board instead of a device, for any profile. Five Gen4 profiles have been through the whole update on an ESP32-C6 board with 8 MB. The Shelly app does start on a board
+  through on a dev board instead of a device, for any profile. Seven Gen4 profiles have been through the whole update on an ESP32-C6 board with 8 MB. The Shelly app does start on a board
   that is not a Shelly, but it checks the flash size and stops on a board with less than the device has (8 MB), so a 4 MB ESP32-C3 board is too small.
   What the boards showed goes into [Test on a dev board](docs/devkit.md#seen-on-a-board).
 
@@ -54,8 +54,8 @@ Where the project stands and where it goes next.
 
 | What | Who can help | Where |
 | --- | --- | --- |
-| Flash a 🧪 device and report the `--log-file` file | Owners of the 🧪 devices in the [list](docs/devices/README.md#devices), 25 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
-| Pro 3EM: a first hardware report. Plus Uni and Pro 3EM: the pins | Owners | Issues [#36](https://github.com/oxynatOr/free-shelly-ota/issues/36) and [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46) |
+| Flash a 🧪 device and report the `--log-file` file | Owners of the 🧪 devices in the [list](docs/devices/README.md#devices), 23 so far | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
+| Pro 3EM: a first hardware report and its pins. Plus Uni: its pins on the hardware (so far only read from the stock firmware) | Owners | Issues [#36](https://github.com/oxynatOr/free-shelly-ota/issues/36) and [#46](https://github.com/oxynatOr/free-shelly-ota/issues/46) |
 | A board for the rest of the test bench: ESP32-C3 with 8 MB, ESP32-C6 and classic ESP32 with 16 MB | Anyone with such a board | [Which board](docs/devkit.md#which-board) |
 | Plug PM Gen3: readings against a reference meter | Owners | [Device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml) |
 | Your device is missing | Anyone | [Request a new device](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=new-device.yml) |
