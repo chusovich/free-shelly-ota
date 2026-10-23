@@ -291,6 +291,17 @@ class LiveLineTests(unittest.TestCase):
         self.assertIn(" 30 %, about 35 s left", text)               # 20 % in 10 s: the 70 % to go take 35 s
         self.assertIn(" 60 %, about 24 s left", text)               # 50 % in 30 s: the 40 % to go take 24 s
 
+    def test_the_time_left_is_measured_from_the_first_step_not_from_the_0_percent_mark(self):
+        out = self.tty()
+        # a real log: 0 % at 0 s (the installer writes the bootloader), 2 % at 5.0 s, 7 % at 9.1 s, 22 % at 15.4 s
+        clock = iter([0.0, 5.0, 9.1, 15.4])
+        with mock.patch.object(ui, "_clock", lambda: next(clock)):
+            for pct in (0, 2, 7, 22):
+                ui.progress("Update", pct)
+        text = out.getvalue()
+        self.assertNotIn("left", text.split(" 22 %")[0])                  # 7 %: too early, the guess would be 76 s for 45
+        self.assertIn(" 22 %, about 41 s left", text)                    # (15.4 - 5.0) s for 20 % -> 78 % more in 41 s
+
     def test_the_device_logging_100_percent_twice_shows_the_finished_line_once(self):
         out = self.tty()
         for pct in (50, 100, 100):

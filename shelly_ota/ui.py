@@ -376,8 +376,10 @@ def progress(label: str, percent: int, out: Callable[[str], None] | None = None)
             first = _progress_start.get(label)
             if first is None or percent < first[1] or _progress_step.get(label) == 11:
                 first = _progress_start[label] = (now, percent)    # a new run
-            # the speed of this run so far; with less than 5 % or 3 s behind it the guess would jump around
-            if first[1] < percent < 100 and percent - first[1] >= 5 and now - first[0] >= 3:
+            elif first[1] == 0 and percent > 0:
+                first = _progress_start[label] = (now, percent)    # the 0 % mark is the installer getting ready (the bootloader), not the download
+            # the speed of this run so far; before 20 % are done the guess is far too high (a log showed 121 s for a real 45 s)
+            if first[1] < percent < 100 and percent - first[1] >= 20 and now - first[0] >= 3:
                 text += f", about {duration((now - first[0]) * (100 - percent) / (percent - first[1]))} left"
             if percent >= 100:
                 if _progress_step.get(label) == 11:

@@ -30,8 +30,8 @@ All notable changes to this project are documented here. The format follows
 ### Changed
 - `restore` prints one NOTE (what it does and that a device with ESPHome does not answer) instead of three; the explanation of the slot change and the
   second NVS sentence are gone or only shown with `-v` (the WARNING with the question already says the NVS is wiped).
-- The progress line (`Update [####---] 76 %`) shows an estimate of the time left (`, about 14 s left`) once the run is 5 % and 3 s on its way, measured from the
-  speed of this run. Only on a terminal; a log file keeps the 10 % lines.
+- The progress line (`Update [####---] 76 %`) shows an estimate of the time left (`, about 14 s left`) once 20 percentage points are done (the first real step to the current one; the installer's 0 % phase is not counted),
+  measured from the speed of this run. Checked against a real log: 40 s shown at 22 % for 39 s left. Only on a terminal; a log file keeps the 10 % lines.
 - `send` follows the download: from the bytes it has handed out it estimates the time left, shows `Download 31 %, about 14 min left` while the device's own
   progress line is not there, and extends the wait on its own when the device is slow but steady, with a NOTE that says so. `--max-wait SEC` (default 3600) caps
   the total; a download that stands still is not extended, and the question at the end of `--timeout` stays.
