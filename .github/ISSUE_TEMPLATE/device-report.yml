@@ -38,7 +38,7 @@ body:
     attributes:
       label: Tool version
       description: Output of `python ota.py --version`.
-      placeholder: "0.5.0 (main, v0.5.0, 2026-10-22)"
+      placeholder: "0.6.0 (main, v0.6.0, 2026-10-24)"
     validations:
       required: true
   - type: input

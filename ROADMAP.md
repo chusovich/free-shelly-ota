@@ -8,12 +8,10 @@ Where the project stands and where it goes next.
 
 > [!NOTE]
 > This is a plan, not a promise: the order changes when a test report or a new device shows up.
-> State: 2026-10-24. The latest release is 0.5.0; 0.6.0 is being prepared (see the [CHANGELOG](CHANGELOG.md)).
+> State: 2026-10-24, at release 0.6.0, a pre-release (see the [CHANGELOG](CHANGELOG.md)).
 
 ## Now
 
-- **Release 0.6.0, as a pre-release.** 43 profiles (25 new ones; 23 of the 43 are still only built and verified, 🧪), the dev board test bench (`devkit`), `ota.py ble`, the time left in the progress line and
-  shorter device pages. The new profiles and `ble` have only been seen on a dev board, so the release says so.
 - **Dev board test bench.** `ota.py devkit` writes a flash image of a package, so the whole update (`send`, the installer, the bootloader swap, the slot logic) can be played
   through on a dev board instead of a device, for any profile. Seven Gen4 profiles have been through the whole update on an ESP32-C6 board with 8 MB. The Shelly app does start on a board
   that is not a Shelly, but it checks the flash size and stops on a board with less than the device has (8 MB), so a 4 MB ESP32-C3 board is too small.
@@ -87,3 +85,5 @@ Items that stood under "Now" in an earlier version of this page.
 | Release 0.4.0 | [CHANGELOG](CHANGELOG.md#040---2026-10-18) |
 | Log levels, progress and error handling for `send`, `restore` and `log`; Mini 1 Gen3 confirmed on hardware; a guide for a home-made UART adapter | [CHANGELOG](CHANGELOG.md#050---2026-10-22) |
 | Release 0.5.0 | [CHANGELOG](CHANGELOG.md#050---2026-10-22) |
+| 25 profiles for Gen3 and Gen4 devices (43 in total), the 🔬 state and the dev board test bench, `ota.py ble`, the time left in the progress line, shorter device pages | [CHANGELOG](CHANGELOG.md#060---2026-10-24) |
+| Release 0.6.0 (pre-release) | [CHANGELOG](CHANGELOG.md#060---2026-10-24) |

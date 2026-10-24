@@ -5,6 +5,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-24
+
+This is a pre-release: 23 of the 43 profiles are only built and verified (🧪), and seven more have been through the update on a dev board but not on the device.
+
+### Summary
+- **25 new Gen3 and Gen4 profiles** (43 in total). Seven of them have been through the whole update on a dev board (🔬); the others only build and verify (🧪).
+- **`ota.py devkit`** writes a flash image of a package for a dev board; **`ota.py ble`** gives a device without Wi-Fi (the Zigbee firmware) its Wi-Fi over Bluetooth. Both are new and were seen on one board only.
+- **`send` and `restore`:** the progress line shows the time left, a slow download extends the wait on its own (`--max-wait`), and `restore` prints one note instead of three.
+- **`build`** warns if the image was built without `allow_partition_access`.
+- **README and device pages:** the README lists only the devices that ran on real hardware; the full list, the ESPHome device page links and a Note column are in `docs/devices/README.md`. The device pages are shorter.
+
 ### Added
 - `Mini1PMG4` device page: a Pins section with the button (GPIO22), the BL0942 UART (RX 19, TX 20, 9600 8N1) and its IRQ input (GPIO18), **read from the stock firmware with a disassembler and not
   confirmed on a device** (marked on the page, with how sure each pin is). Relay and LED pins were not read.
