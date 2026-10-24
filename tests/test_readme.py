@@ -125,6 +125,39 @@ class DevicePageTests(unittest.TestCase):
             for needed in ("Before you start", "Flash it", "What to expect", "Notes for this device", "Way back"):
                 self.assertIn(needed, heads, page.name)
 
+    # The safety sentences stand on every device page, word for word: someone who lands on a page from a search must read them there.
+    # The pages repeat them on purpose; this test keeps the copies from drifting apart.
+    SAFETY_WIPES = ("> - **Wipes Wi-Fi and settings.** ESPHome opens its own access point or joins the Wi-Fi from your config; if nothing comes up, "
+                    "power-cycle the device ([help](../troubleshooting.md#esphome-does-not-start-after-the-update)).")
+    SAFETY_BACK = ("> - **No way back over the network** once ESPHome's bootloader runs: `restore` gets no answer, only UART brings Shelly OS back "
+                   "([Recovery over UART](../recovery-uart.md)). Take a flash backup first")
+    SAFETY_REPORT = ("> - **Flashed it? Tell us,** also when it worked: "
+                     "[open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).")
+    FLASHED_WITHOUT_UART = {"Pill.md", "PlusPlugIT.md", "PlusPlugS.md"}      # no bootloader swap needed there, their Way back says what applies
+
+    def test_every_page_ends_with_the_same_safety_box(self):
+        for page in self.pages:
+            text = page.read_text(encoding="utf-8")
+            box = text[text.rindex("---"):]
+            self.assertIn("> [!WARNING]\n", box, page.name)
+            self.assertIn(self.SAFETY_WIPES, box, page.name)
+            self.assertIn(self.SAFETY_REPORT, box, page.name)
+            if page.name in self.FLASHED_WITHOUT_UART:
+                self.assertNotIn("No way back over the network", box, page.name)
+            else:
+                self.assertIn(self.SAFETY_BACK, box, page.name)
+
+    def test_the_checklist_is_one_line_with_the_four_standard_checks(self):
+        for page in self.pages:
+            text = page.read_text(encoding="utf-8")
+            section = text.split("## Before you start\n\n", 1)[1].split("\n## ", 1)[0]
+            line = section.splitlines()[0]
+            self.assertTrue(line.startswith("Check first: ☐ "), page.name)
+            for part in ("Shelly's own firmware", "you know its IP address", "port 8000", "partition table below"):
+                self.assertIn(part, line, page.name)
+            if "Recovery over UART" not in line:           # a page with its own UART item says it under "Also:"
+                self.assertIn("UART", section, page.name)
+
     def test_state_badge_matches_the_readme(self):
         for page in self.pages:
             text = page.read_text(encoding="utf-8")

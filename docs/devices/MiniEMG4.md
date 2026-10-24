@@ -19,11 +19,7 @@ Gen4 / ESP32-C6.
 
 ## Before you start
 
-- [ ] The device runs Shelly's own firmware, not ESPHome yet.
-- [ ] You know its IP address (`--ip`), or this PC is connected to the device's own access point (the default, `192.168.33.1`).
-- [ ] This PC can be reached from the device: same network, and nothing blocks port 8000 (`--port`).
-- [ ] Your ESPHome config uses the partition table below and is compiled.
-- [ ] A UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md)).
+Check first: ☐ the device runs Shelly's own firmware, not ESPHome yet · ☐ you know its IP address (`--ip`), or this PC is on the device's own access point (default `192.168.33.1`) · ☐ the device can reach this PC: same network, port 8000 (`--port`) not blocked · ☐ your ESPHome config uses the partition table below and is compiled · ☐ a UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md))
 
 ## ESPHome config
 
@@ -105,10 +101,6 @@ In the `--watch` log look for these lines, in this order:
 | 2 | `Boot: cur ... min ... update? 1` | The installer will write ESPHome's bootloader. `update? 0` means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
 | 3 | `ota_progress` up to 95 %, then `ota_success` | The device restarts into ESPHome |
 
-> [!NOTE]
-> The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.
-> If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
-
 ## Notes for this device
 
 Played through on a dev board with the DevKit image on 2026-10-21 (see [Seen on a board](../devkit.md#seen-on-a-board)); not on the real device yet. Please report the `--watch` log of a real device, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
@@ -119,13 +111,11 @@ The profile sets `boot_min_version: "1.0.9"`: devices of this family run Shelly'
 
 `python ota.py restore MiniEMG4` sends the official firmware back while Shelly firmware still runs.
 
-> [!WARNING]
-> Once ESPHome with ESPHome's bootloader is running, `restore` gets no answer and only UART brings Shelly OS back
-> ([Recovery over UART](../recovery-uart.md)). Take a flash backup first if you can.
-
 ---
 
-> [!TIP]
-> **Flashed this device?** Tell us how it went, also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
+> [!WARNING]
+> - **Wipes Wi-Fi and settings.** ESPHome opens its own access point or joins the Wi-Fi from your config; if nothing comes up, power-cycle the device ([help](../troubleshooting.md#esphome-does-not-start-after-the-update)).
+> - **No way back over the network** once ESPHome's bootloader runs: `restore` gets no answer, only UART brings Shelly OS back ([Recovery over UART](../recovery-uart.md)). Take a flash backup first if you can.
+> - **Flashed it? Tell us,** also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
 
 [Bootloader and slots](../bootloader-and-slots.md) · [Troubleshooting](../troubleshooting.md) · [Recovery over UART](../recovery-uart.md)

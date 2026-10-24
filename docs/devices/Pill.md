@@ -21,10 +21,10 @@ Reported: the USB-C port exposes the chip's USB Serial/JTAG, so this device can 
 
 ## Before you start
 
-- [ ] The device runs Shelly's own firmware, not ESPHome yet.
-- [ ] You know its IP address (`--ip`), or this PC is connected to the device's own access point (the default, `192.168.33.1`).
-- [ ] This PC can be reached from the device: same network, and nothing blocks port 8000 (`--port`).
-- [ ] Your ESPHome config uses the partition table below and is compiled.
+Check first: ☐ the device runs Shelly's own firmware, not ESPHome yet · ☐ you know its IP address (`--ip`), or this PC is on the device's own access point (default `192.168.33.1`) · ☐ the device can reach this PC: same network, port 8000 (`--port`) not blocked · ☐ your ESPHome config uses the partition table below and is compiled
+
+Also:
+
 - [ ] A USB-C cable and `esptool` are at hand as your way back ([Recovery over UART](../recovery-uart.md)).
 
 ## ESPHome config
@@ -106,10 +106,6 @@ package, reads the update target slot. Command reference: [Commands](../commands
 | 2 | `Device: The bootloader will be replaced ...` (raw log: `Boot: cur ... min ... update? 1`) | The installer will write ESPHome's bootloader. `WARNING: ESPHome's bootloader was NOT written` (`update? 0`) means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
 | 3 | The progress (`Update: ... %`, one line that updates in place) up to 100 %, then `Done: update installed, the device confirmed it` | The device restarts into ESPHome |
 
-> [!NOTE]
-> The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.
-> If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
-
 ## Notes for this device
 
 No device-specific findings yet. Please report the file written by `--log-file`, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
@@ -120,7 +116,8 @@ USB-C and `esptool` ([Recovery over UART](../recovery-uart.md): the same steps, 
 
 ---
 
-> [!TIP]
-> **Flashed this device?** Tell us how it went, also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
+> [!WARNING]
+> - **Wipes Wi-Fi and settings.** ESPHome opens its own access point or joins the Wi-Fi from your config; if nothing comes up, power-cycle the device ([help](../troubleshooting.md#esphome-does-not-start-after-the-update)).
+> - **Flashed it? Tell us,** also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
 
 [Bootloader and slots](../bootloader-and-slots.md) · [Troubleshooting](../troubleshooting.md) · [Recovery over UART](../recovery-uart.md)
