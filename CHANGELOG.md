@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- `S2PMG3` (2PM Gen3) is confirmed on a real device ([#92](https://github.com/oxynatOr/free-shelly-ota/issues/92)): OTA from Shelly 1.4.99 with ESPHome's bootloader, then a regular ESPHome OTA. Relays and meter not reported.
+
 ## [0.6.0] - 2026-10-24
 
 This is a pre-release: 23 of the 43 profiles are only built and verified (🧪), and seven more have been through the update on a dev board but not on the device.

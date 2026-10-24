@@ -44,7 +44,7 @@ flowchart LR
 
 ## Supported devices
 
-**43 profiles:** ✅ 8 confirmed · 🟡 5 partly checked · 🔬 7 DevKit-tested · 🧪 23 untested
+**43 profiles:** ✅ 9 confirmed · 🟡 5 partly checked · 🔬 7 DevKit-tested · 🧪 22 untested
 
 Click the profile for the device page: ESPHome config, the exact commands and what to expect. This table shows the devices that ran on
 real hardware (✅ and 🟡). All profiles, also the DevKit-tested (🔬) and the untested (🧪) ones, are on the
@@ -65,6 +65,7 @@ real hardware (✅ and 🟡). All profiles, also the DevKit-tested (🔬) and th
 | Mini 1 Gen3 | [`Mini1G3`](docs/devices/Mini1G3.md) | ESP32&#8209;C3 | ✅ | |
 | Mini 1PM Gen3 | [`Mini1PMG3`](docs/devices/Mini1PMG3.md) | ESP32&#8209;C3 | 🟡 | Flashed over OTA (two units); a second OTA, the relay under load and the meter not checked |
 | Plus Uni (Gen2) | [`PlusUni`](docs/devices/PlusUni.md) | ESP32 | 🟡 | Flashed over OTA, ESPHome's bootloader step not checked |
+| 2PM Gen3 | [`S2PMG3`](docs/devices/S2PMG3.md) | ESP32&#8209;C3 | ✅ | Relays and meter not reported |
 
 > - ✅ The whole chain ran on a real device.
 > - 🟡 Flashed on a real device, but part of the chain or of the function is not checked yet (see the Note column).
