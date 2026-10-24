@@ -22,8 +22,6 @@ All notable changes to this project are documented here. The format follows
 - State 🔬 "DevKit-tested" (README, device pages, `docs/devkit.md`): the update ran through on a dev board with the DevKit image, not on the real
   device. `Mini1G4`, `Mini1PMG4`, `Mini1PMG4ZB`, `MiniEMG4`, `DimmerG4`, `Dimmer0110VPMG4` and `I4G4` have it, from runs on an ESP32-C6 dev board with 8 MB
   ("Seen on a board" in `docs/devkit.md`). A real device moves a profile to 🟡 or ✅.
-
-### Added
 - `PlusPlugIT` profile and device page (Shelly Plus Plug IT, SNPL-00110IT, ESP32, Gen2): confirmed on hardware by a device report, with the pins read from the stock firmware ([#83](https://github.com/oxynatOr/free-shelly-ota/issues/83)).
 - `send` checks the device's Wi-Fi signal (`Wifi.GetStatus`). At -67 dBm or weaker it says what that does to the download and asks "seconds / s / c" how long to wait (Enter takes 1200 s, `s` skips, `c` cancels). If the wait runs out while the device is still taking the ZIP, `send` asks the same way instead of stopping. It never waits longer on its own: with `--yes` or `--dry-run` it only says so. The threshold is a guess from one report ([Wi-Fi signal](docs/commands.md#wi-fi-signal)).
 
