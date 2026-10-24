@@ -97,7 +97,7 @@ In the `--watch` log look for these lines, in this order:
 
 ## Notes for this device
 
-First report ([#92](https://github.com/oxynatOr/free-shelly-ota/issues/92)): flashed over OTA from Shelly 1.4.99 (running from slot 1) with `--esphome-factory`. The installer wrote ESPHome's bootloader (loader `010001ff`, minimum `010009ff`) and the device booted straight into ESPHome without a power cycle, joined Wi-Fi, and a later regular ESPHome OTA took effect. Relays and the meter were not part of the report.
+First report ([#92](https://github.com/oxynatOr/free-shelly-ota/issues/92), thanks to [majoto85](https://github.com/majoto85)): flashed over OTA from Shelly 1.4.99 (running from slot 1) with `--esphome-factory`. The installer wrote ESPHome's bootloader (loader `010001ff`, minimum `010009ff`) and the device booted straight into ESPHome without a power cycle, joined Wi-Fi, and a later regular ESPHome OTA took effect. Relays and the meter were not part of the report.
 
 - **Slot:** the first `--dry-run` could not read the target slot (8 s timeout); a second one right after showed slot 0.
 - The installer logs refused eFuse writes (`FW signatures: want 07, got 00`). The update still finished and the device confirmed it.
