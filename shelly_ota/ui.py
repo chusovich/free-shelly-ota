@@ -275,6 +275,8 @@ _lock = threading.RLock()      # the device log is printed from a reader thread,
 _live_text: str | None = None  # the line that stays at the bottom of the screen (timer, progress), without its newline
 _live_drawn = 0                # how many characters of it are on the screen
 _progress_step: dict[str, int] = {}
+_progress_start: dict[str, tuple[float, int]] = {}   # label -> (time, percent) of the first value of this run
+_clock = time.monotonic
 
 
 def _wipe() -> None:
@@ -329,6 +331,17 @@ def live_end(final: str | None = None) -> None:
         sys.stdout.flush()
 
 
+def duration(seconds: float) -> str:
+    """'45 s', '14 min', '1 h 5 min': a time span for people."""
+    seconds = int(round(seconds))
+    if seconds < 90:
+        return f"{seconds} s"
+    if seconds < 3600:
+        return f"{round(seconds / 60)} min"
+    hours, minutes = divmod(round(seconds / 60), 60)
+    return f"{hours} h {minutes} min" if minutes else f"{hours} h"
+
+
 def countdown(seconds: float, label: str = "Waiting", sleep: Callable[[float], None] = time.sleep,
               out: Callable[[str], None] | None = None) -> None:
     """Count down `seconds` in half-second steps (Ctrl+C works at once). On a terminal one line is updated every second;
@@ -359,6 +372,15 @@ def progress(label: str, percent: int, out: Callable[[str], None] | None = None)
         filled = percent * 20 // 100
         text = f"{label} [{'#' * filled}{'-' * (20 - filled)}] {percent:3d} %"
         with _lock:
+            now = _clock()
+            first = _progress_start.get(label)
+            if first is None or percent < first[1] or _progress_step.get(label) == 11:
+                first = _progress_start[label] = (now, percent)    # a new run
+            elif first[1] == 0 and percent > 0:
+                first = _progress_start[label] = (now, percent)    # the 0 % mark is the installer getting ready (the bootloader), not the download
+            # the speed of this run so far; before 20 % are done the guess is far too high (a log showed 121 s for a real 45 s)
+            if first[1] < percent < 100 and percent - first[1] >= 20 and now - first[0] >= 3:
+                text += f", about {duration((now - first[0]) * (100 - percent) / (percent - first[1]))} left"
             if percent >= 100:
                 if _progress_step.get(label) == 11:
                     return                               # the device logs 100 % twice: the finished line is shown once

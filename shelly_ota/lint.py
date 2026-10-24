@@ -79,6 +79,6 @@ def lint_warnings(yaml_path: Path, *, bootloader_shipped: bool = False) -> list[
                     "bootloader, but without this entry ESPHome cannot update it later (Builder's 'Update bootloader'). "
                     "Add it to the config (see the device page)."]
         return ["ota: no 'platform: esphome' entry with 'allow_partition_access: true'. Without it ESPHome cannot "
-                "update the bootloader later, and a later ESPHome OTA may fall back to the previous image "
-                "(see docs/bootloader-and-slots.md)."]
+                "update the bootloader or the partition table later (Builder's 'Update bootloader'); normal app updates "
+                "are not affected (see docs/bootloader-and-slots.md)."]
     return []

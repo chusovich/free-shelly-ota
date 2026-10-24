@@ -17,19 +17,18 @@ A battery device. The partition table is at `0xf000`, so a default ESPHome build
 | Partition table | **`0xf000`** (not `0x10000`) |
 | App slot size | `0x280000` |
 | Bootloader `min_version` | `1.0.9` (set in the profile) |
-| ESPHome device page | [Shelly H&T Gen3](https://devices.esphome.io/devices/shelly-ht-gen3/): pins and an example config |
+| ESPHome device page | [Shelly H&T Gen3](https://devices.esphome.io/devices/shelly-ht-gen3/) |
 
 > [!NOTE]
 > **Confirmed:** the whole chain ran on a real device: `send` from stock 2.0.1 (slot 0) with `--esphome-factory`; ESPHome boots and ESPHome OTAs take effect.
 
 ## Before you start
 
-- [ ] The device runs Shelly's own firmware, not ESPHome yet.
+Check first: ☐ the device runs Shelly's own firmware, not ESPHome yet · ☐ you know its IP address (`--ip`), or this PC is on the device's own access point (default `192.168.33.1`) · ☐ the device can reach this PC: same network, port 8000 (`--port`) not blocked · ☐ your ESPHome config uses the partition table below and is compiled · ☐ a UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md))
+
+Also:
+
 - [ ] The batteries are charged (the stock updater refuses below 30 %) and the device is awake ([Troubleshooting](../troubleshooting.md#battery-devices-ht-gen3)).
-- [ ] You know its IP address (`--ip`), or this PC is connected to the device's own access point (the default, `192.168.33.1`).
-- [ ] This PC can be reached from the device: same network, and nothing blocks port 8000 (`--port`).
-- [ ] Your ESPHome config uses the partition table below and is compiled.
-- [ ] A UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md)).
 
 ## ESPHome config
 
@@ -61,20 +60,9 @@ ota:
 
 ## Pins
 
-| GPIO | Function |
-| --- | --- |
-| GPIO0 | Button (external pull-up, deep-sleep wake-up) |
-| GPIO1 / GPIO3 | I2C SDA / SCL (100 kHz): SHT31 at `0x44`, UC8119 e-paper segment display at `0x50` |
-| GPIO2 | Power rail ADC (regulated 3.3 V rail, not the battery) |
-| GPIO4 | Battery ADC (voltage divider, enabled with GPIO18) |
-| GPIO5 | Battery presence (HIGH when batteries are connected) |
-| GPIO6 / GPIO7 | UC8119 BUSY_N / RESET_N |
-| GPIO8 | USB detect (HIGH = USB) |
-| GPIO10 | UC8119 enable (display power gate) |
-| GPIO18 | Battery power enable |
-
-Source: the owner's Shelly H&T Gen3 page in the ESPHome device database, with a full config. The UART pads
-on the board are bare test points: pogo pins or test clips work, or solder temporary wires.
+The pins (button, I2C bus with the SHT31 and the e-paper display, the ADCs for the battery and the power rail, the battery and USB detection) are on the
+[ESPHome device page](https://devices.esphome.io/devices/shelly-ht-gen3/), with a full config. The UART pads on the board are bare test points:
+pogo pins or test clips work, or solder temporary wires.
 
 ## Flash it
 
@@ -122,10 +110,6 @@ In the `--watch` log look for these lines, in this order:
 | 2 | `Boot: cur ... min ... update? 1` | The installer will write ESPHome's bootloader. `update? 0` means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
 | 3 | `ota_progress` up to 95 %, then `ota_success` | The device restarts into ESPHome |
 
-> [!NOTE]
-> The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.
-> If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
-
 ## Notes for this device
 
 - **Official package:** the update API answers per installed version: the device sends its app and version in the `Shelly-Info`
@@ -145,13 +129,11 @@ In the `--watch` log look for these lines, in this order:
 
 `python ota.py restore HTG3` sends the official firmware back while Shelly firmware still runs.
 
-> [!WARNING]
-> Once ESPHome with ESPHome's bootloader is running, `restore` gets no answer and only UART brings Shelly OS back
-> ([Recovery over UART](../recovery-uart.md)). Take a flash backup first if you can.
-
 ---
 
-> [!TIP]
-> **Flashed this device?** Tell us how it went, also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
+> [!WARNING]
+> - **Wipes Wi-Fi and settings.** ESPHome opens its own access point or joins the Wi-Fi from your config; if nothing comes up, power-cycle the device ([help](../troubleshooting.md#esphome-does-not-start-after-the-update)).
+> - **No way back over the network** once ESPHome's bootloader runs: `restore` gets no answer, only UART brings Shelly OS back ([Recovery over UART](../recovery-uart.md)). Take a flash backup first if you can.
+> - **Flashed it? Tell us,** also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
 
 [Bootloader and slots](../bootloader-and-slots.md) · [Troubleshooting](../troubleshooting.md) · [Recovery over UART](../recovery-uart.md)

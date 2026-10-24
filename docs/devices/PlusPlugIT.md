@@ -28,11 +28,7 @@ copy a Plus Plug S config.
 
 ## Before you start
 
-- [ ] The device runs Shelly's own firmware, not ESPHome yet.
-- [ ] You know its IP address (`--ip`), or this PC is connected to the device's own access point (the default, `192.168.33.1`).
-- [ ] This PC can be reached from the device: same network, and nothing blocks port 8000 (`--port`).
-- [ ] Your ESPHome config uses the partition table below and is compiled.
-- [ ] A UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md)).
+Check first: ☐ the device runs Shelly's own firmware, not ESPHome yet · ☐ you know its IP address (`--ip`), or this PC is on the device's own access point (default `192.168.33.1`) · ☐ the device can reach this PC: same network, port 8000 (`--port`) not blocked · ☐ your ESPHome config uses the partition table below and is compiled · ☐ a UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md))
 
 ## ESPHome config
 
@@ -123,10 +119,6 @@ package, reads the update target slot. Command reference: [Commands](../commands
 
 On the reporter's unit the raw log also showed `FW signatures: want 07 got 00` and `BURN BLOCK3 - OK` twice, with no write error ([eFuse note](../troubleshooting.md#efuse)).
 
-> [!NOTE]
-> The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.
-> If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
-
 ## Notes for this device
 
 A second unit (factory firmware 0.11.99) went Shelly, then Tasmota (`mgos32-to-tasmota32`), then ESPHome through Tasmota's firmware upgrade,
@@ -140,7 +132,8 @@ While Shelly firmware runs: `python ota.py restore PlusPlugIT`. Otherwise [Recov
 
 ---
 
-> [!TIP]
-> **Flashed this device?** Tell us how it went, also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
+> [!WARNING]
+> - **Wipes Wi-Fi and settings.** ESPHome opens its own access point or joins the Wi-Fi from your config; if nothing comes up, power-cycle the device ([help](../troubleshooting.md#esphome-does-not-start-after-the-update)).
+> - **Flashed it? Tell us,** also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
 
 [Bootloader and slots](../bootloader-and-slots.md) · [Troubleshooting](../troubleshooting.md) · [Recovery over UART](../recovery-uart.md)

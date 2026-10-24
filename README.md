@@ -44,9 +44,11 @@ flowchart LR
 
 ## Supported devices
 
-**18 profiles:** ✅ 8 confirmed · 🟡 4 partly checked · 🧪 6 untested
+**43 profiles:** ✅ 8 confirmed · 🟡 5 partly checked · 🔬 7 DevKit-tested · 🧪 23 untested
 
-Click the profile for the device page: ESPHome config, the exact commands and what to expect.
+Click the profile for the device page: ESPHome config, the exact commands and what to expect. This table shows the devices that ran on
+real hardware (✅ and 🟡). All profiles, also the DevKit-tested (🔬) and the untested (🧪) ones, are on the
+[device pages](docs/devices/README.md#devices).
 
 | Device | Profile | Chip | State | Note |
 | --- | --- | --- | --- | --- |
@@ -58,19 +60,15 @@ Click the profile for the device page: ESPHome config, the exact commands and wh
 | Multicolor Bulb E27 Gen3 | [`RGBCCTBulbG3`](docs/devices/RGBCCTBulbG3.md) | ESP32&#8209;C3 | ✅ | |
 | Duo Bulb Gen3 | [`DuoBulbG3`](docs/devices/DuoBulbG3.md) | ESP32&#8209;C3 | 🟡 | Flashed over OTA and runs; the GPIOs (PWM, from the stock dump) are not confirmed on the hardware |
 | Power Strip 4 Gen4 | [`PowerStrip`](docs/devices/PowerStrip.md) | ESP32&#8209;C6 | 🟡 | Boots, outlets not checked |
-| Power Strip 4 Gen4 (Zigbee) | [`PowerStripZB`](docs/devices/PowerStripZB.md) | ESP32&#8209;C6 | 🧪 | |
 | Plus Plug S (V2 hardware, Gen2) | [`PlusPlugS`](docs/devices/PlusPlugS.md) | ESP32 | ✅ | Flashed without UART |
 | Plus Plug IT (Gen2) | [`PlusPlugIT`](docs/devices/PlusPlugIT.md) | ESP32 | ✅ | Flashed without UART |
-| The Pill | [`Pill`](docs/devices/Pill.md) | ESP32&#8209;C3 | 🧪 | |
 | Mini 1 Gen3 | [`Mini1G3`](docs/devices/Mini1G3.md) | ESP32&#8209;C3 | ✅ | |
 | Mini 1PM Gen3 | [`Mini1PMG3`](docs/devices/Mini1PMG3.md) | ESP32&#8209;C3 | 🟡 | Flashed over OTA (two units); a second OTA, the relay under load and the meter not checked |
-| Mini 1PM Gen4 | [`Mini1PMG4`](docs/devices/Mini1PMG4.md) | ESP32&#8209;C6 | 🧪 | |
-| Mini 1PM Gen4 (Zigbee) | [`Mini1PMG4ZB`](docs/devices/Mini1PMG4.md#zigbee-variant) | ESP32&#8209;C6 | 🧪 | |
 | Plus Uni (Gen2) | [`PlusUni`](docs/devices/PlusUni.md) | ESP32 | 🟡 | Flashed over OTA, ESPHome's bootloader step not checked |
-| Pro 3EM (Gen2) | [`Pro3EM`](docs/devices/Pro3EM.md) | ESP32 | 🧪 | |
 
 > - ✅ The whole chain ran on a real device.
 > - 🟡 Flashed on a real device, but part of the chain or of the function is not checked yet (see the Note column).
+> - 🔬 The OTA ran through on a dev board with the [DevKit image](docs/devkit.md), but not on the real device yet.
 > - 🧪 The package builds and verifies, but nobody has flashed it yet.
 
 
@@ -126,6 +124,9 @@ python ota.py send PlugMG3 out/PlugMG3-app-<date>.zip --ip <device IP>
   still guards against transfer errors ([`fetch`](docs/commands.md#fetch)).
 - Without `--ip`, `send` talks to `192.168.33.1`, the Shelly's own access point. Add `--dry-run` first to check the device
   without sending anything ([`send`](docs/commands.md#send)).
+- **A device without Wi-Fi** (the Zigbee firmware opens no access point and has no network yet): give it one over Bluetooth first with
+  `python ota.py ble wifi <SSID> -`, which asks for the password and prints the address to use as `--ip`. It needs `pip install bleak` and a Bluetooth LE
+  adapter ([`ble`](docs/commands.md#ble); seen on one Zigbee unit on a dev board, not yet on a real device).
 
 > [!CAUTION]
 > The package wipes NVS (Wi-Fi and settings), and a package built from your config can contain your Wi-Fi password.
@@ -155,7 +156,7 @@ hardware test: nobody can say a device works until someone has flashed one.
 | Page | What is in it |
 | --- | --- |
 | [Device pages](docs/devices) | One page per device: config, commands, log lines, pitfalls |
-| [Commands](docs/commands.md) | `fetch`, `build`, `send`, `restore`, `log` and the rest, with all options |
+| [Commands](docs/commands.md) | `fetch`, `build`, `send`, `restore`, `ble`, `log` and the rest, with all options |
 | [Bootloader and slots](docs/bootloader-and-slots.md) | Why ESPHome's bootloader is shipped, `min_version`, why the app must land in slot 0 |
 | [Troubleshooting](docs/troubleshooting.md) | Header errors, empty log, battery devices, eFuse, power cycle |
 | [Recovery over UART](docs/recovery-uart.md) | Back to Shelly OS with `esptool` |

@@ -37,6 +37,8 @@ RESULT_WAIT = 30        # seconds to wait for the device's own "update succeeded
 # A weak Wi-Fi signal slows the download down to a crawl: a Mini 1 Gen3 at -68 dBm took about 1 % per 5 to 10 s and was at 28 % after
 # the default 300 s (one report). Where exactly it starts to hurt is not known, so this is a guess from that one report.
 WEAK_RSSI = -67         # dBm; at or below this send() says so and offers a longer wait
+ETA_MIN_SPAN = 10.0     # seconds of download needed before the end is estimated
+MAX_WAIT = 3600         # the longest the wait for a download is extended on its own (--max-wait)
 SLOW_TIMEOUT = 1200     # the wait suggested for a weak signal (that report finished with --timeout 1200)
 
 
@@ -169,6 +171,35 @@ def local_ip_for(addr: str) -> str:
             raise OtaError(f"Cannot find a local address towards {host}: {e}. Use --host.") from e
 
 
+class DownloadWatch:
+    """Estimates when the download ends, from what the file server has handed out (works without the device's log).
+
+    The speed is measured over the last `window` seconds, so a slow start or a stall shows up and the estimate follows it."""
+
+    def __init__(self, size: int, window: float = 60.0, min_span: float | None = None):
+        self.size = size
+        self.window = window
+        self.min_span = ETA_MIN_SPAN if min_span is None else min_span
+        self.samples: list[tuple[float, int]] = []
+
+    def add(self, now: float, sent: int) -> None:
+        self.samples.append((now, sent))
+        while len(self.samples) > 2 and now - self.samples[1][0] >= self.window:
+            self.samples.pop(0)
+
+    def percent(self) -> int:
+        return min(100, 100 * self.samples[-1][1] // max(self.size, 1)) if self.samples else 0
+
+    def eta(self) -> float | None:
+        """Seconds until the last byte at the speed of the window; None while there is too little to tell."""
+        if len(self.samples) < 2:
+            return None
+        (t0, b0), (t1, b1) = self.samples[0], self.samples[-1]
+        if t1 - t0 < self.min_span or b1 <= b0:
+            return None
+        return (self.size - b1) / ((b1 - b0) / (t1 - t0))
+
+
 class FileServer:
     """Serves exactly one file; `served` is set once a client received all of it."""
 
@@ -242,11 +273,13 @@ class SlotProbe(NamedTuple):
     datagrams: int = 0             # UDP datagrams received meanwhile: 0 means the log does not reach this PC at all
 
 
-def probe_slot(addr: str, host: str, log_port: int, *, wait: float = 8.0, **auth) -> SlotProbe:
+def probe_slot(addr: str, host: str, log_port: int, *, wait: float = 8.0, tick: Callable[[float], None] | None = None,
+               **auth) -> SlotProbe:
     """Ask the device which slot its updater would write to, without updating.
 
     SlotProbe(None, None) if no matching log line arrived (log blocked, or an old firmware); SlotProbe(None, "scratch")
-    if it arrived but names something other than app_N. `datagrams` counts what arrived meanwhile."""
+    if it arrived but names something other than app_N. `datagrams` counts what arrived meanwhile. `tick(seconds left)` is
+    called about once a second while it waits."""
     found: list[SlotProbe] = []
 
     def sink(text: str) -> None:
@@ -257,7 +290,12 @@ def probe_slot(addr: str, host: str, log_port: int, *, wait: float = 8.0, **auth
 
     with logwatch.udp_log(addr, host, log_port, sink, **auth) as stats:
         deadline = time.monotonic() + wait
+        shown = None
         while not found and time.monotonic() < deadline:
+            left = int(deadline - time.monotonic()) + 1
+            if tick and left != shown:
+                shown = left
+                tick(left)
             time.sleep(0.1)
     return (found[0] if found else SlotProbe(None, None))._replace(datagrams=stats.datagrams)
 
@@ -367,7 +405,7 @@ def plain_package_text(name: str, forced: bool = False) -> str:
 
 
 def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str | None = None,
-         port: int = 8000, timeout: float = 300, assume_yes: bool = False, dry_run: bool = False,
+         port: int = 8000, timeout: float = 300, max_wait: float = MAX_WAIT, assume_yes: bool = False, dry_run: bool = False,
          force: bool = False, user: str | None = None, password: str | None = None,
          watch: float = 0, log_port: int = 9514, ignore_slot: bool = False, probe_wait: float = 8.0,
          wait: float = DEFAULT_WAIT, sleep: Callable[[float], None] = time.sleep,
@@ -444,10 +482,13 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
             probe = SlotProbe(None, None)
             probe_failed = False
             try:
-                probe = probe_slot(addr, host, log_port, wait=probe_wait, **auth)
+                probe = probe_slot(addr, host, log_port, wait=probe_wait, **auth,
+                                   tick=(lambda left: ui.live(f"Asking the device which slot the update will use ... {left} s")) if session.out is ui.say else None)
             except OtaError as e:
                 probe_failed = True
                 say(Level.normal, f"NOTE: could not ask the device for its update target slot ({e}).")
+            if session.out is ui.say:
+                ui.live_end()
             target = probe.slot
             if target is None and probe.core_dump_target:
                 # The log works, this firmware just does not say: do not send the user to the firewall.
@@ -478,7 +519,7 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
                     "firmware would start again. Install the official firmware first; that also puts Shelly's "
                     "bootloader back and moves the stock firmware to the other slot:\n\n"
                     f"  python ota.py restore {profile.name}\n\n"
-                    "  Then send again. Use --ignore-slot to send anyway.")
+                    "  Then send again.")
     else:
         say(Level.normal, f"NOTE: no official {profile.name} ZIP cached, so it was not checked whether this package replaces "
                           "Shelly's bootloader. Fetch it and try again, or look at the package with 'ota.py inspect':\n\n"
@@ -539,9 +580,33 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
                 started = time.monotonic()
                 deadline = started + timeout
                 seen = 0   # bytes sent at the last deadline
+                dl = DownloadWatch(srv.size)
+                last_sample = 0.0
+                told_cap = False
+                on_screen = session.out is ui.say
                 while not srv.served.wait(0.5):   # short steps, so Ctrl+C works at once (also on Windows)
                     if session.result == "error":
                         break
+                    now = time.monotonic()
+                    if srv.bytes_sent and now - last_sample >= 1:
+                        last_sample = now
+                        dl.add(now, srv.bytes_sent)
+                        eta = dl.eta()
+                        if on_screen and not session.update_seen and eta is not None:   # the device's own bar wins once it shows
+                            ui.live(f"Download {dl.percent()} %, about {ui.duration(eta)} left (Ctrl+C to stop)")
+                        if eta is not None and now + eta > deadline:
+                            limit_end = started + max(max_wait, timeout)
+                            wanted = now + eta * 1.25 + 30
+                            if wanted > limit_end and not told_cap and now + eta > limit_end:
+                                told_cap = True
+                                say(Level.normal, f"NOTE: at this speed the download needs about {ui.duration(eta)} more, which is "
+                                                  f"beyond the longest wait of {ui.duration(max_wait)} (--max-wait). It will stop then.")
+                            if min(wanted, limit_end) > deadline:
+                                deadline = min(wanted, limit_end)
+                                say(Level.normal, f"NOTE: the device takes the ZIP slowly ({dl.percent()} % after "
+                                                  f"{ui.duration(now - started)}, about {ui.duration(eta)} to go): the wait was "
+                                                  f"extended to {ui.duration(deadline - started)} in total (--max-wait caps it at "
+                                                  f"{ui.duration(max_wait)}).")
                     if time.monotonic() >= deadline:
                         if srv.bytes_sent > seen and not assume_yes:   # the device is still taking it: ask, never decide alone
                             seen = srv.bytes_sent
@@ -559,6 +624,8 @@ def send(profile: Profile, zip_path: Path, addr: str = DEFAULT_IP, *, host: str 
                                            f"or wait longer with --timeout {SLOW_TIMEOUT}.")
                         raise OtaError(f"The device did not download the ZIP within {waited:.0f}s. Check that it can "
                                        f"reach {host}:{srv.port} (firewall, network).")
+                if on_screen:
+                    ui.live_end()
                 if srv.served.is_set():
                     say(Level.normal, "The device downloaded the ZIP and installs it now.")
                 sleep(1)

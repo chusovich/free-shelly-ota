@@ -5,11 +5,56 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-24
+
+This is a pre-release: 23 of the 43 profiles are only built and verified (🧪), and seven more have been through the update on a dev board but not on the device.
+
+### Summary
+- **25 new Gen3 and Gen4 profiles** (43 in total). Seven of them have been through the whole update on a dev board (🔬); the others only build and verify (🧪).
+- **`ota.py devkit`** writes a flash image of a package for a dev board; **`ota.py ble`** gives a device without Wi-Fi (the Zigbee firmware) its Wi-Fi over Bluetooth. Both are new and were seen on one board only.
+- **`send` and `restore`:** the progress line shows the time left, a slow download extends the wait on its own (`--max-wait`), and `restore` prints one note instead of three.
+- **`build`** warns if the image was built without `allow_partition_access`.
+- **README and device pages:** the README lists only the devices that ran on real hardware; the full list, the ESPHome device page links and a Note column are in `docs/devices/README.md`. The device pages are shorter.
+
 ### Added
+- `Mini1PMG4` device page: a Pins section with the button (GPIO22), the BL0942 UART (RX 19, TX 20, 9600 8N1) and its IRQ input (GPIO18), **read from the stock firmware with a disassembler and not
+  confirmed on a device** (marked on the page, with how sure each pin is). Relay and LED pins were not read.
+- `ota.py ble scan|info|call|wifi`: talk to a Shelly over Bluetooth LE (its RPC channel), mainly to give a device without Wi-Fi its Wi-Fi (`ble wifi SSID -`, then `send` with
+  the printed address). Found on the Mini 1PM Gen4 Zigbee firmware on a dev board: no Wi-Fi, no access point, `provision: pending`. The logic is `shelly_ota/ble.py`, `bleak` is optional
+  (`requirements-ble.txt`, imported only when `ble` runs). Tested against a fake connection (framing, chunking, errors); on hardware only on that one board.
+- `build` also checks the image itself for `allow_partition_access: true` (ESPHome's "Partition access allowed" text) and warns if it is
+  missing, also without `--esphome-yaml`.
+- 25 profiles for Shelly Gen3 and Gen4 devices, made from the official packages, each with its partition CSV, a device page and a row in the
+  README: Gen3 (ESP32-C3) `S1G3` (1), `S1PMG3` (1PM), `S2PMG3` (2PM), `S1LG3` (1L), `S2LG3` (2L), `I4G3` (i4), `DimmerG3`,
+  `Dimmer0110VPMG3` (Dimmer 0/1-10V PM), `EMG3`, `S3EMG3` (3EM-63), `OutdoorPlugSG3`, `BluGwG3` (BLU Gateway); Gen4 (ESP32-C6) `S1G4`, `S1PMG4`,
+  `S2PMG4`, `S1LG4`, `S2LG4`, `I4G4`, `DimmerG4`, `Dimmer0110VPMG4`, `EMG4`, `Mini1G4` (1 Mini), `MiniEMG4` (EM Mini), `PlugUSG4`, `PresenceG4`.
+  Every profile sets `boot_min_version: 1.0.9`. The packages build and verify; **none was flashed on a real device yet**. The EM Gen4 has a 16 MB
+  flash layout (its DevKit image needs a 16 MB board), the i4 Gen4 is only listed with the beta 2.2.0-beta1 in the update API.
+- State 🔬 "DevKit-tested" (README, device pages, `docs/devkit.md`): the update ran through on a dev board with the DevKit image, not on the real
+  device. `Mini1G4`, `Mini1PMG4`, `Mini1PMG4ZB`, `MiniEMG4`, `DimmerG4`, `Dimmer0110VPMG4` and `I4G4` have it, from runs on an ESP32-C6 dev board with 8 MB
+  ("Seen on a board" in `docs/devkit.md`). A real device moves a profile to 🟡 or ✅.
 - `PlusPlugIT` profile and device page (Shelly Plus Plug IT, SNPL-00110IT, ESP32, Gen2): confirmed on hardware by a device report, with the pins read from the stock firmware ([#83](https://github.com/oxynatOr/free-shelly-ota/issues/83)).
 - `send` checks the device's Wi-Fi signal (`Wifi.GetStatus`). At -67 dBm or weaker it says what that does to the download and asks "seconds / s / c" how long to wait (Enter takes 1200 s, `s` skips, `c` cancels). If the wait runs out while the device is still taking the ZIP, `send` asks the same way instead of stopping. It never waits longer on its own: with `--yes` or `--dry-run` it only says so. The threshold is a guess from one report ([Wi-Fi signal](docs/commands.md#wi-fi-signal)).
 
 ### Changed
+- The device report form lists all 43 profiles in its "Device" dropdown (it had 15, so reports for the 28 others had to use "Other"); `tests/test_labels.py` keeps it in step with the profiles.
+- Device pages are shorter: "Before you start" is one line (what only applies to a model is listed under "Also"), and the three boxes (the NVS note, the warning about the way back, the request for a report) are one
+  box with three bullets at the end of the page. The sentences are still the same on every page, and `tests/test_readme.py` checks that word for word.
+- `restore` prints one NOTE (what it does and that a device with ESPHome does not answer) instead of three; the explanation of the slot change and the
+  second NVS sentence are gone or only shown with `-v` (the WARNING with the question already says the NVS is wiped).
+- The progress line (`Update [####---] 76 %`) shows an estimate of the time left (`, about 14 s left`) once 20 percentage points are done (the first real step to the current one; the installer's 0 % phase is not counted),
+  measured from the speed of this run. Checked against a real log: 40 s shown at 22 % for 39 s left. Only on a terminal; a log file keeps the 10 % lines.
+- `send` follows the download: from the bytes it has handed out it estimates the time left, shows `Download 31 %, about 14 min left` while the device's own
+  progress line is not there, and extends the wait on its own when the device is slow but steady, with a NOTE that says so. `--max-wait SEC` (default 3600) caps
+  the total; a download that stands still is not extended, and the question at the end of `--timeout` stays.
+- `send`: while it waits for the update target slot (up to 8 s) a live line counts down, so the screen is not silent. The slot refusal no longer
+  points to `--ignore-slot` (it stays in the docs): the message says to restore first.
+- `docs/devices/README.md`: the device name in the list links to its page (the profile is plain text now) and a Note column holds what stood after the state symbol; EM Gen4 (16 MB flash layout) and i4 Gen4 (beta package only) got a note.
+- Device pages `HTG3`, `Pill` and `PlusPlugS`: the pin tables were copies of the ESPHome device page and are replaced by a link to it. The pages whose pins this project checked itself (`PlugSG3`, `MiniPMG3`, `PowerStrip`) or that have no such page (`PlugMG3`, `PlugPMG3`, `DuoBulbG3`, `PlusPlugIT`, `PlusUni`) keep theirs.
+- Device pages: the table at the top has a row "ESPHome device page" with the link for every device that has such a page on devices.esphome.io (16 pages; it was 8). The hint in the ESPHome config section no longer claims what the other page contains. `tests/test_readme.py` checks the row.
+- The README lists only the devices that ran on real hardware (✅ and 🟡) so that its table stays short; every profile, with the DevKit-tested (🔬) and
+  the untested (🧪) ones, is in `docs/devices/README.md`, which has a section "Tested on a dev board" below the full list. `tests/test_readme.py` checks
+  both tables against the profiles.
 - `PlusUni` page: the follow-up of the first report ([#46](https://github.com/oxynatOr/free-shelly-ota/issues/46)): the unit was fixed with one UART flash and then took OTAs, and ESPHome's "Update bootloader" over OTA worked. New pin table (analog input, counter, two inputs, two solid-state relays, LED) measured by the tester; the 1-Wire pin (GPIO13) and the reset button (GPIO32) were read from the 2.0.1 firmware and are marked as not yet measured; the firmware confirms all the measured pins. The config note says to keep `allow_partition_access: true` in the first config.
 - `Mini1PMG3` page: first device report ([#82](https://github.com/oxynatOr/free-shelly-ota/issues/82)), two units from stock 1.4.0 with the 2.1.0 package run ESPHome; state 🟡 until a second OTA, the relay under load and the meter are checked. First loader 1.0.0 seen (`Boot: cur 010000ff ... update? 1`).
 - `Mini1G3` page: a second report (a device in the wall): the `Boot:` lines of `restore` and of the ESPHome flash, the slot-1 case fixed by `restore` with Wi-Fi settings kept, and the NTC of the stock firmware against ESPHome on the same device. Troubleshooting and `commands.md`: `--timeout 1200` for a device on a weak Wi-Fi.

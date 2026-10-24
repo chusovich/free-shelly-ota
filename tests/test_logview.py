@@ -101,6 +101,11 @@ class RuleTests(unittest.TestCase):
         self.assertFalse([r.message for r, e in self.entries if e.kind in ("error", "warn")])
         self.assertTrue(all(e.key == "efuse" for _, e in self.entries if e.kind == "known"))
 
+    def test_the_power_meter_timeouts_are_noise_not_warnings(self):
+        rec = logview.split_records(f"{DEVICE} 41 12.3 1 1|shos_bl0942.c:122: 0x4083ebcc: packet read timed out", DEVICE)[0]
+        entry = logview.classify(rec)
+        self.assertEqual((entry.kind, entry.level), ("noise", Level.debug))
+
     def test_the_result_is_a_success(self):
         self.assertEqual(sum(e.kind == "result_ok" for _, e in self.entries), 1)
         self.assertEqual(sum(e.kind == "result_error" for _, e in self.entries), 0)

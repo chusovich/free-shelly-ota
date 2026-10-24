@@ -2,10 +2,10 @@
 
 [← README](../../README.md) · [All devices](README.md) · [Commands](../commands.md)
 
-![State: untested](https://img.shields.io/badge/state-untested-lightgrey.svg?style=flat-square)
+![State: DevKit-tested](https://img.shields.io/badge/state-devkit%20tested-blueviolet.svg?style=flat-square)
 ![Chip: ESP32-C6](https://img.shields.io/badge/chip-ESP32--C6-blue.svg?style=flat-square)
 
-[🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
+[🧰 Before you start](#before-you-start) · [⚙️ Config](#esphome-config) · [📍 Pins](#pins) · [⚡ Flash it](#flash-it) · [👀 What to expect](#what-to-expect) · [↩️ Way back](#way-back)
 
 Gen4 / ESP32-C6.
 
@@ -20,11 +20,7 @@ Gen4 / ESP32-C6.
 
 ## Before you start
 
-- [ ] The device runs Shelly's own firmware, not ESPHome yet.
-- [ ] You know its IP address (`--ip`), or this PC is connected to the device's own access point (the default, `192.168.33.1`).
-- [ ] This PC can be reached from the device: same network, and nothing blocks port 8000 (`--port`).
-- [ ] Your ESPHome config uses the partition table below and is compiled.
-- [ ] A UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md)).
+Check first: ☐ the device runs Shelly's own firmware, not ESPHome yet · ☐ you know its IP address (`--ip`), or this PC is on the device's own access point (default `192.168.33.1`) · ☐ the device can reach this PC: same network, port 8000 (`--port`) not blocked · ☐ your ESPHome config uses the partition table below and is compiled · ☐ a UART adapter is at hand as your way back ([Recovery over UART](../recovery-uart.md))
 
 ## ESPHome config
 
@@ -60,6 +56,22 @@ esphome:
     board_build.f_flash: 80000000L
     board_build.flash_size: 8MB
 ```
+
+## Pins
+
+> [!WARNING]
+> **Read from the stock firmware, not confirmed on a device.** These values come from the code of Shelly's own firmware (Mini 1PM Gen4 2.0.1 and its Zigbee
+> variant, the same initialisation in both), read with a disassembler. Nobody measured them on a board with the parts fitted. Check them on your unit before you rely on them.
+
+| Function | Pin | How sure |
+| --- | --- | --- |
+| Button | **GPIO22**, reads low when pressed | Good: it is the pin of the button object and of the boot-time safe-mode check |
+| BL0942 power meter (UART 1, 9600 baud, 8N1) | **RX GPIO19**, **TX GPIO20** | Baud rate and pins are in the code; which of the two is RX and which TX is the less certain part: if the meter stays silent, swap them |
+| BL0942 interrupt input | GPIO18 | Medium: the firmware's own message calls it the "IRQ pin"; what the meter drives there was not checked |
+| Relay, LED | not read | |
+
+The ESPHome device page for this model does not exist yet (sitemap checked 2026-10-16), so there is nothing to compare with. The Zigbee variant and the normal
+variant share the same values.
 
 ## Flash it
 
@@ -106,29 +118,23 @@ package, reads the update target slot. Command reference: [Commands](../commands
 | 2 | `Device: The bootloader will be replaced ...` (raw log: `Boot: cur ... min ... update? 1`) | The installer will write ESPHome's bootloader. `WARNING: ESPHome's bootloader was NOT written` (`update? 0`) means it will not: build again with a higher `--boot-min-version` ([why](../bootloader-and-slots.md#is-the-new-bootloader-really-written-min_version)) |
 | 3 | The progress (`Update: ... %`, one line that updates in place) up to 100 %, then `Done: update installed, the device confirmed it` | The device restarts into ESPHome |
 
-> [!NOTE]
-> The package wipes NVS: Wi-Fi and settings are gone. ESPHome opens its own access point or joins the Wi-Fi from your config.
-> If nothing comes up, power-cycle the device ([Troubleshooting](../troubleshooting.md#esphome-does-not-start-after-the-update)).
-
 ## Notes for this device
 
-No device-specific findings yet. Please report the file written by `--log-file`, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
+Played through on a dev board with the DevKit image on 2026-10-23 (see [Seen on a board](../devkit.md#seen-on-a-board)); not on the real device yet. Please report the `--watch` log of a real device, especially the lines `Update target slot`, `Boot: cur ... update?` and `Will write to slot`.
 
 ## Zigbee variant
 
-`Mini1PMG4ZB` is the Zigbee firmware variant of the same hardware (listed under `alt` in the update reply of `Mini1PMG4`; its profile has `parent: Mini1PMG4`). Use the same config and flash it with `python ota.py send Mini1PMG4ZB ...` after building with `build Mini1PMG4ZB`. Not tested either.
+`Mini1PMG4ZB` is the Zigbee firmware variant of the same hardware (listed under `alt` in the update reply of `Mini1PMG4`; its profile has `parent: Mini1PMG4`). Use the same config and flash it with `python ota.py send Mini1PMG4ZB ...` after building with `build Mini1PMG4ZB`. Played through on a dev board as well (2026-10-23, see [Seen on a board](../devkit.md#seen-on-a-board)); not on the real device. On the dev board the Zigbee firmware had no Wi-Fi and opened no access point: `python ota.py ble wifi SSID -` ([ble](../commands.md#ble)) gave it one before `send`.
 
 ## Way back
 
 `python ota.py restore Mini1PMG4` sends the official firmware back while Shelly firmware still runs.
 
-> [!WARNING]
-> Once ESPHome with ESPHome's bootloader is running, `restore` gets no answer and only UART brings Shelly OS back
-> ([Recovery over UART](../recovery-uart.md)). Take a flash backup first if you can.
-
 ---
 
-> [!TIP]
-> **Flashed this device?** Tell us how it went, also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
+> [!WARNING]
+> - **Wipes Wi-Fi and settings.** ESPHome opens its own access point or joins the Wi-Fi from your config; if nothing comes up, power-cycle the device ([help](../troubleshooting.md#esphome-does-not-start-after-the-update)).
+> - **No way back over the network** once ESPHome's bootloader runs: `restore` gets no answer, only UART brings Shelly OS back ([Recovery over UART](../recovery-uart.md)). Take a flash backup first if you can.
+> - **Flashed it? Tell us,** also when it worked: [open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).
 
 [Bootloader and slots](../bootloader-and-slots.md) · [Troubleshooting](../troubleshooting.md) · [Recovery over UART](../recovery-uart.md)

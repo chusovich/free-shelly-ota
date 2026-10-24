@@ -17,7 +17,7 @@ from shelly_ota import profile  # noqa: E402
 ROOT = profile.MODULE_DIR
 README = ROOT / "README.md"
 DEVICE_OVERVIEW = ROOT / "docs" / "devices" / "README.md"
-STATES = ("✅", "🟡", "🧪")
+STATES = ("✅", "🟡", "🔬", "🧪")
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp"}
 
 
@@ -38,10 +38,13 @@ def _table_states(path: Path, state_cell: str) -> dict:
     """{profile: state symbol} from the rows that link a profile as [`Name`](...)."""
     states = {}
     for line in path.read_text(encoding="utf-8").splitlines():
-        m = re.match(r"\|[^|]*\|\s*\[`(\w+)`\]\([^)]*\)\s*\|", line)
+        m = re.match(r"\|[^|]*\|\s*\[`(\w+)`\]\([^)]*\)\s*\|", line) \
+            or re.match(r"\|\s*\[[^\]]+\]\([^)]*\)\s*\|\s*`(\w+)`\s*\|", line)    # the profile linked, or the device linked
         if not m:
             continue
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) <= state_cell:
+            continue                      # another table with a profile column (the dev board runs)
         symbol = cells[state_cell].split(" ")[0]
         states[m.group(1)] = symbol
     return states
@@ -51,25 +54,32 @@ class ReadmeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.text = README.read_text(encoding="utf-8")
-        cls.states = _table_states(README, state_cell=3)  # Device | Profile | Chip | State | Note
+        cls.states = _table_states(README, state_cell=3)  # Device | Profile | Chip | State | Note: the confirmed devices
+        cls.overview = _table_states(DEVICE_OVERVIEW, state_cell=5)  # Device | Profile | Chip | Table | Slot | State: all of them
 
-    def test_every_profile_is_in_the_device_table_and_nothing_else(self):
-        self.assertEqual(sorted(self.states), profile.list_devices())
+    def test_the_overview_has_every_profile_and_nothing_else(self):
+        self.assertEqual(sorted(self.overview), profile.list_devices())
+
+    def test_the_readme_table_has_exactly_the_confirmed_devices(self):
+        confirmed = {name: symbol for name, symbol in self.overview.items() if symbol in ("✅", "🟡")}
+        self.assertEqual(self.states, confirmed)
 
     def test_states_are_known_symbols(self):
-        for name, symbol in self.states.items():
+        for name, symbol in self.overview.items():
             self.assertIn(symbol, STATES, name)
 
     def test_summary_line_matches_the_table(self):
-        m = re.search(r"\*\*(\d+) profiles:\*\* ✅ (\d+) confirmed · 🟡 (\d+) partly checked · 🧪 (\d+) untested", self.text)
+        m = re.search(r"\*\*(\d+) profiles:\*\* ✅ (\d+) confirmed · 🟡 (\d+) partly checked · 🔬 (\d+) DevKit-tested · 🧪 (\d+) untested", self.text)
         self.assertIsNotNone(m, "summary line above the device table is missing or changed its form")
-        symbols = list(self.states.values())
-        expected = (len(symbols), symbols.count("✅"), symbols.count("🟡"), symbols.count("🧪"))
+        symbols = list(self.overview.values())
+        expected = (len(symbols), symbols.count("✅"), symbols.count("🟡"), symbols.count("🔬"), symbols.count("🧪"))
         self.assertEqual(tuple(int(g) for g in m.groups()), expected)
 
-    def test_device_overview_has_the_same_states(self):
-        overview = _table_states(DEVICE_OVERVIEW, state_cell=5)  # Device | Profile | Chip | Table | Slot | State
-        self.assertEqual(overview, self.states)
+    def test_the_dev_board_section_lists_exactly_the_devkit_tested_devices(self):
+        text = DEVICE_OVERVIEW.read_text(encoding="utf-8")
+        section = text.split("## Tested on a dev board", 1)[1].split("\n## ", 1)[0]
+        listed = set(re.findall(r"(?m)^\| \[[^\]]+\]\([^)]*\) \| `(\w+)` \|", section))
+        self.assertEqual(listed, {name for name, symbol in self.overview.items() if symbol == "🔬"})
 
     def test_relative_links_and_images_exist(self):
         for m in re.finditer(r"\]\(([^)\s]+)\)", self.text):
@@ -87,14 +97,14 @@ class ReadmeTests(unittest.TestCase):
 
 
 SECTIONS = ("Before you start", "ESPHome config", "Pins", "Flash it", "What to expect", "Notes for this device", "Way back")
-BADGE = {"✅": "state-confirmed-", "🟡": "state-partly%20checked-", "🧪": "state-untested-"}
+BADGE = {"✅": "state-confirmed-", "🟡": "state-partly%20checked-", "🔬": "state-devkit%20tested-", "🧪": "state-untested-"}
 
 
 class DevicePageTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.pages = sorted(p for p in (ROOT / "docs" / "devices").glob("*.md") if p.name != "README.md")
-        cls.states = _table_states(README, state_cell=3)
+        cls.states = _table_states(DEVICE_OVERVIEW, state_cell=5)
 
     def _profiles(self, text):
         m = re.search(r"(?m)^\| Profile \| (.+) \|$", text)
@@ -115,11 +125,55 @@ class DevicePageTests(unittest.TestCase):
             for needed in ("Before you start", "Flash it", "What to expect", "Notes for this device", "Way back"):
                 self.assertIn(needed, heads, page.name)
 
+    # The safety sentences stand on every device page, word for word: someone who lands on a page from a search must read them there.
+    # The pages repeat them on purpose; this test keeps the copies from drifting apart.
+    SAFETY_WIPES = ("> - **Wipes Wi-Fi and settings.** ESPHome opens its own access point or joins the Wi-Fi from your config; if nothing comes up, "
+                    "power-cycle the device ([help](../troubleshooting.md#esphome-does-not-start-after-the-update)).")
+    SAFETY_BACK = ("> - **No way back over the network** once ESPHome's bootloader runs: `restore` gets no answer, only UART brings Shelly OS back "
+                   "([Recovery over UART](../recovery-uart.md)). Take a flash backup first")
+    SAFETY_REPORT = ("> - **Flashed it? Tell us,** also when it worked: "
+                     "[open a device report](https://github.com/oxynatOr/free-shelly-ota/issues/new?template=device-report.yml).")
+    FLASHED_WITHOUT_UART = {"Pill.md", "PlusPlugIT.md", "PlusPlugS.md"}      # no bootloader swap needed there, their Way back says what applies
+
+    def test_every_page_ends_with_the_same_safety_box(self):
+        for page in self.pages:
+            text = page.read_text(encoding="utf-8")
+            box = text[text.rindex("---"):]
+            self.assertIn("> [!WARNING]\n", box, page.name)
+            self.assertIn(self.SAFETY_WIPES, box, page.name)
+            self.assertIn(self.SAFETY_REPORT, box, page.name)
+            if page.name in self.FLASHED_WITHOUT_UART:
+                self.assertNotIn("No way back over the network", box, page.name)
+            else:
+                self.assertIn(self.SAFETY_BACK, box, page.name)
+
+    def test_the_checklist_is_one_line_with_the_four_standard_checks(self):
+        for page in self.pages:
+            text = page.read_text(encoding="utf-8")
+            section = text.split("## Before you start\n\n", 1)[1].split("\n## ", 1)[0]
+            line = section.splitlines()[0]
+            self.assertTrue(line.startswith("Check first: ☐ "), page.name)
+            for part in ("Shelly's own firmware", "you know its IP address", "port 8000", "partition table below"):
+                self.assertIn(part, line, page.name)
+            if "Recovery over UART" not in line:           # a page with its own UART item says it under "Also:"
+                self.assertIn("UART", section, page.name)
+
     def test_state_badge_matches_the_readme(self):
         for page in self.pages:
             text = page.read_text(encoding="utf-8")
             for name in self._profiles(text):
                 self.assertIn(BADGE[self.states[name]], text, f"{page.name}: {name}")
+
+    def test_a_page_that_links_the_esphome_device_page_has_it_as_a_row_of_the_table(self):
+        """The link is in the Fact table once, as https://devices.esphome.io/devices/<slug>/, and every other link on the page goes to the same page."""
+        for page in self.pages:
+            text = page.read_text(encoding="utf-8")
+            linked = set(re.findall(r"https://devices\.esphome\.io/devices/([^/)\s]+)/", text))
+            if not linked:
+                continue
+            rows = re.findall(r"(?m)^\| ESPHome device page \| \[[^\]]+\]\(https://devices\.esphome\.io/devices/([a-z0-9-]+)/\)", text)
+            self.assertEqual(len(rows), 1, f"{page.name}: one ESPHome device page row")
+            self.assertEqual(linked, {rows[0]}, f"{page.name}: all links go to the page of the row")
 
     def test_flash_commands_use_the_profile_of_the_page(self):
         for page in self.pages:

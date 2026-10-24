@@ -18,7 +18,7 @@ import textwrap
 import zipfile
 from pathlib import Path
 
-from shelly_ota import (MODULE_DIR, buildinfo, builder, devicegen, devkit, firmware, lint, logview, logwatch, profile, rpc,
+from shelly_ota import (MODULE_DIR, ble, buildinfo, builder, devicegen, devkit, firmware, lint, logview, logwatch, profile, rpc,
                         secrets_check, sender, ui)
 from shelly_ota.logview import Level
 
@@ -40,6 +40,7 @@ COMMANDS = [
     ("Deploy", [
         ("send", "send a ZIP to a Shelly (it downloads from this PC)"),
         ("restore", "send the cached official firmware back to a Shelly"),
+        ("ble", "Bluetooth: give a device without Wi-Fi (e.g. Zigbee firmware) its Wi-Fi"),
         ("log", "show the live debug log of a Shelly"),
     ]),
     ("Tools", [
@@ -282,7 +283,7 @@ def _send(args, zip_path: Path, log_name: str | None = None, restoring: bool = F
     level = _level(args, Level.normal)
     logfile = _open_logfile(args, level, log_name or f"{zip_path.stem}.send.log")
     try:
-        sender.send(p, zip_path, args.ip, host=args.host, port=args.port, timeout=args.timeout,
+        sender.send(p, zip_path, args.ip, host=args.host, port=args.port, timeout=args.timeout, max_wait=getattr(args, "max_wait", sender.MAX_WAIT),
                     assume_yes=args.yes, dry_run=args.dry_run, force=args.force, user=args.user,
                     password=args.password, watch=args.watch, log_port=args.log_port, ignore_slot=args.ignore_slot,
                     wait=getattr(args, "wait", sender.DEFAULT_WAIT), restoring=restoring, level=level, logfile=logfile)
@@ -296,11 +297,8 @@ def cmd_send(args) -> None:
 
 
 RESTORE_NOTE = """NOTE: restore sends the cached official package. It only works while the Shelly firmware is still running. A device
-      that already runs ESPHome does not answer; the way back is then UART, with a flash backup.
-
-NOTE: The package may reset NVS and otadata, so Wi-Fi credentials and settings can be lost.
-
-NOTE: If ESPHome's bootloader is installed, the installer writes Shelly's bootloader back and moves the stock firmware to
+      that already runs ESPHome does not answer; the way back is then UART, with a flash backup."""
+RESTORE_SLOT_NOTE = """NOTE: If ESPHome's bootloader is installed, the installer writes Shelly's bootloader back and moves the stock firmware to
       the other slot. That is also what `send` needs when it reports that the installer would write to slot 1."""
 
 
@@ -310,11 +308,51 @@ def cmd_restore(args) -> None:
         raise builder.OtaError(f"No official {args.device} ZIP cached. Run 'ota.py fetch {args.device}' first.")
     ui.say(f"Restoring the official firmware from {zip_path}")
     ui.say(RESTORE_NOTE)
+    if _level(args, Level.normal) >= Level.verbose:
+        ui.say(RESTORE_SLOT_NOTE)
     try:
         _send(args, zip_path, f"{args.device}.restore.log", restoring=True)
     except rpc.DeviceUnreachable as e:
         raise builder.OtaError(f"{e}\n  Is the Shelly firmware still running? A device with ESPHome on it "
                                f"cannot be restored this way; use UART (see the note above).") from e
+
+
+def cmd_ble(args) -> None:
+    rest = args.args
+    if args.action == "scan":
+        found = ble.scan()
+        if not found:
+            raise builder.OtaError("No Shelly found over Bluetooth. Is it powered and close by, and is BLE RPC on?")
+        for f in found:
+            ui.say(f"{f.address}  {f.name}  {f.rssi} dBm")
+        return
+    expected = {"info": (0, 0), "call": (1, 2), "wifi": (1, 2)}[args.action]
+    if not expected[0] <= len(rest) <= expected[1]:
+        raise builder.OtaError({"info": "info takes no argument.", "call": "call needs METHOD and optionally a JSON object.",
+                                "wifi": "wifi needs SSID and optionally PASSWORD ('-' asks for it without showing it)."}[args.action])
+    address = args.address
+    if not address:
+        found = ble.find_device()
+        address = found.address
+        ui.say(f"Using {found.name or 'the Shelly'} ({address}, {found.rssi} dBm)")
+    if args.action == "wifi":
+        ssid, password = rest[0], rest[1] if len(rest) > 1 else ""
+        if password == "-":
+            import getpass
+            password = getpass.getpass("Wi-Fi password: ")
+        ip = ble.provision_wifi(address, ssid, password, wait=0 if args.no_wait else args.wait)
+        if ip:
+            ui.say(f"The device joined {ssid} and has the address {ip}.")
+            ui.say(f"Next: python ota.py send DEVICE ZIP --ip {ip}   (restore first if send reports slot 1)")
+        else:
+            ui.say(f"Wi-Fi {ssid} is set. Ask for the address with: python ota.py ble call Wifi.GetStatus -a {address}")
+        return
+    method = "Shelly.GetDeviceInfo" if args.action == "info" else rest[0]
+    try:
+        params = json.loads(rest[1]) if args.action == "call" and len(rest) > 1 else None
+    except ValueError as e:
+        raise builder.OtaError(f"The parameters are not JSON: {e}") from e
+    print(json.dumps(ble.rpc(address, method, params, timeout=args.timeout), indent=2))
 
 
 def cmd_log(args) -> None:
@@ -396,6 +434,8 @@ def send_options() -> argparse.ArgumentParser:
                    help="write the whole run (every message, every device log entry) to a file, whatever the log level; "
                         "without a path to logs/<name>.send.log. Put it after DEVICE and ZIP, or use --log-file=PATH")
     g.add_argument("--timeout", type=float, default=300, metavar="SEC", help="wait for the download (default: %(default)s); a weak Wi-Fi signal can need much more, send asks")
+    g.add_argument("--max-wait", type=float, default=sender.MAX_WAIT, metavar="SEC",
+                   help="if the device downloads slowly but steadily, the wait is extended on its own, up to SEC in total (default: %(default)s)")
     g.add_argument("--wait", type=float, default=sender.DEFAULT_WAIT, metavar="SEC",
                    help="if the device refuses the update because it has only just started ('Not committed'): wait SEC "
                         "seconds, then ask again before the next try (default: %(default)s)")
@@ -571,6 +611,23 @@ def build_parser() -> argparse.ArgumentParser:
     g = r.add_argument_group("firmware")
     g.add_argument("--version", metavar="VER", help="cached version (default: the newest stable one)")
     r.set_defaults(func=cmd_restore)
+
+    bl = _command(sub, "ble", usage="ota.py ble {scan,info,call,wifi} [ARG ...] [options]",
+                  epilog=_epilog("ble wifi MyNetwork -", "ble",
+                                 "scan: the Shellies in range.  info: Shelly.GetDeviceInfo.\n"
+                                 "call METHOD [JSON]: any RPC method.\n"
+                                 "wifi SSID [PASSWORD]: set the Wi-Fi and wait for the address ('-' asks for\n"
+                                 "the password).\n"
+                                 "Needs: pip install bleak, and a Bluetooth LE adapter."))
+    bl.add_argument("action", choices=["scan", "info", "call", "wifi"])
+    bl.add_argument("args", nargs="*", metavar="ARG", help="call: METHOD [JSON]; wifi: SSID [PASSWORD]")
+    g = bl.add_argument_group("the Shelly")
+    g.add_argument("-a", "--address", metavar="ADDR", help="Bluetooth address (default: the strongest Shelly in range)")
+    g = bl.add_argument_group("what to do")
+    g.add_argument("--timeout", type=float, default=15.0, metavar="SEC", help="wait for an answer (default: %(default)s)")
+    g.add_argument("--wait", type=float, default=40.0, metavar="SEC", help="wifi: wait for the address up to SEC (default: %(default)s)")
+    g.add_argument("--no-wait", action="store_true", help="wifi: do not wait for the address")
+    bl.set_defaults(func=cmd_ble)
 
     lg = _command(sub, "log", usage="ota.py log [options]", parents=[dev, lvl],
                   epilog=_epilog("log --ip 192.168.1.50 --seconds 30", "log"))

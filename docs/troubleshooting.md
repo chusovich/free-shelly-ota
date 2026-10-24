@@ -82,6 +82,19 @@ If the device's log reports an update error (an `ota_error` event or any event w
 the device's text and prints the last lines of the device log, whatever the log level. The event name `ota_error` is assumed, not
 seen yet: if a device fails differently, the `--log-file` file shows how. Please report it.
 
+### The device has no Wi-Fi and opens no access point
+
+Seen on the Zigbee firmware of the Mini 1PM Gen4 on a dev board: the log said `WiFi mode: off`, `Shelly.GetDeviceInfo` said `"provision": "pending"`, no access point appeared, and only Bluetooth was on.
+`send` needs an address, so give the device a Wi-Fi over Bluetooth first (needs `pip install bleak` and a Bluetooth LE adapter in this PC):
+
+```
+python ota.py ble scan
+python ota.py ble wifi MyNetwork -
+```
+
+The second command asks for the password, waits for the address and prints it; use it as `--ip`. Nothing is found by `scan`: the device must be powered and within a few metres, and
+BLE RPC must be on. `restore` and the ESPHome package wipe NVS, so the Wi-Fi is gone afterwards and `ble wifi` sets it again ([`ble`](commands.md#ble)). Not tried on a real device yet.
+
 ### The device does not download the ZIP
 
 `send` ends with "did not download the ZIP within ..." when the Shelly cannot reach this PC. The usual cause is a network

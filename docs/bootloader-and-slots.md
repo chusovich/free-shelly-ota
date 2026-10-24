@@ -74,7 +74,7 @@ update to 2.0.1 and a new `send`, ESPHome started.
 same as the later `Will write to slot N` in all runs so far. When the package replaces the bootloader, `send` reads that line
 first (briefly switching on the UDP log, so allow UDP port 9514) and **refuses to send if N is not 0**, telling you to run
 `ota.py restore <Device>` first. `--ignore-slot` sends anyway. The `slot=` value in the first output line is not a reliable
-predictor, so the check uses the log line.
+predictor, so the check uses the log line. (On the Mini 1PM Gen4 Zigbee firmware on a dev board it was the running slot, and the update went to the other one: slot 0 running, target 1; after `restore` slot 1 running, target 0. One board only.)
 
 > [!NOTE]
 > Not every firmware prints an app slot there. The Plug M Gen3 on stock 1.8.99 logs `Storing core dumps to scratch (0x720000)`,

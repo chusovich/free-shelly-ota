@@ -69,6 +69,13 @@ class LabelFileTests(unittest.TestCase):
             if name.startswith("device: "):
                 self.assertTrue(name[len("device: "):] in profile.list_devices() or name == "device: other", name)
 
+    def test_the_device_report_form_lists_every_profile(self):
+        import yaml
+        form = yaml.safe_load((ROOT / ".github" / "ISSUE_TEMPLATE" / "device-report.yml").read_text(encoding="utf-8"))
+        options = next(b for b in form["body"] if b.get("id") == "device")["attributes"]["options"]
+        listed = {o.split(" (", 1)[0] for o in options}
+        self.assertEqual(listed - {"Other"}, set(profile.list_devices()))
+
     def test_issue_forms_use_labels_that_exist(self):
         self.assertTrue(FORMS)
         for path in FORMS:

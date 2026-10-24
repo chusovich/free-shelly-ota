@@ -2,6 +2,7 @@
 fw/
 out/
 logs/
+devkit-configs/
 *.bin
 *.img
 
