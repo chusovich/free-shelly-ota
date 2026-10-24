@@ -37,6 +37,7 @@ This is a pre-release: 23 of the 43 profiles are only built and verified (🧪),
 - `send` checks the device's Wi-Fi signal (`Wifi.GetStatus`). At -67 dBm or weaker it says what that does to the download and asks "seconds / s / c" how long to wait (Enter takes 1200 s, `s` skips, `c` cancels). If the wait runs out while the device is still taking the ZIP, `send` asks the same way instead of stopping. It never waits longer on its own: with `--yes` or `--dry-run` it only says so. The threshold is a guess from one report ([Wi-Fi signal](docs/commands.md#wi-fi-signal)).
 
 ### Changed
+- The device report form lists all 43 profiles in its "Device" dropdown (it had 15, so reports for the 28 others had to use "Other"); `tests/test_labels.py` keeps it in step with the profiles.
 - Device pages are shorter: "Before you start" is one line (what only applies to a model is listed under "Also"), and the three boxes (the NVS note, the warning about the way back, the request for a report) are one
   box with three bullets at the end of the page. The sentences are still the same on every page, and `tests/test_readme.py` checks that word for word.
 - `restore` prints one NOTE (what it does and that a device with ESPHome does not answer) instead of three; the explanation of the slot change and the
