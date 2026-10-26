@@ -99,6 +99,7 @@ In the `--watch` log look for these lines, in this order:
 
 First report ([#92](https://github.com/oxynatOr/free-shelly-ota/issues/92), thanks to [majoto85](https://github.com/majoto85)): flashed over OTA from Shelly 1.4.99 (running from slot 1) with `--esphome-factory`. The installer wrote ESPHome's bootloader (loader `010001ff`, minimum `010009ff`) and the device booted straight into ESPHome without a power cycle, joined Wi-Fi, and a later regular ESPHome OTA took effect. Relays and the meter were not part of the report.
 
+- **Two more units** (thanks to [WulffTech](https://github.com/WulffTech)): `S3SW-002P16EU`, from Shelly 2.0.1 to ESPHome 2026.9.0 over OTA without UART, built with their own tooling instead of `ota.py`. Both ran stable across reboots, the relays stayed off after them, and a later ESPHome OTA worked. The meter was not reported.
 - **Slot:** the first `--dry-run` could not read the target slot (8 s timeout); a second one right after showed slot 0.
 - The installer logs refused eFuse writes (`FW signatures: want 07, got 00`). The update still finished and the device confirmed it.
 
